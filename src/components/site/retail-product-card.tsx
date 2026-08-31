@@ -1,8 +1,8 @@
-import { ArrowRight, PackageCheck } from "lucide-react";
-import Image from "next/image";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 import { formatStoreMoney, type StoreLocale } from "@/config/store";
+import { StorefrontImage } from "@/components/site/storefront-image";
 
 export type RetailProductCardData = {
   slug: string;
@@ -20,10 +20,8 @@ export function RetailProductCard({ product, locale }: { product: RetailProductC
     <article className="group flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface transition-[transform,box-shadow,border-color] hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl">
       <Link href={`/${locale}/products/${product.slug}`} className="relative aspect-square overflow-hidden bg-surface-warm" aria-label={`${product.name} ${de ? "ansehen" : "view"}`}>
         {product.imageUrl ? (
-          <Image src={product.imageUrl} alt="" fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-contain p-5 transition-transform duration-300 group-hover:scale-[1.03]" />
-        ) : (
-          <div className="flex h-full items-center justify-center"><PackageCheck className="h-12 w-12 text-muted/40" aria-hidden="true" /></div>
-        )}
+          <StorefrontImage src={product.imageUrl} alt="" fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-contain p-5 transition-transform duration-300 group-hover:scale-[1.03]" />
+        ) : <StorefrontImage src={null} alt="" fill sizes="(max-width: 640px) 50vw, 25vw" className="object-contain p-5" />}
         {!product.available ? <span className="absolute left-3 top-3 rounded-full bg-foreground px-3 py-1 text-xs font-bold text-white">{de ? "Nicht verfügbar" : "Unavailable"}</span> : null}
       </Link>
       <div className="flex flex-1 flex-col p-4 sm:p-5">

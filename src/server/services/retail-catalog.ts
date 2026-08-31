@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import { cache } from "react";
 
 import type { Prisma } from "@/generated/prisma/client";
@@ -23,6 +24,14 @@ function local(locale: StoreLocale, de: string | null | undefined, en: string | 
   return locale === "de" ? de || en || "" : en || de || "";
 }
 
+function shuffle<T>(items: T[]) {
+  for (let index = items.length - 1; index > 0; index -= 1) {
+    const target = randomInt(index + 1);
+    [items[index], items[target]] = [items[target], items[index]];
+  }
+  return items;
+}
+
 export function retailProductDto(product: RetailProduct, locale: StoreLocale) {
   const variants = product.variants.map((variant) => ({
     id: variant.id,
@@ -42,7 +51,7 @@ export function retailProductDto(product: RetailProduct, locale: StoreLocale) {
     description: local(locale, product.descriptionDe, product.descriptionEn),
     seoTitle: local(locale, product.seoTitleDe, product.seoTitleEn),
     seoDescription: local(locale, product.seoDescriptionDe, product.seoDescriptionEn),
-    category: { slug: product.category.slug, name: local(locale, product.category.nameDe, product.category.nameEn) },
+    category: { id: product.category.id, slug: product.category.slug, name: local(locale, product.category.nameDe, product.category.nameEn) },
     featured: product.featured,
     imageUrl: resolveProductMediaUrl(product.media[0] ?? { objectKey: product.imageKey }),
     media: product.media.map((media) => ({ id: media.id, url: resolveProductMediaUrl(media), alt: local(locale, media.altDe, media.altEn) || local(locale, product.nameDe, product.nameEn) })),
@@ -77,7 +86,6 @@ export async function listRetailProducts(input: {
   categorySlug?: string;
   query?: string;
   tag?: string;
-  options?: Array<{ optionId: string; valueId: string }>;
   minPriceRappen?: number;
   maxPriceRappen?: number;
   availableOnly?: boolean;
@@ -112,11 +120,6 @@ export async function listRetailProducts(input: {
         deletedAt: null,
         ...(input.minPriceRappen !== undefined ? { priceRappen: { gte: input.minPriceRappen } } : {}),
         ...(input.maxPriceRappen !== undefined ? { priceRappen: { lte: input.maxPriceRappen } } : {}),
-        ...(input.options?.length ? {
-          AND: input.options.map(({ optionId, valueId }) => ({
-            optionValues: { some: { optionValueId: valueId, optionValue: { optionId } } },
-          })),
-        } : {}),
       },
     },
   };
@@ -140,31 +143,36 @@ export async function listRetailProducts(input: {
   return { items, page, pageCount: Math.max(1, Math.ceil(total / take)), total };
 }
 
-export async function getRetailOptionFacets() {
-  return prisma.productOption.findMany({
-    where: { product: { status: "ACTIVE", active: true, deletedAt: null } },
-    select: {
-      id: true,
-      name: true,
-      values: {
-        where: { variants: { some: { variant: { active: true, deletedAt: null } } } },
-        select: { id: true, value: true },
-        orderBy: [{ sortOrder: "asc" }, { value: "asc" }],
-      },
-    },
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-  });
-}
-
 export async function getRetailProduct(slug: string, locale: StoreLocale) {
   const product = await prisma.product.findFirst({ where: { slug, status: "ACTIVE", active: true, deletedAt: null }, include: retailProductInclude });
   return product ? retailProductDto(product, locale) : null;
 }
 
+export async function getRetailRelatedProducts(productId: string, categoryId: string, locale: StoreLocale) {
+  const products = await prisma.product.findMany({
+    where: { id: { not: productId }, categoryId, status: "ACTIVE", active: true, deletedAt: null },
+    include: retailProductInclude,
+    orderBy: [{ featured: "desc" }, { sortOrder: "asc" }, { id: "asc" }],
+    take: 4,
+  });
+  return products.map((product) => retailProductDto(product, locale));
+}
+
+export async function getRetailProductsBySlugs(slugs: string[], locale: StoreLocale) {
+  if (!slugs.length) return [];
+  const products = await prisma.product.findMany({
+    where: { slug: { in: slugs }, status: "ACTIVE", active: true, deletedAt: null },
+    include: retailProductInclude,
+  });
+  const bySlug = new Map(products.map((product) => [product.slug, product]));
+  return slugs.flatMap((slug) => bySlug.has(slug) ? [retailProductDto(bySlug.get(slug)!, locale)] : []);
+}
+
 export async function getRetailHomepage(locale: StoreLocale) {
   const now = new Date();
-  const [categories, featured, newest, bestSellerGroups, promotions] = await Promise.all([
+  const [categories, showcase, featured, newest, bestSellerGroups, promotions] = await Promise.all([
     getRetailCategories(locale),
+    prisma.product.findMany({ where: { status: "ACTIVE", active: true, deletedAt: null }, include: retailProductInclude, orderBy: [{ featured: "desc" }, { sortOrder: "asc" }, { id: "asc" }], take: 12 }),
     prisma.product.findMany({ where: { status: "ACTIVE", active: true, deletedAt: null, featured: true }, include: retailProductInclude, orderBy: { sortOrder: "asc" }, take: 8 }),
     prisma.product.findMany({ where: { status: "ACTIVE", active: true, deletedAt: null }, include: retailProductInclude, orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }], take: 8 }),
     prisma.orderItem.groupBy({
@@ -194,6 +202,7 @@ export async function getRetailHomepage(locale: StoreLocale) {
   const byId = new Map(bestProducts.map((product) => [product.id, product]));
   return {
     categories: categories.filter(({ parentId }) => !parentId).slice(0, 8),
+    showcase: shuffle(showcase.map((product) => retailProductDto(product, locale))),
     featured: featured.map((product) => retailProductDto(product, locale)),
     newest: newest.map((product) => retailProductDto(product, locale)),
     bestSellers: bestIds.flatMap((id) => byId.get(id) ? [retailProductDto(byId.get(id)!, locale)] : []),
