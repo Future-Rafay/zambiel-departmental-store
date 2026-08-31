@@ -6,6 +6,7 @@ const pages = [
   "",
   "/products",
   "/categories",
+  "/contact",
   "/privacy",
   "/terms",
 ];

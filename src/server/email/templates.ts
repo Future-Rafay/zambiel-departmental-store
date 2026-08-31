@@ -1,4 +1,5 @@
 import { storeConfig } from "@/config/store";
+import type { ContactInput } from "@/server/validators/contact";
 
 function escapeHtml(value: string) {
   return value.replace(
@@ -19,6 +20,39 @@ function brandedEmail(input: {
     ? `<p style="margin:28px 0"><a href="${escapeHtml(input.action.href)}" style="display:inline-block;border-radius:10px;background:${storeConfig.brand.colors.primary};color:#fff;padding:13px 20px;text-decoration:none;font-weight:700">${escapeHtml(input.action.label)}</a></p>`
     : "";
   return `<!doctype html><html><body style="margin:0;background:#f3f3ef;color:#17251f;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:28px 12px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;border:1px solid #d8ddd9;border-radius:18px;background:#fff;overflow:hidden"><tr><td style="padding:26px 32px;border-bottom:4px solid ${storeConfig.brand.colors.accent};font-size:28px;font-weight:900">${storeConfig.identity.name}</td></tr><tr><td style="padding:32px"><p style="color:${storeConfig.brand.colors.primary};font-size:12px;font-weight:700;text-transform:uppercase">${escapeHtml(input.eyebrow)}</p><h1>${escapeHtml(input.title)}</h1>${input.body}${action}<p style="margin-top:30px;border-top:1px solid #d8ddd9;padding-top:18px;color:#66736d;font-size:12px">${storeConfig.identity.name} · Automated service message</p></td></tr></table></td></tr></table></body></html>`;
+}
+
+export function contactInquiryEmail(input: ContactInput) {
+  const requestLabel = input.kind === "product_request" ? "Product request" : "Contact inquiry";
+  const subject = input.subject || requestLabel;
+  const details = [
+    `<p><strong>Name:</strong> ${escapeHtml(input.name)}</p>`,
+    `<p><strong>Email:</strong> ${escapeHtml(input.email)}</p>`,
+    input.phone ? `<p><strong>Phone:</strong> ${escapeHtml(input.phone)}</p>` : "",
+    `<p><strong>Message:</strong></p><p>${escapeHtml(input.message).replaceAll("\n", "<br>")}</p>`,
+  ].join("");
+  return {
+    subject: `${storeConfig.identity.name}: ${subject}`,
+    text: `${requestLabel}\nName: ${input.name}\nEmail: ${input.email}\nPhone: ${input.phone || "-"}\n\n${input.message}`,
+    html: brandedEmail({ eyebrow: requestLabel, title: subject, body: details }),
+  };
+}
+
+export function contactAcknowledgementEmail(input: ContactInput) {
+  const de = input.locale === "de";
+  return {
+    subject: de ? "Wir haben Ihre Nachricht erhalten" : "We received your message",
+    text: de
+      ? `Hallo ${input.name}, wir haben Ihre Nachricht erhalten und melden uns so bald wie möglich.`
+      : `Hello ${input.name}, we received your message and will reply as soon as possible.`,
+    html: brandedEmail({
+      eyebrow: de ? "Nachricht erhalten" : "Message received",
+      title: de ? `Danke, ${input.name}` : `Thank you, ${input.name}`,
+      body: de
+        ? "<p>Wir haben Ihre Nachricht erhalten und melden uns so bald wie möglich.</p>"
+        : "<p>We received your message and will reply as soon as possible.</p>",
+    }),
+  };
 }
 export function staffInvitationEmail(input: { invitationUrl: string }) {
   return {
