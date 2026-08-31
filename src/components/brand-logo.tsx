@@ -1,7 +1,28 @@
-export function BrandLogo({ compact = false, className = "" }: { compact?: boolean; priority?: boolean; className?: string }) {
+import Image from "next/image";
+
+import { cn } from "@/lib/cn";
+
+export function BrandLogo({
+  compact = false,
+  priority = false,
+  className = "",
+}: {
+  compact?: boolean;
+  priority?: boolean;
+  className?: string;
+}) {
   return (
-    <span role="img" aria-label="Zambiel" className={`inline-flex items-baseline whitespace-nowrap font-display text-2xl leading-none tracking-[-0.045em] text-primary ${className}`}>
-      {compact ? "Z" : <><span>Zambi</span><span className="text-secondary">e</span><span>l</span></>}
-    </span>
+    <Image
+      src="/images/zambiel-logo.png"
+      alt="Zambiel"
+      width={200}
+      height={106}
+      priority={priority}
+      className={cn(
+        compact ? "h-9 w-auto max-w-24" : "h-11 w-auto max-w-36",
+        "object-contain",
+        className,
+      )}
+    />
   );
 }

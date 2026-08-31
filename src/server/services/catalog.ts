@@ -28,8 +28,8 @@ export const getPublicConfig = cache(async function getPublicConfig() {
     locales: ["de", "en"],
     brand: {
       displayName: site.displayName,
-      email: site.email,
-      phone: site.phone,
+      email: site.email || storeConfig.contact.email,
+      phone: site.phone || storeConfig.contact.phone,
       address: [site.street, site.postalCode, site.city].filter(Boolean).join(", "),
       primaryColor: site.primaryColor,
       secondaryColor: site.secondaryColor,
@@ -45,8 +45,8 @@ export const getPublicConfig = cache(async function getPublicConfig() {
       street: site.street,
       postalCode: site.postalCode,
       city: site.city,
-      instagramUrl: site.instagramUrl,
-      facebookUrl: site.facebookUrl,
+      instagramUrl: site.instagramUrl || storeConfig.contact.social.instagram,
+      facebookUrl: site.facebookUrl || storeConfig.contact.social.facebook,
     },
     fulfillment: {
       deliveryEnabled: fulfillment.deliveryEnabled,
