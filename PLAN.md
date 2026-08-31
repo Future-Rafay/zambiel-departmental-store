@@ -15,11 +15,11 @@ Zambiel is one Swiss store and one seller. German is primary, English secondary,
 
 ## Production blockers
 
-See `content-todo.md`. The independent local `zambiel_dev` database is established. Approved identity/legal/German content, dedicated S3 policy, real delivery zones, Stripe staging tests, and deployment credentials are still required before production enablement. Physical receipt printing remains hardware-dependent.
+See `content-todo.md`. The independent local `zambiel_dev` database is established. Approved legal/German content, dedicated S3 policy, real delivery zones, Stripe staging tests, and deployment credentials are still required before production enablement.
 
 ## Verification gate
 
-Run Prisma format/validate/generate and fresh-database migration/seed; importer dry-run and repeatability checks; unit/integration tests; typecheck, lint, build; responsive and keyboard browser journeys; Stripe webhook/refund staging; Android tests/typecheck/debug build and physical printer checks.
+Run Prisma format/validate/generate and fresh-database migration/seed; importer dry-run and repeatability checks; unit/integration tests; typecheck, lint, build; responsive and keyboard browser journeys; and Stripe webhook/refund staging.
 
 ## Current verification (2026-08-29)
 
@@ -27,5 +27,5 @@ Run Prisma format/validate/generate and fresh-database migration/seed; importer 
 - Catalog: 61 active categories, 50 active products, 223 active variants, and 950 Shopify-source media rows. All 950 source URLs passed bounded checks; stock is 5,568 on hand and 1 reserved after demo order movements.
 - Demo business data: 5 customers, 2 delivery zones, 10 orders, `WELCOME10`, 1 successful refund, 10 notifications, 10 audits, and 12 idempotent order movements.
 - Web: 27 tests passed and one isolated Stripe integration test skipped; typecheck, lint, and production build passed. German/English storefront, catalogue, product/variant, cart, checkout, login redirects, and 375/768/1024/1440 responsive checks passed without broken images or console errors.
-- Android: presentation tests and TypeScript passed. Gradle debug is blocked on this machine by `Unable to establish loopback connection`; physical printers remain unverified.
+- Product decision (2026-08-31): Zambiel has no planned React Native application. Existing native artifacts are frozen and excluded from implementation and release verification.
 - Authenticated admin mutations, live Stripe/webhook/refund, and production-provider checks remain blocked until a browser session and staging credentials/endpoints are supplied.

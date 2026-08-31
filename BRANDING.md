@@ -6,7 +6,7 @@ Zambiel is a single-store application. Rebranding does not add sellers, tenants,
 
 Code and safe defaults live in `src/config/store.ts`. Change store identity, locales, CHF currency, `Europe/Zurich` timezone, country, order prefix, S3 object prefix, theme colours, fonts, metadata, and footer fallback there. Replace logo/favicon keys through **Admin → Settings → General** after uploading approved assets. Runtime contact, address, social links, hero copy, announcement, and colour overrides are merged by `src/server/services/store-config.ts`.
 
-Update `.env` from `.env.example` for the independent database, Auth.js origin/secret, owner bootstrap, S3, email, Stripe, app URL, and optional Android APK. Provider values are deployment configuration, never public content or committed secrets. Delivery rules belong under **Admin → Settings → Delivery zones**; keep postal codes as strings.
+Update `.env` from `.env.example` for the independent database, Auth.js origin/secret, owner bootstrap, S3, email, Stripe, and app URL. Provider values are deployment configuration, never public content or committed secrets. Delivery rules belong under **Admin → Settings → Delivery zones**; keep postal codes as strings.
 
 ## Content configuration
 
@@ -20,8 +20,10 @@ Adding currencies/locales, changing tax/legal models, payment providers, fulfill
 
 1. Create a dedicated lowercase database; never reuse `saltnpepper_dev` or another client's database.
 2. Change `src/config/store.ts`, approved assets, semantic tokens, order prefix, and S3 prefix.
-3. Configure owner/Auth.js, HTTPS domain, prefix-limited S3 policy, email, Stripe webhook, and optional staff APK.
+3. Configure owner/Auth.js, HTTPS domain, prefix-limited S3 policy, email, and Stripe webhook.
 4. Enter verified contact, delivery, footer, SEO, bilingual content, promotions, and legal text.
 5. Run migrations and seed only against the guarded development database.
 6. Dry-run the catalog, review reports, then apply only with confirmed CHF and independent storage.
-7. Run test, typecheck, lint, build, responsive/keyboard journeys, staging payment/refund/webhook checks, and Android checks.
+7. Run test, typecheck, lint, build, responsive/keyboard journeys, and staging payment/refund/webhook checks.
+
+Zambiel has no planned React Native application. The existing native directory is frozen legacy code and must not be transformed or extended during storefront rebranding.

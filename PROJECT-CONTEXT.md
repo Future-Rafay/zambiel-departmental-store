@@ -18,7 +18,7 @@ This is the durable handoff for future development in this repository. It record
 - NextAuth database sessions and customer/owner/staff authorization.
 - Stripe Checkout/webhooks and S3-compatible media storage.
 - Zod trust-boundary validation and Node test runner.
-- React Native Android staff application in `apps/saltnpepper-staff-android`.
+- No React Native application is planned for Zambiel. The existing `apps/saltnpepper-staff-android` directory is frozen legacy code and is not part of the Zambiel product or verification scope.
 
 Read installed Next.js documentation in `node_modules/next/dist/docs/` before framework changes because this version differs from older conventions.
 
@@ -57,7 +57,7 @@ Administration:
 APIs:
 
 - Customer ordering/tracking: `/api/v1/customer/*`
-- Staff Android: authenticated `/api/v1/staff/*`; Android never connects directly to MariaDB.
+- Frozen compatibility endpoints remain under `/api/v1/staff/*`; do not extend or advertise them as a Zambiel mobile application.
 - Stripe: `/api/webhooks/stripe`; preserve signature verification, event claims, replay protection, and shared idempotent finalization.
 - Media: `/api/uploads/images`; owner-authorized and limited by MIME, size, and configured object prefix.
 
@@ -117,8 +117,8 @@ Import is dry-run by default, applies only to `zambiel_dev`/`zambiel_test`, stor
 - Media: all 950 stored Shopify URLs passed bounded availability checks; product media prefers `sourceUrl` and retains S3 keys as fallback metadata.
 - Web: Prisma validation/generation, 27 passing tests, typecheck, lint, and production build passed. One isolated Stripe integration test is skipped without `TEST_DATABASE_URL`.
 - Browser: German/English storefront, catalogue filters, product variants, cart, checkout, and login redirects passed at 375/768/1024/1440 without broken images, console errors, or remaining horizontal overflow. Cart migration discards legacy `zambiel-cart-v1` state.
-- Android: presentation test and TypeScript passed. Gradle debug is blocked on this machine by `Unable to establish loopback connection`.
-- Not verified: live Stripe/webhook/refund flows, authenticated admin journeys, concurrent oversell against an isolated integration database, production credentials/providers, signed APK, or physical printers.
+- Product decision (2026-08-31): Zambiel will not have a React Native application. Historical native verification is no longer a release gate.
+- Not verified: live Stripe/webhook/refund flows, authenticated admin journeys, concurrent oversell against an isolated integration database, or production credentials/providers.
 
 ## Branding and content
 
@@ -131,7 +131,7 @@ Import is dry-run by default, applies only to `zambiel_dev`/`zambiel_test`, stor
 ## Compatibility and cleanup boundaries
 
 - Historical migration files are immutable.
-- Android Java package, React Native component/module names, signing keys, npm package name, and AsyncStorage keys intentionally retain SaltNPepper identifiers. Renaming them requires a separate native migration.
+- Frozen React Native and staff-mobile artifacts intentionally remain untouched. Removing them and their compatibility endpoints requires a separate reviewed cleanup after dependency and deployment checks.
 - Old public/admin route redirects can remain for compatibility but must not contain restaurant behavior.
 - A recoverable quarantine from the initial cleanup exists outside the repository under `C:\Users\MY PC\Documents\Codex\quarantine`; do not delete it without explicit instruction.
 
@@ -148,9 +148,6 @@ npm.cmd test
 npm.cmd run typecheck
 npm.cmd run lint
 npm.cmd run build
-npm.cmd --prefix apps/saltnpepper-staff-android test
-npm.cmd --prefix apps/saltnpepper-staff-android run typecheck
-apps\saltnpepper-staff-android\android\gradlew.bat --no-daemon assembleDebug
 git diff --check
 ```
 

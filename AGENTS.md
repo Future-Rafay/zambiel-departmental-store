@@ -14,7 +14,7 @@ Read `PROJECT-CONTEXT.md` and `PLAN.md` before making changes. Then read `BRANDI
 ## Scope
 
 - This is a single-seller Swiss departmental store. Never add vendor, tenant, organization, commission, payout, or order-splitting architecture.
-- Public routes are German/English under `/de` and `/en`; admin is `/admin`; Android uses authenticated `/api/v1` HTTPS services and never connects to MariaDB.
+- Public routes are German/English under `/de` and `/en`; admin is `/admin`. Zambiel has no planned React Native application. Existing native artifacts and staff-mobile endpoints are frozen legacy code: do not transform, extend, advertise, or verify them as Zambiel functionality without a separately approved removal or migration task.
 - Preserve the shared seams: `src/server/db.ts`, `src/server/services/ordering.ts`, admin services/actions, explicit DTOs, and `resolvePublicImageUrl`.
 - Legacy restaurant schema fields and enum members remain temporarily for forward expand/contract compatibility. Do not use them in new behavior, UI, routes, seeds, or APIs; remove them only through a reviewed forward migration after all historical-data requirements are confirmed.
 
@@ -42,8 +42,8 @@ Read `PROJECT-CONTEXT.md` and `PLAN.md` before making changes. Then read `BRANDI
 ## Verification
 
 - Non-trivial money, stock, transitions, authorization, import, and payment changes need a runnable regression check.
-- Before completion run Prisma validation/generation, fresh guarded migration/seed where available, tests, typecheck, lint, build, responsive browser checks, and Android verification. State credential/provider/hardware-dependent checks honestly.
-- Do not claim live Stripe, webhook, refund, destructive admin, concurrent oversell, production provider, or physical printer behavior without direct evidence from the relevant environment.
+- Before completion run Prisma validation/generation, fresh guarded migration/seed where available, tests, typecheck, lint, build, and responsive browser checks. State credential/provider-dependent checks honestly.
+- Do not claim live Stripe, webhook, refund, destructive admin, concurrent oversell, or production provider behavior without direct evidence from the relevant environment.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
