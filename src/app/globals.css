@@ -1,27 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --brand-primary: #1c1917;
-  --brand-primary-light: #3f3a36;
-  --brand-primary-dark: #0f0e0d;
+  --brand-primary: #153b35;
+  --brand-primary-light: #2b5c52;
+  --brand-primary-dark: #0b2622;
   --brand-primary-foreground: #ffffff;
-  --brand-secondary: #b43a25;
-  --brand-secondary-light: #d3573f;
-  --brand-secondary-contrast: #f2b7a8;
-  --brand-secondary-foreground: #ffffff;
-  --brand-background: #f7f2e8;
-  --brand-surface: #fffdf8;
-  --brand-surface-warm: #efe6d8;
-  --brand-foreground: #1c1917;
-  --brand-muted: #6f675e;
-  --brand-border: #d8cdbd;
+  --brand-secondary: #d6a84b;
+  --brand-secondary-light: #e7c979;
+  --brand-secondary-contrast: #f8e8bd;
+  --brand-secondary-foreground: #14211e;
+  --brand-background: #f4f7f3;
+  --brand-surface: #ffffff;
+  --brand-surface-warm: #e8efea;
+  --brand-foreground: #102722;
+  --brand-muted: #60716b;
+  --brand-border: #d7e1db;
   --brand-success: #287a54;
   --brand-destructive: #b42318;
-  --brand-ring: #b43a25;
-  --radius-control: 0.75rem;
-  --radius-card: 1rem;
-  --font-display: var(--font-archivo-black), "Arial Black", sans-serif;
-  --font-body: var(--font-dm-sans), "Segoe UI", sans-serif;
+  --brand-ring: #d6a84b;
+  --radius-control: 0.625rem;
+  --radius-card: 0.875rem;
+  --font-display: var(--font-bricolage), "Arial", sans-serif;
+  --font-body: var(--font-manrope), "Segoe UI", sans-serif;
 }
 
 @theme inline {
@@ -61,9 +61,9 @@ body {
   min-height: 100vh;
   margin: 0;
   background-image:
-    linear-gradient(rgba(28, 25, 23, 0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(28, 25, 23, 0.025) 1px, transparent 1px);
-  background-size: 48px 48px;
+    linear-gradient(rgba(21, 59, 53, 0.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(21, 59, 53, 0.026) 1px, transparent 1px);
+  background-size: 64px 64px;
 }
 
 :focus-visible {
@@ -158,40 +158,18 @@ body {
   animation: pulseBadge 0.3s ease-in-out;
 }
 
-/* Utility Classes */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(232, 221, 215, 0.7);
+.department-rail {
+  position: relative;
 }
 
-.glass-panel-dark {
-  background: rgba(43, 15, 27, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(197, 138, 31, 0.2);
-}
-
-.gold-gradient-text {
-  background: linear-gradient(135deg, #b43a25 0%, #d3573f 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.plum-gradient {
-  background: #1c1917;
-}
-
-.horizon-divider {
-  height: 2px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    #b43a25 50%,
-    transparent 100%
-  );
-  opacity: 0.5;
+.department-rail::before {
+  position: absolute;
+  inset-block: 4rem;
+  left: 0;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--brand-secondary);
+  content: "";
 }
 
 .blog-prose {

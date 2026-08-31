@@ -1,287 +1,131 @@
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { createHash } from "node:crypto";
 import { hash } from "bcryptjs";
-import "dotenv/config";
-
-import { PrismaClient } from "../src/generated/prisma/client";
+import { prisma } from "../src/server/db";
 
 const databaseUrl = process.env.DATABASE_URL;
 const ownerEmail = process.env.OWNER_EMAIL?.trim().toLowerCase();
 const ownerPassword = process.env.OWNER_PASSWORD;
-const ownerName = process.env.OWNER_NAME?.trim() || "SaltNPepper Owner";
-
+const ownerName = process.env.OWNER_NAME?.trim() || "Zambiel Owner";
 if (!databaseUrl) throw new Error("DATABASE_URL is required.");
-if (new URL(databaseUrl).pathname.replace(/^\/+/, "") !== "saltnpepper_dev") {
-  throw new Error("Seed refused: DATABASE_URL must target the lowercase saltnpepper_dev database.");
-}
+const databaseName = new URL(databaseUrl).pathname.replace(/^\/+/, "");
+if (!["zambiel_dev", "zambiel_test"].includes(databaseName)) throw new Error("Seed refused: DATABASE_URL must target lowercase zambiel_dev or zambiel_test.");
 if (!ownerEmail) throw new Error("OWNER_EMAIL is required.");
-if (!ownerPassword || ownerPassword.startsWith("replace-with")) {
-  throw new Error("Set a real OWNER_PASSWORD before running the seed.");
+if (!ownerPassword || ownerPassword.startsWith("replace-with")) throw new Error("OWNER_PASSWORD must be configured.");
+
+const digest = (value: string) => createHash("sha256").update(value).digest("hex");
+const categoryNames: Record<string, string> = {
+  "Animals & Pet Supplies": "Tierbedarf", "Pet Supplies": "Haustierbedarf", "Pet Bowls, Feeders & Waterers": "Näpfe, Futter- und Wasserspender", "Water Dispensers": "Wasserspender",
+  "Apparel & Accessories": "Bekleidung & Accessoires", Jewelry: "Schmuck", "Smart Watches": "Smartwatches", Electronics: "Elektronik", "Electronics Accessories": "Elektronikzubehör",
+  Power: "Stromversorgung", "Power Control Units": "Stromsteuergeräte", "Power Strips & Surge Suppressors": "Steckdosenleisten & Überspannungsschutz", Hardware: "Haus & Technik",
+  "Hardware Pumps": "Pumpen", "Utility Pumps": "Mehrzweckpumpen", "Transfer Pumps": "Transferpumpen", "Locks & Keys": "Schlösser & Schlüssel", "Locks & Latches": "Schlösser & Riegel",
+  Plumbing: "Sanitär", "Plumbing Fixture Hardware & Parts": "Sanitärarmaturen & Ersatzteile", "Shower Parts": "Duschteile", "Shower Water Filters": "Duschwasserfilter",
+  "Water Dispensing & Filtration": "Wasserspender & Filtration", "In-Line Water Filters": "Leitungswasserfilter", "Power & Electrical Supplies": "Elektrobedarf", "Home Automation Kits": "Hausautomatisierung",
+  "Energy Management Kits": "Energiemanagement", Tools: "Werkzeuge", "Measuring Tools & Sensors": "Messgeräte & Sensoren", Gauges: "Messgeräte", "Depth Gauges": "Tiefenmessgeräte",
+  "Home & Garden": "Haus & Garten", "Bathroom Accessories": "Badezimmerzubehör", "Soap & Lotion Dispensers": "Seifen- & Lotionsspender", "Kitchen & Dining": "Küche & Essen",
+  "Kitchen Appliances": "Küchengeräte", "Water Coolers": "Wasserkühler", "Water Filters": "Wasserfilter", Uncategorised: "Weitere Produkte", "Vehicles & Parts": "Fahrzeuge & Teile",
+  "Vehicle Parts & Accessories": "Fahrzeugteile & Zubehör", "Motor Vehicle Electronics": "Fahrzeugelektronik", "Motor Vehicle Speakers": "Autolautsprecher", "Coaxial Speakers": "Koaxiallautsprecher",
+  Tweeters: "Hochtöner", "Motor Vehicle Subwoofers": "Auto-Subwoofer", "Motor Vehicle Parts": "Fahrzeugteile", "Motor Vehicle Frame & Body Parts": "Karosserieteile", Doors: "Türen",
+  "Motor Vehicle Lighting": "Fahrzeugbeleuchtung", "Light Bars": "Lichtleisten", "Motor Vehicle Wheel Systems": "Radsysteme", "Motor Vehicle Tire Accessories": "Reifenzubehör",
+  "Vehicle Maintenance, Care & Decor": "Fahrzeugpflege & Ausstattung", "Vehicle Decor": "Fahrzeugdekor", "Vehicle Wraps": "Fahrzeugfolien", "Vehicle Repair & Specialty Tools": "Fahrzeugreparatur & Spezialwerkzeuge",
+  "Vehicle Safety & Security": "Fahrzeugsicherheit", "Vehicle Alarms & Locks": "Fahrzeugalarme & Schlösser", "Motorcycle Alarms & Locks": "Motorradalarme & Schlösser",
+};
+const productPhrases: Array<[RegExp, string]> = [
+  [/Water Filter/gi, "Wasserfilter"], [/Water Purifier/gi, "Wasserreiniger"], [/Water Dispenser/gi, "Wasserspender"], [/Electric Pump/gi, "Elektrische Pumpe"],
+  [/Power Saver/gi, "Stromspargerät"], [/Energy Saver/gi, "Energiespargerät"], [/Smart Watch/gi, "Smartwatch"], [/Snow Chains?/gi, "Schneeketten"],
+  [/Anti-Skid/gi, "Rutschhemmend"], [/Car Speakers?/gi, "Autolautsprecher"], [/Car Speaker/gi, "Autolautsprecher"], [/Interior/gi, "Innenraum"],
+  [/Automatic/gi, "Automatisch"], [/Portable/gi, "Tragbar"], [/Household/gi, "Haushalt"], [/Motorcycle/gi, "Motorrad"], [/Bicycle/gi, "Fahrrad"],
+  [/Alarm Lock/gi, "Alarmschloss"], [/Dent Repair Tools/gi, "Dellenreparatur-Set"], [/Dent Puller/gi, "Dellenzieher"], [/Coating Thickness Gauge/gi, "Lackschicht-Messgerät"],
+  [/Soap Dispenser/gi, "Seifenspender"], [/Faucet/gi, "Wasserhahn"], [/Kitchen Tap/gi, "Küchenarmatur"], [/Shower Head/gi, "Duschkopf"],
+  [/Cabinet Lock/gi, "Schrankschloss"], [/Pet/gi, "Haustier"], [/Car /gi, "Auto-"], [/Vehicle/gi, "Fahrzeug"], [/Professional/gi, "Professionell"],
+];
+const demoGermanName = (name: string) => productPhrases.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), name).replace(/\s+/g, " ").trim();
+const customers = [
+  ["anna.keller@demo.zambiel.test", "Anna Keller", "+41 79 555 01 01", "8001", "Zürich"], ["luca.meier@demo.zambiel.test", "Luca Meier", "+41 79 555 01 02", "8002", "Zürich"],
+  ["sara.mueller@demo.zambiel.test", "Sara Müller", "+41 79 555 01 03", "8050", "Zürich"], ["noah.frei@demo.zambiel.test", "Noah Frei", "+41 79 555 01 04", "8302", "Kloten"],
+  ["mia.schmid@demo.zambiel.test", "Mia Schmid", "+41 79 555 01 05", "8152", "Opfikon"],
+] as const;
+const orderFixtures = [
+  ["PAYMENT_PENDING", "PICKUP", "STRIPE"], ["CONFIRMED", "DELIVERY", "CASH_ON_DELIVERY"], ["PROCESSING", "PICKUP", "PAY_AT_PICKUP"],
+  ["READY_FOR_PICKUP", "PICKUP", "PAY_AT_PICKUP"], ["OUT_FOR_DELIVERY", "DELIVERY", "CASH_ON_DELIVERY"], ["DELIVERED", "DELIVERY", "STRIPE"],
+  ["PICKED_UP", "PICKUP", "PAY_AT_PICKUP"], ["CANCELLED", "PICKUP", "STRIPE"], ["CANCELLED", "DELIVERY", "STRIPE"], ["DELIVERED", "DELIVERY", "CASH_ON_DELIVERY"],
+] as const;
+const paths = {
+  PAYMENT_PENDING: ["PAYMENT_PENDING"], CONFIRMED: ["CONFIRMED"], PROCESSING: ["CONFIRMED", "PROCESSING"], READY_FOR_PICKUP: ["CONFIRMED", "PROCESSING", "READY_FOR_PICKUP"],
+  OUT_FOR_DELIVERY: ["CONFIRMED", "PROCESSING", "OUT_FOR_DELIVERY"], DELIVERED: ["CONFIRMED", "PROCESSING", "OUT_FOR_DELIVERY", "DELIVERED"],
+  PICKED_UP: ["CONFIRMED", "PROCESSING", "READY_FOR_PICKUP", "PICKED_UP"], CANCELLED: ["PAYMENT_PENDING", "CANCELLED"],
+} as const;
+
+async function applyMovement(variantId: string, orderId: bigint, type: "ORDER_RESERVED" | "ORDER_RELEASED" | "ORDER_SOLD" | "ORDER_RESTORED", quantity: number) {
+  const idempotencyKey = `demo:${orderId}:${variantId}:${type.toLowerCase()}`;
+  if (await prisma.inventoryMovement.findUnique({ where: { idempotencyKey } })) return;
+  await prisma.$transaction(async (tx) => {
+    if (type === "ORDER_RESERVED") await tx.productVariant.update({ where: { id: variantId }, data: { stockReserved: { increment: quantity } } });
+    if (type === "ORDER_RELEASED") await tx.productVariant.update({ where: { id: variantId }, data: { stockReserved: { decrement: quantity } } });
+    if (type === "ORDER_SOLD") await tx.productVariant.update({ where: { id: variantId }, data: { stockOnHand: { decrement: quantity } } });
+    if (type === "ORDER_RESTORED") await tx.productVariant.update({ where: { id: variantId }, data: { stockOnHand: { increment: quantity } } });
+    await tx.inventoryMovement.create({ data: { variantId, orderId, type, quantityChange: type === "ORDER_RESERVED" || type === "ORDER_SOLD" ? -quantity : quantity, reason: "Deterministic Zambiel demo order", idempotencyKey } });
+  });
 }
-
-const bootstrapEmail = ownerEmail;
-const bootstrapPassword = ownerPassword;
-
-const prisma = new PrismaClient({ adapter: new PrismaMariaDb(databaseUrl) });
-
-const allergens = [
-  ["gluten", "Gluten", "Gluten"],
-  ["crustaceans", "Krebstiere", "Crustaceans"],
-  ["eggs", "Eier", "Eggs"],
-  ["fish", "Fisch", "Fish"],
-  ["peanuts", "Erdnüsse", "Peanuts"],
-  ["soy", "Soja", "Soy"],
-  ["milk", "Milch", "Milk"],
-  ["nuts", "Schalenfrüchte", "Tree nuts"],
-  ["celery", "Sellerie", "Celery"],
-  ["mustard", "Senf", "Mustard"],
-  ["sesame", "Sesam", "Sesame"],
-  ["sulphites", "Sulfite", "Sulphites"],
-  ["lupin", "Lupinen", "Lupin"],
-  ["molluscs", "Weichtiere", "Molluscs"],
-] as const;
-
-const categories = [
-  { slug: "starters", nameDe: "Vorspeisen", nameEn: "Starters", descriptionDe: "Knusprige Kleinigkeiten zum Teilen.", descriptionEn: "Crisp bites made for sharing." },
-  { slug: "grill", nameDe: "Vom Grill", nameEn: "From the grill", descriptionDe: "Würzig marinierte Grillgerichte.", descriptionEn: "Boldly marinated dishes from the grill." },
-  { slug: "curries", nameDe: "Currys", nameEn: "Curries", descriptionDe: "Wärmende Klassiker mit aromatischen Gewürzen.", descriptionEn: "Comforting classics layered with aromatic spices." },
-  { slug: "rice-bread", nameDe: "Reis & Brot", nameEn: "Rice & bread", descriptionDe: "Duftender Reis und frisch gebackene Beilagen.", descriptionEn: "Fragrant rice and freshly baked sides." },
-  { slug: "drinks-desserts", nameDe: "Getränke & Desserts", nameEn: "Drinks & desserts", descriptionDe: "Erfrischende und süsse Abschlüsse.", descriptionEn: "Refreshing and sweet finishes." },
-] as const;
-
-const products = [
-  { category: "starters", slug: "vegetable-samosa", nameDe: "Gemüse-Samosa", nameEn: "Vegetable Samosa", descriptionDe: "Knusprige Teigtaschen mit würziger Gemüsefüllung.", descriptionEn: "Crisp pastry filled with gently spiced vegetables.", imageKey: "SaltNPepper/products/samosa.jpg", priceRappen: 750, vegetarian: true, vegan: false, halal: false, spiceLevel: "MILD", allergens: ["gluten"] },
-  { category: "starters", slug: "chicken-pakora", nameDe: "Chicken Pakora", nameEn: "Chicken Pakora", descriptionDe: "Saftige Pouletstücke in einem knusprig gewürzten Teigmantel.", descriptionEn: "Tender chicken bites in a crisp, seasoned coating.", imageKey: "SaltNPepper/products/chicken-pakora.jpg", priceRappen: 1150, vegetarian: false, vegan: false, halal: true, spiceLevel: "MILD", allergens: [] },
-  { category: "grill", slug: "chicken-tikka", nameDe: "Chicken Tikka", nameEn: "Chicken Tikka", descriptionDe: "Joghurtmariniertes Poulet, kräftig gewürzt und gegrillt.", descriptionEn: "Yogurt-marinated chicken, boldly seasoned and grilled.", imageKey: "SaltNPepper/products/chicken-tikka.jpg", priceRappen: 2250, vegetarian: false, vegan: false, halal: true, spiceLevel: "MEDIUM", allergens: ["milk"] },
-  { category: "grill", slug: "seekh-kebab", nameDe: "Seekh Kebab", nameEn: "Seekh Kebab", descriptionDe: "Saftige Hackfleischspiesse mit Kräutern und Gewürzen.", descriptionEn: "Juicy minced-meat skewers with herbs and warm spices.", imageKey: "SaltNPepper/products/chicken-tikka.jpg", priceRappen: 2150, vegetarian: false, vegan: false, halal: true, spiceLevel: "MEDIUM", allergens: [] },
-  { category: "grill", slug: "mixed-grill", nameDe: "Mixed Grill", nameEn: "Mixed Grill", descriptionDe: "Eine grosszügige Auswahl unserer Grillfavoriten.", descriptionEn: "A generous selection of our grilled favourites.", imageKey: "SaltNPepper/products/mixed-grill.jpg", priceRappen: 2950, vegetarian: false, vegan: false, halal: true, spiceLevel: "MEDIUM", allergens: ["milk"] },
-  { category: "curries", slug: "butter-chicken", nameDe: "Butter Chicken", nameEn: "Butter Chicken", descriptionDe: "Zartes Poulet in einer cremigen Tomaten-Butter-Sauce.", descriptionEn: "Tender chicken in a creamy tomato and butter sauce.", imageKey: "SaltNPepper/products/butter-chicken.jpg", priceRappen: 2350, vegetarian: false, vegan: false, halal: true, spiceLevel: "MILD", allergens: ["milk"] },
-  { category: "curries", slug: "chicken-karahi", nameDe: "Chicken Karahi", nameEn: "Chicken Karahi", descriptionDe: "Poulet mit Tomaten, Ingwer, Kräutern und kräftigen Gewürzen.", descriptionEn: "Chicken cooked with tomato, ginger, herbs, and bold spices.", imageKey: "SaltNPepper/products/chicken-karahi.jpg", priceRappen: 2450, vegetarian: false, vegan: false, halal: true, spiceLevel: "MEDIUM", allergens: [] },
-  { category: "curries", slug: "chana-masala", nameDe: "Chana Masala", nameEn: "Chana Masala", descriptionDe: "Kichererbsen in einer aromatischen Tomaten-Gewürz-Sauce.", descriptionEn: "Chickpeas in an aromatic tomato and spice sauce.", imageKey: "SaltNPepper/products/chana-masala.jpg", priceRappen: 1850, vegetarian: true, vegan: true, halal: false, spiceLevel: "MEDIUM", allergens: [] },
-  { category: "rice-bread", slug: "chicken-biryani", nameDe: "Chicken Biryani", nameEn: "Chicken Biryani", descriptionDe: "Duftender Basmatireis mit gewürztem Poulet und Kräutern.", descriptionEn: "Fragrant basmati rice layered with spiced chicken and herbs.", imageKey: "SaltNPepper/products/chicken-biryani.jpg", priceRappen: 2250, vegetarian: false, vegan: false, halal: true, spiceLevel: "MEDIUM", allergens: [] },
-  { category: "rice-bread", slug: "vegetable-biryani", nameDe: "Gemüse-Biryani", nameEn: "Vegetable Biryani", descriptionDe: "Aromatischer Basmatireis mit saisonalem Gemüse.", descriptionEn: "Aromatic basmati rice with seasonal vegetables.", imageKey: "SaltNPepper/products/vegetable-biryani.jpg", priceRappen: 1950, vegetarian: true, vegan: true, halal: false, spiceLevel: "MILD", allergens: [] },
-  { category: "rice-bread", slug: "naan", nameDe: "Naan", nameEn: "Naan", descriptionDe: "Weiches, frisch gebackenes Fladenbrot.", descriptionEn: "Soft, freshly baked flatbread.", imageKey: "SaltNPepper/products/naan.jpg", priceRappen: 400, vegetarian: true, vegan: false, halal: false, spiceLevel: null, allergens: ["gluten", "milk"] },
-  { category: "rice-bread", slug: "raita", nameDe: "Raita", nameEn: "Raita", descriptionDe: "Kühlende Joghurtbeilage.", descriptionEn: "Cooling yogurt side.", imageKey: null, priceRappen: 200, vegetarian: true, vegan: false, halal: false, spiceLevel: null, allergens: ["milk"] },
-  { category: "rice-bread", slug: "salad", nameDe: "Salat", nameEn: "Salad", descriptionDe: "Frischer gemischter Salat.", descriptionEn: "Fresh mixed salad.", imageKey: null, priceRappen: 200, vegetarian: true, vegan: true, halal: false, spiceLevel: null, allergens: [] },
-  { category: "drinks-desserts", slug: "mango-lassi", nameDe: "Mango Lassi", nameEn: "Mango Lassi", descriptionDe: "Cremiger Joghurt-Drink mit Mango.", descriptionEn: "A creamy yogurt drink blended with mango.", imageKey: "SaltNPepper/products/mango-lassi.jpg", priceRappen: 650, vegetarian: true, vegan: false, halal: false, spiceLevel: null, allergens: ["milk"] },
-  { category: "drinks-desserts", slug: "gulab-jamun", nameDe: "Gulab Jamun", nameEn: "Gulab Jamun", descriptionDe: "Warme Milchteigbällchen in duftendem Zuckersirup.", descriptionEn: "Warm milk-dough dumplings in fragrant sugar syrup.", imageKey: "SaltNPepper/products/gulab-jamun.jpg", priceRappen: 750, vegetarian: true, vegan: false, halal: false, spiceLevel: null, allergens: ["gluten", "milk"] },
-] as const;
-
-const weekdays = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"] as const;
 
 async function main() {
-  const passwordHash = await hash(bootstrapPassword, 12);
-  const siteSettings = {
-    displayName: "SaltNPepper",
-    legalName: "SaltNPepper",
-    slug: "saltnpepper",
-    email: "info@saltnpepper.ch",
-    phone: "+41 76 408 94 30",
-    street: "Allmendstrasse 18",
-    postalCode: "8154",
-    city: "Oberglatt",
-    countryCode: "CH",
-    timezone: "Europe/Zurich",
-    currency: "CHF",
-    primaryColor: "#1C1917",
-    secondaryColor: "#B43A25",
-    logoKey: null,
-    compactLogoKey: null,
-    faviconKey: null,
-    heroImageKey: "/images/editorial/restaurant-table.jpg",
-    heroTitleDe: "Frisch. Lokal. SaltNPepper.",
-    heroTitleEn: "Fresh. Local. SaltNPepper.",
-    heroSubtitleDe: "SaltNPepper ist Ihr lokales Restaurant in Oberglatt – frisch zubereitet und einfach online bestellt.",
-    heroSubtitleEn: "SaltNPepper is your local restaurant in Oberglatt, serving freshly prepared food with simple online ordering.",
-    aboutDe: "Wir schaffen einen Ort für frisch zubereitetes Essen, herzliche Begegnungen und einfache Bestellungen.",
-    aboutEn: "We are creating a place for freshly prepared food, warm encounters, and simple ordering.",
-    announcementDe: "Oberglatt, wir liefern! 8154 · Mindestbestellung CHF 30 · Gratislieferung ab CHF 60",
-    announcementEn: "Oberglatt, we deliver! 8154 · CHF 30 minimum · Free delivery from CHF 60",
-    announcementActive: true,
-    instagramUrl: "https://www.instagram.com/foodeez.ch",
-    facebookUrl: "https://facebook.com/foodeez.ch",
-  } as const;
-  const fulfillmentSettings = {
-    deliveryEnabled: true,
-    pickupEnabled: true,
-    asapEnabled: true,
-    scheduledEnabled: true,
-  } as const;
-
-  await prisma.$transaction([
-    prisma.siteSettings.upsert({
-      where: { id: 1 },
-      create: { id: 1, ...siteSettings },
-      update: siteSettings,
-    }),
-    prisma.fulfillmentSettings.upsert({
-      where: { id: 1 },
-      create: { id: 1, ...fulfillmentSettings },
-      update: fulfillmentSettings,
-    }),
-    prisma.user.upsert({
-      where: { email: bootstrapEmail },
-      create: {
-        email: bootstrapEmail,
-        name: ownerName,
-        passwordHash,
-        role: "OWNER",
-        active: true,
-      },
-      update: {
-        name: ownerName,
-        passwordHash,
-        role: "OWNER",
-        active: true,
-      },
-    }),
-    ...allergens.map(([code, nameDe, nameEn], sortOrder) =>
-      prisma.allergen.upsert({
-        where: { code },
-        create: { code, nameDe, nameEn, sortOrder },
-        update: { nameDe, nameEn, sortOrder },
-      }),
-    ),
+  const owner = await prisma.user.upsert({ where: { email: ownerEmail! }, update: { name: ownerName, passwordHash: await hash(ownerPassword!, 12), role: "OWNER", active: true }, create: { email: ownerEmail!, name: ownerName, passwordHash: await hash(ownerPassword!, 12), role: "OWNER", active: true } });
+  await prisma.siteSettings.upsert({
+    where: { id: 1 },
+    update: { displayName: "Zambiel", primaryColor: "#153B35", secondaryColor: "#D6A84B", heroTitleDe: "Gutes für Alltag, Zuhause und unterwegs.", heroTitleEn: "Useful goods for everyday life, home and the road.", heroSubtitleDe: "Entdecken Sie praktische Technik, Haushalt und Fahrzeugzubehör in einem klar kuratierten Sortiment.", heroSubtitleEn: "Discover practical technology, home essentials and vehicle accessories in one clearly curated range.", announcementDe: "10 % Willkommensrabatt mit WELCOME10 ab CHF 50.", announcementEn: "10% welcome discount with WELCOME10 from CHF 50.", announcementActive: true },
+    create: { id: 1, slug: "zambiel", displayName: "Zambiel", primaryColor: "#153B35", secondaryColor: "#D6A84B", heroTitleDe: "Gutes für Alltag, Zuhause und unterwegs.", heroTitleEn: "Useful goods for everyday life, home and the road.", heroSubtitleDe: "Entdecken Sie praktische Technik, Haushalt und Fahrzeugzubehör in einem klar kuratierten Sortiment.", heroSubtitleEn: "Discover practical technology, home essentials and vehicle accessories in one clearly curated range.", announcementDe: "10 % Willkommensrabatt mit WELCOME10 ab CHF 50.", announcementEn: "10% welcome discount with WELCOME10 from CHF 50.", announcementActive: true },
+  });
+  await prisma.fulfillmentSettings.upsert({ where: { id: 1 }, update: { pickupEnabled: true, deliveryEnabled: true, lowStockDefault: 5, pickupInstructionsDe: "Demo: Die Abholadresse wird vor dem Produktionsstart ergänzt.", pickupInstructionsEn: "Demo: The pickup address will be added before production launch." }, create: { id: 1, pickupEnabled: true, deliveryEnabled: true, lowStockDefault: 5, pickupInstructionsDe: "Demo: Die Abholadresse wird vor dem Produktionsstart ergänzt.", pickupInstructionsEn: "Demo: The pickup address will be added before production launch." } });
+  const zones = await Promise.all([
+    prisma.deliveryZone.upsert({ where: { id: "demo-zone-zurich" }, update: { active: true }, create: { id: "demo-zone-zurich", nameDe: "Demo Zürich Stadt", nameEn: "Demo Zurich City", feeRappen: 790, minimumSubtotalRappen: 3500, freeDeliveryThresholdRappen: 12000, estimatedMinutes: 60, sortOrder: 0 } }),
+    prisma.deliveryZone.upsert({ where: { id: "demo-zone-glattal" }, update: { active: true }, create: { id: "demo-zone-glattal", nameDe: "Demo Glattal", nameEn: "Demo Glatt Valley", feeRappen: 990, minimumSubtotalRappen: 5000, freeDeliveryThresholdRappen: 15000, estimatedMinutes: 90, sortOrder: 1 } }),
   ]);
+  for (const [postalCode, zone] of [["8001", zones[0]], ["8002", zones[0]], ["8050", zones[0]], ["8302", zones[1]], ["8152", zones[1]]] as const) await prisma.deliveryZonePostalCode.upsert({ where: { postalCode }, update: { deliveryZoneId: zone.id }, create: { postalCode, deliveryZoneId: zone.id } });
+  const promo = await prisma.promoCode.upsert({ where: { code: "WELCOME10" }, update: { type: "PERCENT", value: 1000, minimumSubtotalRappen: 5000, perCustomerLimit: 1, totalUsageLimit: 500, startsAt: null, endsAt: null, active: true }, create: { code: "WELCOME10", type: "PERCENT", value: 1000, minimumSubtotalRappen: 5000, perCustomerLimit: 1, totalUsageLimit: 500, active: true } });
 
-  const allergenRows = await prisma.allergen.findMany({ select: { id: true, code: true } });
-  const allergenIds = new Map(allergenRows.map(({ id, code }) => [code, id]));
-  const categoryIds = new Map<string, string>();
-  const productIds = new Map<string, string>();
-  const variantIds = new Map<string, string>();
-
-  for (const [sortOrder, category] of categories.entries()) {
-    const row = await prisma.category.upsert({
-      where: { slug: category.slug },
-      create: { ...category, sortOrder, active: true },
-      update: { ...category, sortOrder, active: true, deletedAt: null },
-    });
-    categoryIds.set(category.slug, row.id);
+  for (const category of await prisma.category.findMany()) {
+    const nameDe = categoryNames[category.nameEn] ?? category.nameEn;
+    await prisma.category.update({ where: { id: category.id }, data: { nameDe, descriptionDe: `${nameDe} für einen gut organisierten Alltag.`, descriptionEn: category.descriptionEn || `${category.nameEn} selected for practical everyday use.`, seoTitleDe: nameDe, seoTitleEn: category.seoTitleEn || category.nameEn, active: true } });
+  }
+  const products = await prisma.product.findMany({ where: { sourceHandle: { not: null } }, include: { media: { orderBy: { sortOrder: "asc" }, take: 1 }, variants: true }, orderBy: { slug: "asc" } });
+  for (const [index, product] of products.entries()) {
+    const nameDe = demoGermanName(product.nameEn);
+    await prisma.product.update({ where: { id: product.id }, data: { nameDe, descriptionDe: `<p>${nameDe} für praktische Anwendungen im Alltag.</p><p>Wählen Sie die passende Variante und prüfen Sie Verfügbarkeit und Preis direkt im Shop.</p>`, seoTitleDe: nameDe, seoDescriptionDe: `${nameDe} bei Zambiel entdecken. Varianten, Preise und Verfügbarkeit direkt vergleichen.`, imageKey: product.media[0]?.sourceUrl ?? product.imageKey, status: "ACTIVE", active: true, available: true, featured: index < 8, sortOrder: index, publishedAt: new Date(Date.UTC(2026, 7, 1 + index)), media: { updateMany: { where: {}, data: { altDe: nameDe, altEn: product.nameEn } } } } });
+    for (const variant of product.variants) await prisma.productVariant.update({ where: { id: variant.id }, data: { nameDe: demoGermanName(variant.nameEn || nameDe), active: true, deletedAt: null } });
   }
 
-  for (const [sortOrder, product] of products.entries()) {
-    const categoryId = categoryIds.get(product.category);
-    if (!categoryId) throw new Error(`Missing seed category: ${product.category}`);
-
-    const row = await prisma.product.upsert({
-      where: { slug: product.slug },
-      create: {
-        categoryId,
-        slug: product.slug,
-        nameDe: product.nameDe,
-        nameEn: product.nameEn,
-        descriptionDe: product.descriptionDe,
-        descriptionEn: product.descriptionEn,
-        imageKey: product.imageKey,
-        active: true,
-        available: true,
-        sortOrder,
-        isHalal: product.halal,
-        isVegetarian: product.vegetarian,
-        isVegan: product.vegan,
-        spiceLevel: product.spiceLevel,
-      },
-      update: {
-        categoryId,
-        nameDe: product.nameDe,
-        nameEn: product.nameEn,
-        descriptionDe: product.descriptionDe,
-        descriptionEn: product.descriptionEn,
-        imageKey: product.imageKey,
-        active: true,
-        available: true,
-        sortOrder,
-        isHalal: product.halal,
-        isVegetarian: product.vegetarian,
-        isVegan: product.vegan,
-        spiceLevel: product.spiceLevel,
-        deletedAt: null,
-      },
-    });
-    productIds.set(product.slug, row.id);
-
-    const variant = await prisma.productVariant.upsert({
-      where: { sku: `SNP-${product.slug.toUpperCase()}` },
-      create: { productId: row.id, sku: `SNP-${product.slug.toUpperCase()}`, nameDe: "Standard", nameEn: "Standard", priceRappen: product.priceRappen },
-      update: { productId: row.id, nameDe: "Standard", nameEn: "Standard", priceRappen: product.priceRappen, active: true, deletedAt: null },
-    });
-    variantIds.set(product.slug, variant.id);
-
-    await prisma.productAllergen.deleteMany({ where: { productId: row.id } });
-    if (product.allergens.length > 0) {
-      await prisma.productAllergen.createMany({
-        data: product.allergens.map((code) => {
-          const allergenId = allergenIds.get(code);
-          if (!allergenId) throw new Error(`Missing seed allergen: ${code}`);
-          return { productId: row.id, allergenId };
-        }),
-      });
-    }
+  const customerUsers = [];
+  for (const [email, name, phone, postalCode, city] of customers) {
+    const user = await prisma.user.upsert({ where: { email }, update: { name, phone, role: "CUSTOMER", active: true }, create: { email, name, phone, role: "CUSTOMER", active: true, emailVerified: new Date("2026-08-01T09:00:00.000Z") } });
+    await prisma.customerAddress.upsert({ where: { userId: user.id }, update: { recipientName: name, phone, street: "Demostrasse 1", postalCode, city, countryCode: "CH", isDefault: true }, create: { userId: user.id, label: "Zuhause", recipientName: name, phone, street: "Demostrasse 1", postalCode, city, countryCode: "CH", isDefault: true } });
+    customerUsers.push({ user, postalCode, city, phone });
   }
-
-  const chickenBiryaniId = productIds.get("chicken-biryani");
-  const raitaVariantId = variantIds.get("raita");
-  const saladVariantId = variantIds.get("salad");
-  if (!chickenBiryaniId || !raitaVariantId || !saladVariantId) throw new Error("Missing product-option seed fixtures.");
-
-  const drinkGroupId = "seed-chicken-biryani-drink";
-  await prisma.$transaction([
-    prisma.optionGroup.upsert({
-      where: { id: drinkGroupId },
-      create: { id: drinkGroupId, productId: chickenBiryaniId, nameDe: "Getränk wählen", nameEn: "Choose a drink", required: true, minimumSelections: 1, maximumSelections: 1, active: true, sortOrder: 0 },
-      update: { productId: chickenBiryaniId, nameDe: "Getränk wählen", nameEn: "Choose a drink", required: true, minimumSelections: 1, maximumSelections: 1, active: true, sortOrder: 0, deletedAt: null },
-    }),
-    ...[
-      ["pepsi", "Pepsi", "Pepsi"],
-      ["coca-cola", "Coca-Cola", "Coca-Cola"],
-    ].map(([key, nameDe, nameEn], sortOrder) => prisma.optionChoice.upsert({
-      where: { id: `seed-chicken-biryani-drink-${key}` },
-      create: { id: `seed-chicken-biryani-drink-${key}`, optionGroupId: drinkGroupId, nameDe, nameEn, priceDeltaRappen: 0, active: true, sortOrder },
-      update: { optionGroupId: drinkGroupId, nameDe, nameEn, priceDeltaRappen: 0, active: true, sortOrder, deletedAt: null },
-    })),
-    ...[raitaVariantId, saladVariantId].map((suggestedVariantId, sortOrder) => prisma.productSuggestion.upsert({
-      where: { productId_suggestedVariantId: { productId: chickenBiryaniId, suggestedVariantId } },
-      create: { productId: chickenBiryaniId, suggestedVariantId, sortOrder },
-      update: { sortOrder },
-    })),
-  ]);
-
-  await prisma.$transaction([
-    prisma.openingWindow.deleteMany(),
-    prisma.openingWindow.createMany({
-      data: (["PICKUP", "DELIVERY"] as const).flatMap((fulfillmentType) =>
-        weekdays.map((weekday, sortOrder) => ({ fulfillmentType, weekday, startMinute: 660, endMinute: 1320, sortOrder })),
-      ),
-    }),
-  ]);
-
-  const existingPostcode = await prisma.deliveryZonePostalCode.findUnique({ where: { postalCode: "8154" } });
-  if (existingPostcode) {
-    await prisma.deliveryZone.update({
-      where: { id: existingPostcode.deliveryZoneId },
-      data: { nameDe: "Oberglatt", nameEn: "Oberglatt", active: true, feeRappen: 500, minimumSubtotalRappen: 3000, freeDeliveryThresholdRappen: 6000, estimatedMinutes: 45, sortOrder: 0 },
+  const variants = await prisma.productVariant.findMany({ where: { active: true, deletedAt: null, product: { status: "ACTIVE" } }, include: { product: true, optionValues: { include: { optionValue: { include: { option: true } } } } }, orderBy: { sku: "asc" }, take: 12 });
+  if (!variants.length) return;
+  for (const [index, [status, fulfillmentType, paymentMethod]] of orderFixtures.entries()) {
+    const customer = customerUsers[index % customerUsers.length];
+    const variant = index === 9 ? (await prisma.productVariant.findFirst({ where: { active: true, priceRappen: { gte: 5000 }, product: { status: "ACTIVE" } }, include: { product: true, optionValues: { include: { optionValue: { include: { option: true } } } } } })) ?? variants[index % variants.length] : variants[index % variants.length];
+    const quantity = 1, subtotalRappen = variant.priceRappen, discountRappen = index === 9 ? Math.round(subtotalRappen * 0.1) : 0, deliveryFeeRappen = fulfillmentType === "DELIVERY" ? (index % 2 ? 990 : 790) : 0, totalRappen = subtotalRappen - discountRappen + deliveryFeeRappen;
+    const createdAt = new Date(Date.UTC(2026, 7, 10 + index, 9 + index)), path = paths[status];
+    const paymentStatus = status === "PAYMENT_PENDING" ? "PENDING" : index === 7 ? "FAILED" : index === 8 ? "REFUNDED" : ["DELIVERED", "PICKED_UP"].includes(status) ? "PAID" : "PENDING";
+    const order = await prisma.order.upsert({
+      where: { checkoutKeyHash: digest(`zambiel-demo-order-${index + 1}`) }, update: {},
+      create: { checkoutKeyHash: digest(`zambiel-demo-order-${index + 1}`), userId: customer.user.id, locale: index % 3 === 0 ? "EN" : "DE", customerName: customer.user.name || "Demo Customer", customerEmail: customer.user.email, customerPhone: customer.phone, fulfillmentType, status, paymentMethod, note: "Deterministic local demo order", subtotalRappen, discountRappen, deliveryFeeRappen, totalRappen, promoCodeId: index === 9 ? promo.id : null, deliveryZoneId: fulfillmentType === "DELIVERY" ? (index % 2 ? zones[1].id : zones[0].id) : null, deliveryZoneNameDeSnapshot: fulfillmentType === "DELIVERY" ? (index % 2 ? zones[1].nameDe : zones[0].nameDe) : null, deliveryZoneNameEnSnapshot: fulfillmentType === "DELIVERY" ? (index % 2 ? zones[1].nameEn : zones[0].nameEn) : null, version: Math.max(0, path.length - 1), completedAt: ["DELIVERED", "PICKED_UP"].includes(status) ? new Date(createdAt.getTime() + 3_600_000) : null, cancelledAt: status === "CANCELLED" ? new Date(createdAt.getTime() + 1_800_000) : null, cancellationReason: status === "CANCELLED" ? (index === 8 ? "Demo refund and cancellation" : "Demo payment expired") : null, createdAt,
+        address: fulfillmentType === "DELIVERY" ? { create: { recipientName: customer.user.name || "Demo Customer", phone: customer.phone, street: "Demostrasse 1", postalCode: customer.postalCode, city: customer.city, countryCode: "CH" } } : undefined,
+        items: { create: { productId: variant.productId, variantId: variant.id, productNameDeSnapshot: variant.product.nameDe, productNameEnSnapshot: variant.product.nameEn, variantNameDeSnapshot: variant.nameDe, variantNameEnSnapshot: variant.nameEn, unitPriceRappen: variant.priceRappen, quantity, lineSubtotalRappen: subtotalRappen, options: { create: variant.optionValues.map(({ optionValue }) => ({ nameDeSnapshot: `${optionValue.option.name}: ${optionValue.value}`, nameEnSnapshot: `${optionValue.option.name}: ${optionValue.value}`, priceDeltaRappen: 0 })) } } },
+        statusEvents: { create: path.map((toStatus, step) => ({ actorUserId: owner.id, fromStatus: step ? path[step - 1] : null, toStatus, reason: step ? "DEMO_STATUS_ADVANCED" : "ORDER_CREATED", createdAt: new Date(createdAt.getTime() + step * 900_000) })) },
+        payment: { create: { provider: paymentMethod === "STRIPE" ? "STRIPE" : "CASH", status: paymentStatus, stripeCheckoutSessionId: paymentMethod === "STRIPE" ? `cs_demo_zambiel_${index + 1}` : null, stripePaymentIntentId: paymentMethod === "STRIPE" && paymentStatus !== "PENDING" && paymentStatus !== "FAILED" ? `pi_demo_zambiel_${index + 1}` : null, amountRappen: totalRappen, refundedRappen: index === 8 ? totalRappen : 0, paidAt: ["PAID", "REFUNDED"].includes(paymentStatus) ? new Date(createdAt.getTime() + 600_000) : null, failedAt: paymentStatus === "FAILED" ? new Date(createdAt.getTime() + 600_000) : null } },
+        promoRedemption: index === 9 ? { create: { promoCodeId: promo.id, userId: customer.user.id, customerEmail: customer.user.email, discountRappen } } : undefined,
+      }, include: { payment: true },
     });
-  } else {
-    await prisma.deliveryZone.create({
-      data: {
-        nameDe: "Oberglatt",
-        nameEn: "Oberglatt",
-        active: true,
-        feeRappen: 500,
-        minimumSubtotalRappen: 3000,
-        freeDeliveryThresholdRappen: 6000,
-        estimatedMinutes: 45,
-        sortOrder: 0,
-        postalCodes: { create: { postalCode: "8154" } },
-      },
-    });
+    if (paymentMethod === "STRIPE" && status === "PAYMENT_PENDING") await applyMovement(variant.id, order.id, "ORDER_RESERVED", quantity);
+    else if (paymentMethod === "STRIPE" && index === 7) { await applyMovement(variant.id, order.id, "ORDER_RESERVED", quantity); await applyMovement(variant.id, order.id, "ORDER_RELEASED", quantity); }
+    else if (paymentMethod === "STRIPE" && index === 8) { await applyMovement(variant.id, order.id, "ORDER_SOLD", quantity); await applyMovement(variant.id, order.id, "ORDER_RESTORED", quantity); }
+    else await applyMovement(variant.id, order.id, "ORDER_SOLD", quantity);
+    if (index === 8 && order.payment) await prisma.refund.upsert({ where: { stripeRefundId: "re_demo_zambiel_9" }, update: {}, create: { paymentId: order.payment.id, requestedByUserId: owner.id, stripeRefundId: "re_demo_zambiel_9", amountRappen: totalRappen, reason: "Deterministic demo refund", status: "SUCCEEDED" } });
+    await prisma.notificationDelivery.upsert({ where: { deduplicationKey: `demo:order:${order.id}:email` }, update: {}, create: { orderId: order.id, channel: "EMAIL", kind: "order-status-demo", recipient: customer.user.email, deduplicationKey: `demo:order:${order.id}:email`, status: index === 7 ? "FAILED" : "SENT", attemptCount: 1, providerId: index === 7 ? null : `demo-email-${index + 1}`, lastError: index === 7 ? "Intentional demo provider failure" : null, sentAt: index === 7 ? null : createdAt } });
+    const correlation = `demo-seed-order-${index + 1}`;
+    if (!await prisma.auditLog.findFirst({ where: { requestCorrelationId: correlation } })) await prisma.auditLog.create({ data: { actorUserId: owner.id, action: "DEMO_ORDER_SEEDED", entityType: "Order", entityId: order.id.toString(), metadata: { status, paymentMethod }, requestCorrelationId: correlation, createdAt } });
   }
-
 }
 
-main()
-  .then(() => prisma.$disconnect())
-  .catch(async (error) => {
-    console.error(error);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+main().finally(() => prisma.$disconnect());

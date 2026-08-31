@@ -21,7 +21,7 @@ function writeSeen(key: string, value: string) {
 }
 
 export function CustomerNotifications({ locale, userId }: { locale: "de" | "en"; userId: string }) {
-  const storageKey = `saltnpepper-notifications-seen-v2:${userId}`;
+  const storageKey = `zambiel-notifications-seen-v1:${userId}`;
   const [notices, setNotices] = useState<Notice[]>([]);
   const [open, setOpen] = useState(false);
   const [seenId, setSeenId] = useState<string | null>(() => typeof window === "undefined" ? null : readSeen(storageKey));

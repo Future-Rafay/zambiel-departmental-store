@@ -13,7 +13,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ upload });
   } catch (error) {
     if (error instanceof ZodError) {
-      return NextResponse.json({ error: "The image upload details are invalid." }, { status: 400 });
+      return NextResponse.json(
+        { error: "The image upload details are invalid." },
+        { status: 400 },
+      );
     }
     if (error instanceof Error && error.message === "FORBIDDEN") {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });

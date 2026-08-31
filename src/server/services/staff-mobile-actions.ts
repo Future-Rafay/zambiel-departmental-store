@@ -10,10 +10,10 @@ export function allowedOrderActions(order: {
     nextStatus: nextOrderStatus(order.status, order.fulfillmentType),
     canConfirmCash: order.payment?.provider === "CASH" && order.payment.status === "PENDING",
     canCancel:
-      !["COMPLETED", "CANCELLED"].includes(order.status) &&
+      !["DELIVERED", "PICKED_UP", "CANCELLED"].includes(order.status) &&
       !(order.payment?.provider === "STRIPE" && ["PAID", "PARTIALLY_REFUNDED"].includes(order.payment.status)),
     canRefundAndCancel:
-      !["COMPLETED", "CANCELLED"].includes(order.status) &&
+      !["DELIVERED", "PICKED_UP", "CANCELLED"].includes(order.status) &&
       order.payment?.provider === "STRIPE" && ["PAID", "PARTIALLY_REFUNDED"].includes(order.payment.status),
   };
 }

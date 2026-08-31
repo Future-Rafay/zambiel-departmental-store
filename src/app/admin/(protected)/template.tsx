@@ -6,7 +6,7 @@ import { getStaffApkUrl } from "@/config/env";
 
 export default async function AdminTemplate({ children }: { children: ReactNode }) {
   const user = await requireRole("OWNER", "STAFF");
-  const email = user.email ?? "info@saltnpepper.ch";
+  const email = user.email ?? "admin@localhost";
   const name = user.name ?? email.split("@")[0];
 
   return (

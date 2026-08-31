@@ -33,11 +33,11 @@ function createPrismaClient() {
 }
 
 const globalForPrisma = globalThis as unknown as {
-  saltNPepperPrisma?: ReturnType<typeof createPrismaClient>;
+  zambielPrisma?: ReturnType<typeof createPrismaClient>;
 };
 
-export const prisma = globalForPrisma.saltNPepperPrisma ?? createPrismaClient();
+export const prisma = globalForPrisma.zambielPrisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.saltNPepperPrisma = prisma;
+  globalForPrisma.zambielPrisma = prisma;
 }

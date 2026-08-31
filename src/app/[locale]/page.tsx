@@ -1,152 +1,362 @@
-import { ArrowUpRight, Clock3, Mail, MapPin, Phone, ShoppingBag } from "lucide-react";
+import {
+  ArrowRight,
+  CreditCard,
+  PackageCheck,
+  Search,
+  Truck,
+} from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
-import { BlogCard } from "@/components/site/blog-card";
 import {
-  CategoryMenuIndex,
-  CategoryShowcase,
-  FeaturedProducts,
-  ImageTextStory,
-  InstagramGallery,
-  ProductMosaic,
-  PromotionalBanner,
-  SplitHero,
-  type GalleryItem,
-} from "@/components/site/landing-sections";
-import { editorialPhotography, restaurantContent } from "@/content/restaurant";
+  RetailProductCard,
+  type RetailProductCardData,
+} from "@/components/site/retail-product-card";
+import { storeConfig, type StoreLocale } from "@/config/store";
 import { localizedMetadata } from "@/lib/metadata";
-import { listLatestBlogPosts } from "@/lib/wordpress";
-import { getPublicConfig, getPublicMenu } from "@/server/services/catalog";
+import { formatMoney } from "@/lib/orders";
+import { getRetailHomepage } from "@/server/services/retail-catalog";
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const locale = (await params).locale === "en" ? "en" : "de";
   return localizedMetadata(
-    (await params).locale,
+    locale,
     "",
-    { de: "SaltNPepper Restaurant Oberglatt", en: "SaltNPepper Restaurant Oberglatt" },
-    {
-      de: "SaltNPepper ist Ihr lokales Restaurant an der Allmendstrasse 18 in Oberglatt.",
-      en: "SaltNPepper is your local restaurant at Allmendstrasse 18 in Oberglatt.",
-    },
+    storeConfig.seo.title,
+    storeConfig.seo.description,
   );
 }
 
-export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
-  const locale = (await params).locale === "en" ? "en" : "de";
-  const de = locale === "de";
-  const [{ brand, fulfillment, hours, announcement }, categories, latestPosts] = await Promise.all([
-    getPublicConfig(),
-    getPublicMenu(de ? "DE" : "EN"),
-    listLatestBlogPosts(4),
-  ]);
-  const copy = restaurantContent.copy[locale];
-  const products = categories.flatMap((category) =>
-    category.products.map((product) => ({ ...product, category: category.name })),
-  );
-  const orderingReady = products.length > 0 && (fulfillment.deliveryEnabled || fulfillment.pickupEnabled);
-  const galleryItems: GalleryItem[] = editorialPhotography.map((image) => ({
-    id: image.file,
-    image: image.file,
-    alt: {
-      de: `Temporäres Editorialbild: ${image.use}`,
-      en: `Temporary editorial image: ${image.use}`,
-    },
-    credit: image.credit,
-    source: image.source,
-  }));
-
+function ProductSection({
+  id,
+  eyebrow,
+  title,
+  products,
+  locale,
+}: {
+  id: string;
+  eyebrow: string;
+  title: string;
+  products: RetailProductCardData[];
+  locale: StoreLocale;
+}) {
+  if (!products.length) return null;
   return (
-    <div className="overflow-hidden pb-20 sm:pb-28">
-      <SplitHero
-        locale={locale}
-        brand={brand}
-        title={(de ? brand.heroTitleDe : brand.heroTitleEn) || copy.heroTitle}
-        subtitle={(de ? brand.heroSubtitleDe : brand.heroSubtitleEn) || copy.heroSubtitle}
-        eyebrow={copy.eyebrow}
-        orderingReady={orderingReady}
-      />
+    <section
+      className="department-rail mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-24"
+      aria-labelledby={id}
+    >
+      <div className="flex items-end justify-between gap-5 border-b border-border pb-6">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+            {eyebrow}
+          </p>
+          <h2
+            id={id}
+            className="mt-2 font-display text-3xl leading-tight tracking-[-0.035em] text-primary sm:text-5xl"
+          >
+            {title}
+          </h2>
+        </div>
+        <Link
+          href={`/${locale}/products`}
+          className="hidden min-h-11 items-center gap-2 font-bold text-primary hover:text-secondary sm:inline-flex"
+        >
+          {locale === "de" ? "Alle ansehen" : "View all"}
+          <ArrowRight className="h-5 w-5" aria-hidden="true" />
+        </Link>
+      </div>
+      <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
+        {products.map((product) => (
+          <RetailProductCard
+            key={product.slug}
+            product={product}
+            locale={locale}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
 
-      <section aria-label={de ? "Kontaktinformationen" : "Contact information"} className="border-y border-border bg-primary text-primary-foreground">
-        <div className="mx-auto grid max-w-7xl divide-y divide-white/15 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          <a href={restaurantContent.mapUrl} target="_blank" rel="noreferrer" className="flex min-h-20 items-center gap-3 px-5 py-4 transition-colors hover:bg-white/5 sm:px-8">
-            <MapPin className="h-5 w-5 shrink-0 text-secondary-light" aria-hidden="true" />
-            <span className="text-sm font-medium">Allmendstrasse 18, 8154 Oberglatt</span>
-          </a>
-          <a href={`tel:${restaurantContent.phone.replace(/\s/g, "")}`} className="flex min-h-20 items-center gap-3 px-5 py-4 transition-colors hover:bg-white/5 sm:px-8">
-            <Phone className="h-5 w-5 shrink-0 text-secondary-light" aria-hidden="true" />
-            <span className="text-sm font-medium">{restaurantContent.phone}</span>
-          </a>
-          <a href={`mailto:${restaurantContent.email}`} className="flex min-h-20 items-center gap-3 px-5 py-4 transition-colors hover:bg-white/5 sm:px-8">
-            <Mail className="h-5 w-5 shrink-0 text-secondary-light" aria-hidden="true" />
-            <span className="break-all text-sm font-medium">{restaurantContent.email}</span>
-          </a>
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const locale: StoreLocale = (await params).locale === "en" ? "en" : "de";
+  const de = locale === "de";
+  const catalog = await getRetailHomepage(locale);
+  const heroProducts = catalog.featured
+    .filter((product) => product.imageUrl)
+    .slice(0, 4);
+  return (
+    <div className="overflow-hidden pb-16">
+
+      <section className="relative border-b border-border bg-primary text-white">
+        <div className="mx-auto grid max-w-7xl lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="px-5 py-16 sm:px-8 sm:py-24 lg:py-28">
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-secondary-light">
+              {de ? "Schweizer Warenhaus" : "Swiss department store"}
+            </p>
+            <h1 className="mt-5 max-w-3xl font-display text-5xl leading-[0.96] tracking-[-0.055em] sm:text-7xl">
+              {storeConfig.identity.tagline[locale]}
+            </h1>
+            <p className="mt-6 max-w-xl text-lg leading-8 text-white/75">
+              {storeConfig.identity.description[locale]}
+            </p>
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Link
+                href={`/${locale}/products`}
+                className="inline-flex min-h-12 items-center gap-2 rounded-control bg-secondary px-6 font-bold text-secondary-foreground hover:bg-secondary-light"
+              >
+                {de ? "Produkte entdecken" : "Explore products"}
+                <ArrowRight className="h-5 w-5" aria-hidden="true" />
+              </Link>
+              <Link
+                href={`/${locale}/categories`}
+                className="inline-flex min-h-12 items-center rounded-control border border-white/30 px-6 font-bold text-white hover:bg-white/10"
+              >
+                {de ? "Kategorien" : "Categories"}
+              </Link>
+            </div>
+            <form
+              action={`/${locale}/products`}
+              role="search"
+              className="mt-10 max-w-2xl border-t border-white/20 pt-6"
+            >
+              <label
+                htmlFor="hero-search"
+                className="mb-3 block text-sm font-bold"
+              >
+                {de ? "Was suchen Sie?" : "What are you looking for?"}
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="hero-search"
+                  name="q"
+                  type="search"
+                  className="min-h-12 min-w-0 flex-1 rounded-control border border-white/20 bg-white px-4 text-foreground"
+                  placeholder={de ? "Produkt oder SKU" : "Product or SKU"}
+                />
+                <button
+                  className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-control bg-secondary text-secondary-foreground hover:bg-secondary-light"
+                  aria-label={de ? "Suchen" : "Search"}
+                >
+                  <Search className="h-5 w-5" aria-hidden="true" />
+                </button>
+              </div>
+            </form>
+          </div>
+          {heroProducts.length ? (
+            <div className="grid min-h-[22rem] grid-cols-2 gap-px bg-white/15 lg:min-h-full">
+              <Link
+                href={`/${locale}/products/${heroProducts[0].slug}`}
+                className="group relative col-span-2 overflow-hidden sm:col-span-1 sm:row-span-1"
+              >
+                <Image
+                  src={heroProducts[0].imageUrl!}
+                  alt={heroProducts[0].name}
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 24vw, 50vw"
+                  className="object-contain transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none"
+                />
+                {/* <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary/90 to-transparent p-5 pt-14 font-bold">
+                  {heroProducts[0].name}
+                </span> */}
+              </Link>
+              {heroProducts.slice(1).map((product) => (
+                <Link
+                  key={product.slug}
+                  href={`/${locale}/products/${product.slug}`}
+                  className="group relative min-h-44 overflow-hidden"
+                >
+                  <Image
+                    src={product.imageUrl!}
+                    alt={product.name}
+                    fill
+                    sizes="(min-width: 1024px) 24vw, 50vw"
+                    className="object-contain transition-transform duration-500 group-hover:scale-[1.03] motion-reduce:transition-none"
+                  />
+                  {/* <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-primary/90 to-transparent p-4 pt-12 text-sm font-bold">
+                    {product.name}
+                  </span> */}
+                </Link>
+              ))}
+            </div>
+          ) : null}
         </div>
       </section>
 
-      <CategoryShowcase locale={locale} categories={categories} />
-      <CategoryMenuIndex locale={locale} categories={categories} />
-      <PromotionalBanner locale={locale} announcement={announcement?.[locale] ?? null} />
-      <FeaturedProducts locale={locale} products={products.slice(0, 3)} />
-      <ProductMosaic locale={locale} products={products.slice(0, 4)} />
-      <ImageTextStory locale={locale} title={copy.aboutTitle} body={(de ? brand.aboutDe : brand.aboutEn) || copy.about} />
-      <InstagramGallery
+      <section
+        className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-24"
+        aria-labelledby="category-heading"
+      >
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+          {de ? "Sortiment" : "Department directory"}
+        </p>
+        <h2
+          id="category-heading"
+          className="mt-2 font-display text-3xl tracking-[-0.035em] text-primary sm:text-5xl"
+        >
+          {de ? "Nach Kategorie einkaufen" : "Shop by category"}
+        </h2>
+        {catalog.categories.length ? (
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {catalog.categories.map((category) => (
+              <Link
+                key={category.id}
+                href={`/${locale}/categories/${category.slug}`}
+                className="group flex min-h-36 flex-col justify-between rounded-card border border-border bg-surface p-6 hover:border-primary/35 hover:shadow-lg"
+              >
+                <PackageCheck
+                  className="h-7 w-7 text-secondary"
+                  aria-hidden="true"
+                />
+                <div>
+                  <h3 className="mt-8 text-xl font-bold text-primary">
+                    {category.name}
+                  </h3>
+                  {/* <p className="mt-1 text-sm text-muted">
+                    {category.productCount} {de ? "Produkte" : "products"}
+                  </p> */}
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-8 rounded-card border border-dashed border-border p-8 text-muted">
+            {de
+              ? "Kategorien erscheinen nach der Katalogprüfung."
+              : "Categories will appear after catalogue review."}
+          </div>
+        )}
+      </section>
+
+      <ProductSection
+        id="featured-heading"
+        eyebrow={de ? "Ausgewählt" : "Selected"}
+        title={de ? "Empfohlene Produkte" : "Featured products"}
+        products={catalog.featured}
         locale={locale}
-        items={galleryItems}
-        profileUrl="https://www.instagram.com/foodeez.ch"
-        profileHandle="@foodeez.ch"
+      />
+      <ProductSection
+        id="bestseller-heading"
+        eyebrow={de ? "Häufig bestellt" : "Frequently ordered"}
+        title={de ? "Bestseller" : "Best sellers"}
+        products={catalog.bestSellers}
+        locale={locale}
+      />
+      <ProductSection
+        id="new-heading"
+        eyebrow={de ? "Neu im Sortiment" : "Recently added"}
+        title={de ? "Neuheiten" : "New arrivals"}
+        products={catalog.newest}
+        locale={locale}
       />
 
-      {latestPosts.length > 0 && (
-        <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28" aria-labelledby="latest-blog-heading">
-          <div className="flex flex-col justify-between gap-5 border-b border-primary/15 pb-8 md:flex-row md:items-end">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-secondary">SweetNSavour · SaltNPepper</p>
-              <h2 id="latest-blog-heading" className="mt-3 max-w-3xl font-display text-4xl leading-none tracking-[-0.04em] text-primary sm:text-6xl">
-                {de ? "Frische Ideen aus dem Blog." : "Fresh ideas from the blog."}
-              </h2>
-              <p className="mt-4 max-w-2xl leading-7 text-muted">
-                {de ? "Food-Guides, Ernährungstipps und Inspiration für Ihren Alltag." : "Food guides, nutrition tips, and practical inspiration for everyday life."}
-              </p>
-            </div>
-            <Link href={`/${locale}/blog`} className="inline-flex min-h-11 items-center gap-2 font-bold text-primary hover:text-secondary">
-              {de ? "Alle Artikel" : "All articles"}
-              <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
-            </Link>
-          </div>
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-            {latestPosts.map((post) => <BlogCard key={post.id} post={post} locale={locale} />)}
+      {catalog.promotions.length ? (
+        <section
+          className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-24"
+          aria-labelledby="promotions-heading"
+        >
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+            {de ? "Aktuelle Angebote" : "Current offers"}
+          </p>
+          <h2
+            id="promotions-heading"
+            className="mt-2 font-display text-3xl tracking-[-0.035em] text-primary sm:text-5xl"
+          >
+            {de ? "Promotionen" : "Promotions"}
+          </h2>
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            {catalog.promotions.map((promotion) => (
+              <article
+                key={promotion.id}
+                className="rounded-card border border-border bg-primary p-6 text-white"
+              >
+                <p className="text-sm font-bold uppercase tracking-[0.16em] text-secondary-light">
+                  {promotion.code}
+                </p>
+                <p className="mt-3 font-display text-3xl">
+                  {promotion.type === "PERCENT"
+                    ? `${promotion.value / 100}%`
+                    : formatMoney(promotion.value, locale)}{" "}
+                  {de ? "Rabatt" : "off"}
+                </p>
+                {promotion.minimumSubtotalRappen > 0 ? (
+                  <p className="mt-2 text-sm text-white/70">
+                    {de ? "Ab" : "From"}{" "}
+                    {formatMoney(promotion.minimumSubtotalRappen, locale)}
+                  </p>
+                ) : null}
+              </article>
+            ))}
           </div>
         </section>
-      )}
+      ) : null}
 
-      <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8 sm:py-28">
-        <div className="grid gap-6 md:grid-cols-3">
-          <article className="rounded-card border border-border bg-surface p-7">
-            <ShoppingBag className="h-7 w-7 text-secondary" aria-hidden="true" />
-            <h2 className="mt-5 font-display text-2xl text-primary">{de ? "Online bestellen" : "Order online"}</h2>
-            <p className="mt-3 text-sm leading-6 text-muted">
-              {orderingReady
-                ? de ? "Wählen Sie Ihre Gerichte und die verfügbare Abhol- oder Lieferoption." : "Choose your dishes and an available pickup or delivery option."
-                : de ? "Die Online-Bestellung wird freigeschaltet, sobald Menü und Servicezeiten bestätigt sind." : "Online ordering will open once the menu and service hours are confirmed."}
-            </p>
-          </article>
-          <article className="rounded-card border border-border bg-surface p-7">
-            <Clock3 className="h-7 w-7 text-secondary" aria-hidden="true" />
-            <h2 className="mt-5 font-display text-2xl text-primary">{de ? "Öffnungszeiten" : "Opening hours"}</h2>
-            <p className="mt-3 text-sm leading-6 text-muted">
-              {hours.length > 0
-                ? de ? "Die aktuellen Servicezeiten finden Sie auf unserer Kontaktseite." : "Current service hours are available on our contact page."
-                : de ? "Bestätigte Öffnungszeiten werden hier veröffentlicht." : "Confirmed opening hours will be published here."}
-            </p>
-          </article>
-          <article className="rounded-card border border-border bg-surface p-7">
-            <MapPin className="h-7 w-7 text-secondary" aria-hidden="true" />
-            <h2 className="mt-5 font-display text-2xl text-primary">{de ? "In Oberglatt" : "In Oberglatt"}</h2>
-            <p className="mt-3 text-sm leading-6 text-muted">Allmendstrasse 18<br />8154 Oberglatt</p>
-            <a href={restaurantContent.mapUrl} target="_blank" rel="noreferrer" className="mt-5 inline-flex min-h-11 items-center gap-2 font-bold text-primary hover:text-secondary">
-              {de ? "Route öffnen" : "Open directions"}
-              <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
-            </a>
-          </article>
+      <section
+        className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-24"
+        aria-labelledby="why-heading"
+      >
+        <div className="rounded-3xl bg-surface-warm p-7 sm:p-10">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+            Zambiel
+          </p>
+          <h2
+            id="why-heading"
+            className="mt-2 font-display text-3xl tracking-[-0.035em] text-primary sm:text-5xl"
+          >
+            {de ? "Einfach einkaufen" : "Shopping made clear"}
+          </h2>
+          <div className="mt-9 grid gap-5 md:grid-cols-3">
+            {[
+              {
+                icon: PackageCheck,
+                de: "Aktueller Bestand",
+                en: "Live availability",
+                bodyDe:
+                  "Nicht verfügbare Varianten können nicht bestellt werden.",
+                bodyEn: "Unavailable variants cannot be ordered.",
+              },
+              {
+                icon: Truck,
+                de: "Lieferung oder Abholung",
+                en: "Delivery or pickup",
+                bodyDe: "Die Verfügbarkeit wird serverseitig geprüft.",
+                bodyEn: "Eligibility is checked on the server.",
+              },
+              {
+                icon: CreditCard,
+                de: "Sichere Zahlung",
+                en: "Secure payment",
+                bodyDe: "Stripe und passende Barzahlungsarten.",
+                bodyEn: "Stripe and the appropriate cash payment methods.",
+              },
+            ].map((item) => (
+              <article
+                key={item.en}
+                className="rounded-card border border-border bg-surface p-6"
+              >
+                <item.icon
+                  className="h-7 w-7 text-secondary"
+                  aria-hidden="true"
+                />
+                <h3 className="mt-5 text-lg font-bold text-primary">
+                  {de ? item.de : item.en}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  {de ? item.bodyDe : item.bodyEn}
+                </p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
     </div>

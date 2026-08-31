@@ -23,36 +23,35 @@ enum FulfillmentType {
   PICKUP
 }
 
-enum Weekday {
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
-  SUNDAY
-}
-
-enum SpiceLevel {
-  MILD
-  MEDIUM
-  HOT
-  EXTRA_HOT
-}
-
 enum PromoType {
   FIXED
   PERCENT
 }
 
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
 enum OrderStatus {
   PAYMENT_PENDING
   CONFIRMED
-  PREPARING
+  PROCESSING
   READY_FOR_PICKUP
   OUT_FOR_DELIVERY
-  COMPLETED
+  DELIVERED
+  PICKED_UP
   CANCELLED
+}
+
+enum InventoryMovementType {
+  OPENING_STOCK
+  MANUAL_ADJUSTMENT
+  ORDER_RESERVED
+  ORDER_RELEASED
+  ORDER_SOLD
+  ORDER_RESTORED
 }
 
 enum PaymentMethod {
@@ -99,9 +98,9 @@ enum WebhookProcessingStatus {
 
 model SiteSettings {
   id                 Int      @id @default(1)
-  displayName        String   @default("SaltNPepper") @db.VarChar(120)
+  displayName        String   @default("Zambiel") @db.VarChar(120)
   legalName          String?  @db.VarChar(160)
-  slug               String   @unique(map: "SiteSettings_slug_key") @default("saltnpepper") @db.VarChar(120)
+  slug               String   @unique(map: "SiteSettings_slug_key") @default("zambiel") @db.VarChar(120)
   email              String?  @db.VarChar(320)
   phone              String?  @db.VarChar(40)
   street             String?  @db.VarChar(200)
@@ -114,8 +113,8 @@ model SiteSettings {
   currency           String   @default("CHF") @db.Char(3)
   vatRegistered      Boolean?
   vatNumber          String?  @db.VarChar(64)
-  primaryColor       String   @default("#1C1917") @db.Char(7)
-  secondaryColor     String   @default("#B43A25") @db.Char(7)
+  primaryColor       String   @default("#153B35") @db.Char(7)
+  secondaryColor     String   @default("#D6A84B") @db.Char(7)
   logoKey            String?  @db.VarChar(512)
   compactLogoKey     String?  @db.VarChar(512)
   faviconKey         String?  @db.VarChar(512)
@@ -138,69 +137,17 @@ model SiteSettings {
 }
 
 model FulfillmentSettings {
-  id                       Int      @id @default(1)
-  deliveryEnabled          Boolean  @default(true)
-  pickupEnabled            Boolean  @default(true)
-  asapEnabled              Boolean  @default(true)
-  scheduledEnabled         Boolean  @default(true)
-  deliveryPrepMinutes      Int      @default(45)
-  pickupPrepMinutes        Int      @default(30)
-  minimumLeadMinutes       Int      @default(30)
-  maximumAdvanceDays       Int      @default(14)
-  slotIntervalMinutes      Int      @default(15)
-  defaultSlotCapacity      Int      @default(10)
-  pickupInstructionsDe     String?  @db.Text
-  pickupInstructionsEn     String?  @db.Text
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
+  id                   Int      @id @default(1)
+  deliveryEnabled      Boolean  @default(true)
+  pickupEnabled        Boolean  @default(true)
+  pickupInstructionsDe String?  @db.Text
+  pickupInstructionsEn String?  @db.Text
+  reservationMinutes   Int      @default(30)
+  lowStockDefault      Int      @default(5)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@map("fulfillmentsettings")
-}
-
-model OpeningWindow {
-  id              String          @id @default(cuid())
-  fulfillmentType FulfillmentType
-  weekday         Weekday
-  startMinute     Int
-  endMinute       Int
-  active          Boolean         @default(true)
-  sortOrder       Int             @default(0)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  @@index([fulfillmentType, weekday, active, sortOrder], map: "OpeningWindow_fulfillmentType_weekday_active_sortOrder_idx")
-  @@map("openingwindow")
-}
-
-model ServiceException {
-  id              String          @id @default(cuid())
-  date            DateTime        @db.Date
-  fulfillmentType FulfillmentType
-  closed          Boolean         @default(true)
-  startMinute     Int?
-  endMinute       Int?
-  note            String?         @db.VarChar(300)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-
-  @@index([date, fulfillmentType], map: "ServiceException_date_fulfillmentType_idx")
-  @@map("serviceexception")
-}
-
-model FulfillmentSlot {
-  id              String          @id @default(cuid())
-  fulfillmentType FulfillmentType
-  startsAt        DateTime
-  capacity        Int
-  bookedCount     Int             @default(0)
-  closed          Boolean         @default(false)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  orders          Order[]
-
-  @@unique([fulfillmentType, startsAt], map: "FulfillmentSlot_fulfillmentType_startsAt_key")
-  @@index([startsAt, closed], map: "FulfillmentSlot_startsAt_closed_idx")
-  @@map("fulfillmentslot")
 }
 
 model DeliveryZone {
@@ -235,166 +182,163 @@ model DeliveryZonePostalCode {
 }
 
 model Category {
-  id            String    @id @default(cuid())
-  slug          String    @unique(map: "Category_slug_key") @db.VarChar(160)
-  nameDe        String    @db.VarChar(160)
-  nameEn        String    @db.VarChar(160)
-  descriptionDe String?   @db.Text
-  descriptionEn String?   @db.Text
-  active        Boolean   @default(true)
-  sortOrder     Int       @default(0)
-  deletedAt     DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  products      Product[]
+  id               String     @id @default(cuid())
+  slug             String     @unique(map: "Category_slug_key") @db.VarChar(160)
+  nameDe           String     @db.VarChar(160)
+  nameEn           String     @db.VarChar(160)
+  descriptionDe    String?    @db.Text
+  descriptionEn    String?    @db.Text
+  parentId         String?
+  imageKey         String?    @db.VarChar(512)
+  seoTitleDe       String?    @db.VarChar(180)
+  seoTitleEn       String?    @db.VarChar(180)
+  seoDescriptionDe String?    @db.Text
+  seoDescriptionEn String?    @db.Text
+  active           Boolean    @default(true)
+  sortOrder        Int        @default(0)
+  deletedAt        DateTime?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  products         Product[]
+  parent           Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull, map: "Category_parentId_fkey")
+  children         Category[] @relation("CategoryTree")
 
   @@index([deletedAt, active, sortOrder], map: "Category_deletedAt_active_sortOrder_idx")
+  @@index([parentId, deletedAt, active, sortOrder], map: "Category_parentId_deletedAt_active_sortOrder_idx")
   @@map("category")
 }
 
 model Product {
-  id                  String                      @id @default(cuid())
-  categoryId          String
-  slug                String                      @unique(map: "Product_slug_key") @db.VarChar(180)
-  nameDe              String                      @db.VarChar(180)
-  nameEn              String                      @db.VarChar(180)
-  descriptionDe       String?                     @db.Text
-  descriptionEn       String?                     @db.Text
-  imageKey            String?                     @db.VarChar(512)
-  active              Boolean                     @default(true)
-  available           Boolean                     @default(true)
-  sortOrder           Int                         @default(0)
-  isHalal             Boolean                     @default(false)
-  isVegetarian        Boolean                     @default(false)
-  isVegan             Boolean                     @default(false)
-  spiceLevel          SpiceLevel?
-  deletedAt           DateTime?
-  createdAt           DateTime                    @default(now())
-  updatedAt           DateTime                    @updatedAt
-  category            Category                    @relation(fields: [categoryId], references: [id], onDelete: Restrict, map: "Product_categoryId_fkey")
-  variants            ProductVariant[]
-  optionGroups        OptionGroup[]
-  availabilityWindows ProductAvailabilityWindow[]
-  suggestions         ProductSuggestion[]
-  allergens           ProductAllergen[]
-  orderItems          OrderItem[]
+  id               String           @id @default(cuid())
+  categoryId       String
+  slug             String           @unique(map: "Product_slug_key") @db.VarChar(180)
+  nameDe           String           @db.VarChar(180)
+  nameEn           String           @db.VarChar(180)
+  descriptionDe    String?          @db.Text
+  descriptionEn    String?          @db.Text
+  imageKey         String?          @db.VarChar(512)
+  status           ProductStatus    @default(DRAFT)
+  featured         Boolean          @default(false)
+  seoTitleDe       String?          @db.VarChar(180)
+  seoTitleEn       String?          @db.VarChar(180)
+  seoDescriptionDe String?          @db.Text
+  seoDescriptionEn String?          @db.Text
+  sourceHandle     String?          @unique(map: "Product_sourceHandle_key") @db.VarChar(180)
+  sourceImportHash String?          @db.Char(64)
+  sourceMetadata   Json?
+  publishedAt      DateTime?
+  active           Boolean          @default(true)
+  available        Boolean          @default(true)
+  sortOrder        Int              @default(0)
+  deletedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  category         Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict, map: "Product_categoryId_fkey")
+  variants         ProductVariant[]
+  orderItems       OrderItem[]
+  productOptions   ProductOption[]
+  media            ProductMedia[]
+  tags             ProductTag[]
 
   @@index([categoryId, deletedAt, active, sortOrder], map: "Product_categoryId_deletedAt_active_sortOrder_idx")
   @@index([deletedAt, available], map: "Product_deletedAt_available_idx")
+  @@index([status, featured, publishedAt], map: "Product_status_featured_publishedAt_idx")
   @@map("product")
 }
 
 model ProductVariant {
-  id           String      @id @default(cuid())
-  productId    String
-  nameDe       String      @db.VarChar(160)
-  nameEn       String      @db.VarChar(160)
-  sku          String?     @unique(map: "ProductVariant_sku_key") @db.VarChar(100)
-  priceRappen  Int
-  active       Boolean     @default(true)
-  sortOrder    Int         @default(0)
-  deletedAt    DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  product      Product     @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductVariant_productId_fkey")
-  suggestedFor ProductSuggestion[]
-  orderItems   OrderItem[]
+  id                   String                      @id @default(cuid())
+  productId            String
+  nameDe               String                      @db.VarChar(160)
+  nameEn               String                      @db.VarChar(160)
+  sku                  String?                     @unique(map: "ProductVariant_sku_key") @db.VarChar(100)
+  priceRappen          Int
+  compareAtPriceRappen Int?
+  barcode              String?                     @db.VarChar(120)
+  weightGrams          Int?
+  stockOnHand          Int                         @default(0)
+  stockReserved        Int                         @default(0)
+  lowStockThreshold    Int?
+  trackInventory       Boolean                     @default(true)
+  active               Boolean                     @default(true)
+  sortOrder            Int                         @default(0)
+  deletedAt            DateTime?
+  createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @updatedAt
+  product              Product                     @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductVariant_productId_fkey")
+  orderItems           OrderItem[]
+  optionValues         ProductVariantOptionValue[]
+  media                ProductMedia[]
+  inventoryMovements   InventoryMovement[]
 
   @@index([productId, deletedAt, active, sortOrder], map: "ProductVariant_productId_deletedAt_active_sortOrder_idx")
+  @@index([trackInventory, stockOnHand, stockReserved], map: "ProductVariant_inventory_idx")
   @@map("productvariant")
 }
 
-model ProductSuggestion {
-  id                 String         @id @default(cuid())
-  productId          String
-  suggestedVariantId String
-  sortOrder          Int            @default(0)
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  product            Product        @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductSuggestion_productId_fkey")
-  suggestedVariant   ProductVariant @relation(fields: [suggestedVariantId], references: [id], onDelete: Restrict, map: "ProductSuggestion_suggestedVariantId_fkey")
+model ProductTag {
+  id       String    @id @default(cuid())
+  name     String    @db.VarChar(120)
+  slug     String    @unique(map: "ProductTag_slug_key") @db.VarChar(140)
+  products Product[]
 
-  @@unique([productId, suggestedVariantId], map: "ProductSuggestion_productId_suggestedVariantId_key")
-  @@index([productId, sortOrder], map: "ProductSuggestion_productId_sortOrder_idx")
-  @@index([suggestedVariantId], map: "ProductSuggestion_suggestedVariantId_idx")
-  @@map("productsuggestion")
+  @@map("producttag")
 }
 
-model OptionGroup {
-  id                String         @id @default(cuid())
-  productId         String
-  nameDe            String         @db.VarChar(160)
-  nameEn            String         @db.VarChar(160)
-  required          Boolean        @default(false)
-  minimumSelections Int            @default(0)
-  maximumSelections Int            @default(1)
-  active            Boolean        @default(true)
-  sortOrder         Int            @default(0)
-  deletedAt         DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  product           Product        @relation(fields: [productId], references: [id], onDelete: Cascade, map: "OptionGroup_productId_fkey")
-  choices           OptionChoice[]
+model ProductOption {
+  id        String               @id @default(cuid())
+  productId String
+  name      String               @db.VarChar(120)
+  sortOrder Int                  @default(0)
+  product   Product              @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductOption_productId_fkey")
+  values    ProductOptionValue[]
 
-  @@index([productId, deletedAt, active, sortOrder], map: "OptionGroup_productId_deletedAt_active_sortOrder_idx")
-  @@map("optiongroup")
+  @@unique([productId, name], map: "ProductOption_productId_name_key")
+  @@index([productId, sortOrder], map: "ProductOption_productId_sortOrder_idx")
+  @@map("productoption")
 }
 
-model OptionChoice {
-  id               String            @id @default(cuid())
-  optionGroupId    String
-  nameDe           String            @db.VarChar(160)
-  nameEn           String            @db.VarChar(160)
-  priceDeltaRappen Int               @default(0)
-  active           Boolean           @default(true)
-  sortOrder        Int               @default(0)
-  deletedAt        DateTime?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  optionGroup      OptionGroup       @relation(fields: [optionGroupId], references: [id], onDelete: Cascade, map: "OptionChoice_optionGroupId_fkey")
-  orderItemOptions OrderItemOption[]
+model ProductOptionValue {
+  id        String                      @id @default(cuid())
+  optionId  String
+  value     String                      @db.VarChar(160)
+  sortOrder Int                         @default(0)
+  option    ProductOption               @relation(fields: [optionId], references: [id], onDelete: Cascade, map: "ProductOptionValue_optionId_fkey")
+  variants  ProductVariantOptionValue[]
 
-  @@index([optionGroupId, deletedAt, active, sortOrder], map: "OptionChoice_optionGroupId_deletedAt_active_sortOrder_idx")
-  @@map("optionchoice")
+  @@unique([optionId, value], map: "ProductOptionValue_optionId_value_key")
+  @@index([optionId, sortOrder], map: "ProductOptionValue_optionId_sortOrder_idx")
+  @@map("productoptionvalue")
 }
 
-model ProductAvailabilityWindow {
-  id          String   @id @default(cuid())
+model ProductVariantOptionValue {
+  variantId     String
+  optionValueId String
+  variant       ProductVariant     @relation(fields: [variantId], references: [id], onDelete: Cascade, map: "ProductVariantOptionValue_variantId_fkey")
+  optionValue   ProductOptionValue @relation(fields: [optionValueId], references: [id], onDelete: Cascade, map: "ProductVariantOptionValue_optionValueId_fkey")
+
+  @@id([variantId, optionValueId])
+  @@index([optionValueId], map: "ProductVariantOptionValue_optionValueId_idx")
+  @@map("productvariantoptionvalue")
+}
+
+model ProductMedia {
+  id          String          @id @default(cuid())
   productId   String
-  weekday     Weekday
-  startMinute Int
-  endMinute   Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductAvailabilityWindow_productId_fkey")
+  variantId   String?
+  objectKey   String          @db.VarChar(2048)
+  sourceUrl   String?         @db.VarChar(2048)
+  contentHash String?         @db.Char(64)
+  altDe       String?         @db.VarChar(240)
+  altEn       String?         @db.VarChar(240)
+  sortOrder   Int             @default(0)
+  product     Product         @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductMedia_productId_fkey")
+  variant     ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull, map: "ProductMedia_variantId_fkey")
 
-  @@index([productId, weekday], map: "ProductAvailabilityWindow_productId_weekday_idx")
-  @@map("productavailabilitywindow")
-}
-
-model Allergen {
-  id        String            @id @default(cuid())
-  code      String            @unique(map: "Allergen_code_key") @db.VarChar(64)
-  nameDe    String            @db.VarChar(120)
-  nameEn    String            @db.VarChar(120)
-  sortOrder Int               @default(0)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-  products  ProductAllergen[]
-
-  @@map("allergen")
-}
-
-model ProductAllergen {
-  productId  String
-  allergenId String
-  createdAt  DateTime @default(now())
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade, map: "ProductAllergen_productId_fkey")
-  allergen   Allergen @relation(fields: [allergenId], references: [id], onDelete: Restrict, map: "ProductAllergen_allergenId_fkey")
-
-  @@id([productId, allergenId])
-  @@index([allergenId], map: "ProductAllergen_allergenId_idx")
-  @@map("productallergen")
+  @@index([productId, sortOrder], map: "ProductMedia_productId_sortOrder_idx")
+  @@index([variantId], map: "ProductMedia_variantId_idx")
+  @@index([contentHash], map: "ProductMedia_contentHash_idx")
+  @@map("productmedia")
 }
 
 model User {
@@ -414,7 +358,8 @@ model User {
   sessions            Session[]
   passwordResetTokens PasswordResetToken[]
   invitationsSent     StaffInvitation[]    @relation("InvitedBy")
-  addresses           CustomerAddress[]
+  address             CustomerAddress?
+  inventoryMovements  InventoryMovement[]
   deviceSessions      StaffDeviceSession[]
   orders              Order[]
   promoRedemptions    PromoRedemption[]
@@ -490,7 +435,7 @@ model StaffInvitation {
 
 model CustomerAddress {
   id            String   @id @default(cuid())
-  userId        String
+  userId        String   @unique(map: "CustomerAddress_userId_key")
   label         String   @db.VarChar(80)
   recipientName String   @db.VarChar(160)
   phone         String   @db.VarChar(40)
@@ -504,7 +449,6 @@ model CustomerAddress {
   updatedAt     DateTime @updatedAt
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "CustomerAddress_userId_fkey")
 
-  @@index([userId, isDefault], map: "CustomerAddress_userId_isDefault_idx")
   @@map("customeraddress")
 }
 
@@ -547,17 +491,17 @@ model PromoCode {
 }
 
 model PromoRedemption {
-  id              String    @id @default(cuid())
-  promoCodeId     String
-  orderId         BigInt    @unique(map: "PromoRedemption_orderId_key")
-  userId          String?
-  customerEmail   String    @db.VarChar(320)
-  discountRappen  Int
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  promoCode       PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Restrict, map: "PromoRedemption_promoCodeId_fkey")
-  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade, map: "PromoRedemption_orderId_fkey")
-  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull, map: "PromoRedemption_userId_fkey")
+  id             String    @id @default(cuid())
+  promoCodeId    String
+  orderId        BigInt    @unique(map: "PromoRedemption_orderId_key")
+  userId         String?
+  customerEmail  String    @db.VarChar(320)
+  discountRappen Int
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  promoCode      PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Restrict, map: "PromoRedemption_promoCodeId_fkey")
+  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade, map: "PromoRedemption_orderId_fkey")
+  user           User?     @relation(fields: [userId], references: [id], onDelete: SetNull, map: "PromoRedemption_userId_fkey")
 
   @@index([promoCodeId, createdAt], map: "PromoRedemption_promoCodeId_createdAt_idx")
   @@index([promoCodeId, customerEmail], map: "PromoRedemption_promoCodeId_customerEmail_idx")
@@ -566,56 +510,71 @@ model PromoRedemption {
 }
 
 model Order {
-  id                         BigInt             @id @default(autoincrement())
-  checkoutKeyHash            String             @unique(map: "Order_checkoutKeyHash_key") @db.Char(64)
+  id                         BigInt                 @id @default(autoincrement())
+  checkoutKeyHash            String                 @unique(map: "Order_checkoutKeyHash_key") @db.Char(64)
   userId                     String?
-  guestTrackingTokenHash     String?            @unique(map: "Order_guestTrackingTokenHash_key") @db.Char(64)
-  locale                     Locale             @default(DE)
-  customerName               String             @db.VarChar(160)
-  customerEmail              String             @db.VarChar(320)
-  customerPhone              String             @db.VarChar(40)
+  guestTrackingTokenHash     String?                @unique(map: "Order_guestTrackingTokenHash_key") @db.Char(64)
+  locale                     Locale                 @default(DE)
+  customerName               String                 @db.VarChar(160)
+  customerEmail              String                 @db.VarChar(320)
+  customerPhone              String                 @db.VarChar(40)
   fulfillmentType            FulfillmentType
-  status                     OrderStatus        @default(PAYMENT_PENDING)
+  status                     OrderStatus            @default(PAYMENT_PENDING)
   paymentMethod              PaymentMethod
-  slotId                     String?
-  scheduledFor               DateTime?
-  estimatedReadyAt           DateTime?
-  note                       String?            @db.Text
+  note                       String?                @db.Text
   subtotalRappen             Int
-  discountRappen             Int                @default(0)
-  deliveryFeeRappen          Int                @default(0)
+  discountRappen             Int                    @default(0)
+  deliveryFeeRappen          Int                    @default(0)
   taxRateBps                 Int?
-  taxAmountRappen            Int                @default(0)
+  taxAmountRappen            Int                    @default(0)
   totalRappen                Int
   promoCodeId                String?
   deliveryZoneId             String?
-  deliveryZoneNameDeSnapshot String?            @db.VarChar(120)
-  deliveryZoneNameEnSnapshot String?            @db.VarChar(120)
-  version                    Int                @default(0)
+  deliveryZoneNameDeSnapshot String?                @db.VarChar(120)
+  deliveryZoneNameEnSnapshot String?                @db.VarChar(120)
+  version                    Int                    @default(0)
   completedAt                DateTime?
   cancelledAt                DateTime?
-  cancellationReason         String?            @db.VarChar(500)
-  createdAt                  DateTime           @default(now())
-  updatedAt                  DateTime           @updatedAt
-  user                       User?              @relation(fields: [userId], references: [id], onDelete: SetNull, map: "Order_userId_fkey")
-  slot                       FulfillmentSlot?   @relation(fields: [slotId], references: [id], onDelete: SetNull, map: "Order_slotId_fkey")
-  promoCode                  PromoCode?         @relation(fields: [promoCodeId], references: [id], onDelete: SetNull, map: "Order_promoCodeId_fkey")
-  deliveryZone               DeliveryZone?      @relation(fields: [deliveryZoneId], references: [id], onDelete: SetNull, map: "Order_deliveryZoneId_fkey")
+  cancellationReason         String?                @db.VarChar(500)
+  createdAt                  DateTime               @default(now())
+  updatedAt                  DateTime               @updatedAt
+  user                       User?                  @relation(fields: [userId], references: [id], onDelete: SetNull, map: "Order_userId_fkey")
+  promoCode                  PromoCode?             @relation(fields: [promoCodeId], references: [id], onDelete: SetNull, map: "Order_promoCodeId_fkey")
+  deliveryZone               DeliveryZone?          @relation(fields: [deliveryZoneId], references: [id], onDelete: SetNull, map: "Order_deliveryZoneId_fkey")
   address                    OrderAddress?
   items                      OrderItem[]
   statusEvents               OrderStatusEvent[]
   payment                    Payment?
   promoRedemption            PromoRedemption?
   notifications              NotificationDelivery[]
+  inventoryMovements         InventoryMovement[]
 
   @@index([userId, createdAt], map: "Order_userId_createdAt_idx")
   @@index([status, createdAt], map: "Order_status_createdAt_idx")
-  @@index([scheduledFor, status], map: "Order_scheduledFor_status_idx")
-  @@index([slotId, status], map: "Order_slotId_status_idx")
   @@index([paymentMethod, status], map: "Order_paymentMethod_status_idx")
   @@index([promoCodeId], map: "Order_promoCodeId_idx")
   @@index([deliveryZoneId], map: "Order_deliveryZoneId_idx")
   @@map("order")
+}
+
+model InventoryMovement {
+  id             String                @id @default(cuid())
+  variantId      String
+  orderId        BigInt?
+  actorUserId    String?
+  type           InventoryMovementType
+  quantityChange Int
+  reason         String?               @db.VarChar(300)
+  idempotencyKey String                @unique(map: "InventoryMovement_idempotencyKey_key") @db.VarChar(191)
+  createdAt      DateTime              @default(now())
+  variant        ProductVariant        @relation(fields: [variantId], references: [id], onDelete: Restrict, map: "InventoryMovement_variantId_fkey")
+  order          Order?                @relation(fields: [orderId], references: [id], onDelete: SetNull, map: "InventoryMovement_orderId_fkey")
+  actor          User?                 @relation(fields: [actorUserId], references: [id], onDelete: SetNull, map: "InventoryMovement_actorUserId_fkey")
+
+  @@index([variantId, createdAt], map: "InventoryMovement_variantId_createdAt_idx")
+  @@index([orderId], map: "InventoryMovement_orderId_idx")
+  @@index([actorUserId], map: "InventoryMovement_actorUserId_idx")
+  @@map("inventorymovement")
 }
 
 model OrderAddress {
@@ -661,19 +620,16 @@ model OrderItem {
 }
 
 model OrderItemOption {
-  id                 String        @id @default(cuid())
-  orderItemId        String
-  optionChoiceId     String?
-  nameDeSnapshot     String        @db.VarChar(160)
-  nameEnSnapshot     String        @db.VarChar(160)
-  priceDeltaRappen   Int           @default(0)
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  orderItem          OrderItem     @relation(fields: [orderItemId], references: [id], onDelete: Cascade, map: "OrderItemOption_orderItemId_fkey")
-  optionChoice       OptionChoice? @relation(fields: [optionChoiceId], references: [id], onDelete: SetNull, map: "OrderItemOption_optionChoiceId_fkey")
+  id               String    @id @default(cuid())
+  orderItemId      String
+  nameDeSnapshot   String    @db.VarChar(160)
+  nameEnSnapshot   String    @db.VarChar(160)
+  priceDeltaRappen Int       @default(0)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  orderItem        OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade, map: "OrderItemOption_orderItemId_fkey")
 
   @@index([orderItemId], map: "OrderItemOption_orderItemId_idx")
-  @@index([optionChoiceId], map: "OrderItemOption_optionChoiceId_idx")
   @@map("orderitemoption")
 }
 
@@ -749,20 +705,20 @@ model StripeWebhookEvent {
 }
 
 model NotificationDelivery {
-  id               String             @id @default(cuid())
+  id               String              @id @default(cuid())
   orderId          BigInt?
   channel          NotificationChannel
-  kind             String             @db.VarChar(120)
-  recipient        String             @db.VarChar(512)
-  deduplicationKey String             @unique(map: "NotificationDelivery_deduplicationKey_key") @db.VarChar(255)
-  status           NotificationStatus @default(PENDING)
-  attemptCount     Int                @default(0)
-  providerId       String?            @db.VarChar(255)
-  lastError        String?            @db.Text
+  kind             String              @db.VarChar(120)
+  recipient        String              @db.VarChar(512)
+  deduplicationKey String              @unique(map: "NotificationDelivery_deduplicationKey_key") @db.VarChar(255)
+  status           NotificationStatus  @default(PENDING)
+  attemptCount     Int                 @default(0)
+  providerId       String?             @db.VarChar(255)
+  lastError        String?             @db.Text
   sentAt           DateTime?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  order            Order?             @relation(fields: [orderId], references: [id], onDelete: Cascade, map: "NotificationDelivery_orderId_fkey")
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  order            Order?              @relation(fields: [orderId], references: [id], onDelete: Cascade, map: "NotificationDelivery_orderId_fkey")
 
   @@index([orderId, createdAt], map: "NotificationDelivery_orderId_createdAt_idx")
   @@index([status, createdAt], map: "NotificationDelivery_status_createdAt_idx")

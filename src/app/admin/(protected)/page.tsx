@@ -11,7 +11,7 @@ export default async function AdminDashboardPage() {
   const metrics = [
     { label: "Paid net revenue", value: formatMoney(dashboard.revenueRappen, "en"), detail: undefined, icon: Banknote },
     { label: "Total orders", value: dashboard.totalOrders.toLocaleString("en-CH"), detail: undefined, icon: ShoppingBag },
-    { label: "Products", value: dashboard.totalProducts.toLocaleString("en-CH"), detail: `${dashboard.availableProducts} available · ${dashboard.unavailableProducts} unavailable`, icon: Package },
+    { label: "Products", value: dashboard.totalProducts.toLocaleString("en-CH"), detail: `${dashboard.lowStock} low-stock variants`, icon: Package },
     { label: "Active orders", value: dashboard.activeOrders.toLocaleString("en-CH"), detail: `${dashboard.pendingStripe} awaiting Stripe`, icon: Clock3 },
   ];
   return <AdminPage title="Dashboard" description="Store performance and the newest orders.">

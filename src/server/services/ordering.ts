@@ -2,15 +2,14 @@ import type Stripe from "stripe";
 
 import { siteConfig } from "@/config/site";
 import { Prisma } from "@/generated/prisma/client";
-import type { FulfillmentType, Locale, OrderStatus } from "@/generated/prisma/enums";
+import type { Locale, OrderStatus } from "@/generated/prisma/enums";
 import { getStripeEnv } from "@/config/env";
-import { allocateDiscount, assertOptionCount, formatOrderNumber, hashToken, nextOrderStatus, parseOrderNumber, promoDiscount, publicOrderAddress } from "@/lib/orders";
-import { zurichDateToUtc, zurichParts } from "@/lib/zurich-time";
+import { allocateDiscount, formatOrderNumber, hashToken, nextOrderStatus, parseOrderNumber, promoDiscount, publicOrderAddress } from "@/lib/orders";
 import { prisma } from "@/server/db";
 import { sendEmail } from "@/server/email/client";
 import { orderConfirmationEmail, orderStatusEmail } from "@/server/email/templates";
 import { getStripe } from "@/server/payments/stripe";
-import { resolvePublicImageUrl } from "@/server/storage/s3";
+import { resolveProductMediaUrl, resolvePublicImageUrl } from "@/server/storage/s3";
 import { syncStripeRefund } from "@/server/services/admin";
 import type { CreateOrderInput, QuoteInput } from "@/server/validators/order";
 
@@ -72,48 +71,28 @@ export async function calculateQuote(input: QuoteInput, db: Db = prisma, userId?
     (input.fulfillmentType === "DELIVERY" && !settings.deliveryEnabled) ||
     (input.fulfillmentType === "PICKUP" && !settings.pickupEnabled)
   ) throw new OrderError("FULFILLMENT_DISABLED");
-  if (
-    (!input.scheduledFor && !settings.asapEnabled) ||
-    (input.scheduledFor && !settings.scheduledEnabled)
-  ) throw new OrderError("ORDER_TIMING_DISABLED");
+  const quantities = new Map<string, number>();
+  for (const item of input.items) quantities.set(item.variantId, (quantities.get(item.variantId) ?? 0) + item.quantity);
 
   const variants = await db.productVariant.findMany({
-    where: { id: { in: input.items.map((item) => item.variantId) }, active: true, deletedAt: null },
+    where: { id: { in: [...quantities.keys()] }, active: true, deletedAt: null },
     include: {
       product: {
         include: {
-          availabilityWindows: true,
-          optionGroups: {
-            where: { active: true, deletedAt: null },
-            include: { choices: { where: { active: true, deletedAt: null } } },
-          },
+          media: { orderBy: { sortOrder: "asc" }, take: 1 },
         },
       },
+      optionValues: { include: { optionValue: { include: { option: true } } } },
     },
   });
   const variantsById = new Map(variants.map((variant) => [variant.id, variant]));
-  const local = zurichParts(input.scheduledFor ? new Date(input.scheduledFor) : new Date());
-  const items = input.items.map((item) => {
-    const variant = variantsById.get(item.variantId);
-    if (!variant || !variant.product.active || variant.product.deletedAt || !variant.product.available) {
+  const items = [...quantities].map(([variantId, quantity]) => {
+    const variant = variantsById.get(variantId);
+    if (!variant || variant.product.status !== "ACTIVE" || !variant.product.active || variant.product.deletedAt || !variant.product.available) {
       throw new OrderError("PRODUCT_UNAVAILABLE");
     }
-    if (
-      variant.product.availabilityWindows.length > 0 &&
-      !variant.product.availabilityWindows.some(
-        (window) => window.weekday === local.weekday && local.minute >= window.startMinute && local.minute < window.endMinute,
-      )
-    ) throw new OrderError("PRODUCT_UNAVAILABLE_AT_TIME");
-
-    const selectedIds = new Set(item.choiceIds);
-    if (selectedIds.size !== item.choiceIds.length) throw new OrderError("DUPLICATE_OPTION");
-    const choices = variant.product.optionGroups.flatMap((group) => {
-      const selected = group.choices.filter((choice) => selectedIds.has(choice.id));
-      if (!assertOptionCount(group, selected.length)) throw new OrderError("OPTION_SELECTION_INVALID");
-      return selected;
-    });
-    if (choices.length !== selectedIds.size) throw new OrderError("OPTION_SELECTION_INVALID");
-    const unitPriceRappen = variant.priceRappen + choices.reduce((sum, choice) => sum + choice.priceDeltaRappen, 0);
+    if (variant.trackInventory && variant.stockOnHand - variant.stockReserved < quantity) throw new OrderError("OUT_OF_STOCK");
+    const unitPriceRappen = variant.priceRappen;
     return {
       productId: variant.product.id,
       variantId: variant.id,
@@ -121,15 +100,15 @@ export async function calculateQuote(input: QuoteInput, db: Db = prisma, userId?
       productNameEn: variant.product.nameEn,
       variantNameDe: variant.nameDe,
       variantNameEn: variant.nameEn,
-      imageUrl: resolvePublicImageUrl(variant.product.imageKey),
+      imageUrl: resolveProductMediaUrl(variant.product.media[0] ?? { objectKey: variant.product.imageKey }),
       unitPriceRappen,
-      quantity: item.quantity,
-      lineSubtotalRappen: unitPriceRappen * item.quantity,
-      choices: choices.map((choice) => ({
-        id: choice.id,
-        nameDe: choice.nameDe,
-        nameEn: choice.nameEn,
-        priceDeltaRappen: choice.priceDeltaRappen,
+      quantity,
+      lineSubtotalRappen: unitPriceRappen * quantity,
+      choices: variant.optionValues.map(({ optionValue }) => ({
+        id: null,
+        nameDe: `${optionValue.option.name}: ${optionValue.value}`,
+        nameEn: `${optionValue.option.name}: ${optionValue.value}`,
+        priceDeltaRappen: 0,
       })),
     };
   });
@@ -148,44 +127,10 @@ export async function calculateQuote(input: QuoteInput, db: Db = prisma, userId?
     discountRappen,
     deliveryFeeRappen,
     totalRappen: Math.max(0, subtotalRappen - discountRappen) + deliveryFeeRappen,
-    estimatedMinutes: delivery?.estimatedMinutes ?? settings.pickupPrepMinutes,
+    estimatedMinutes: null,
     promo,
     delivery,
   };
-}
-
-export async function getAvailableSlots(fulfillmentType: FulfillmentType, date: string) {
-  const settings = await prisma.fulfillmentSettings.findUniqueOrThrow({ where: { id: 1 } });
-  if (!settings.scheduledEnabled) return [];
-  const weekday = zurichParts(zurichDateToUtc(date, 720)).weekday;
-  const exception = await prisma.serviceException.findFirst({
-    where: { date: new Date(`${date}T00:00:00.000Z`), fulfillmentType },
-  });
-  if (exception?.closed) return [];
-  const windows = exception?.startMinute !== null && exception?.startMinute !== undefined
-    ? [{ startMinute: exception.startMinute, endMinute: exception.endMinute ?? exception.startMinute }]
-    : await prisma.openingWindow.findMany({ where: { fulfillmentType, weekday, active: true }, orderBy: { sortOrder: "asc" } });
-  const earliest = new Date(Date.now() + settings.minimumLeadMinutes * 60_000);
-  const latest = new Date(Date.now() + settings.maximumAdvanceDays * 86_400_000);
-  const starts = windows.flatMap((window) => {
-    const result: Date[] = [];
-    for (let minute = window.startMinute; minute < window.endMinute; minute += settings.slotIntervalMinutes) {
-      const start = zurichDateToUtc(date, minute);
-      if (start >= earliest && start <= latest) result.push(start);
-    }
-    return result;
-  });
-  await Promise.all(starts.map((startsAt) => prisma.fulfillmentSlot.upsert({
-    where: { fulfillmentType_startsAt: { fulfillmentType, startsAt } },
-    create: { fulfillmentType, startsAt, capacity: settings.defaultSlotCapacity },
-    update: {},
-  })));
-  const slots = await prisma.fulfillmentSlot.findMany({
-    where: { fulfillmentType, startsAt: { in: starts }, closed: false },
-    select: { id: true, startsAt: true, capacity: true, bookedCount: true },
-    orderBy: { startsAt: "asc" },
-  });
-  return slots.filter((slot) => slot.bookedCount < slot.capacity);
 }
 
 type EmailContent = { subject: string; text: string; html: string };
@@ -236,7 +181,7 @@ function assertStripeSession(order: StripeOrder, session: Stripe.Checkout.Sessio
 
 async function failPendingOrder(orderId: bigint, reason = "PAYMENT_SESSION_FAILED", session?: Stripe.Checkout.Session) {
   await prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUniqueOrThrow({ where: { id: orderId }, include: { payment: true } });
+    const order = await tx.order.findUniqueOrThrow({ where: { id: orderId }, include: { payment: true, items: { select: { variantId: true, quantity: true } } } });
     if (session) assertStripeSession(order, session);
     if (order.status !== "PAYMENT_PENDING") return;
     const now = new Date();
@@ -249,8 +194,13 @@ async function failPendingOrder(orderId: bigint, reason = "PAYMENT_SESSION_FAILE
     await tx.orderStatusEvent.create({
       data: { orderId, fromStatus: "PAYMENT_PENDING", toStatus: "CANCELLED", reason },
     });
-    if (order.slotId) {
-      await tx.fulfillmentSlot.update({ where: { id: order.slotId }, data: { bookedCount: { decrement: 1 } } });
+    for (const item of order.items) {
+      if (!item.variantId) continue;
+      const released = await tx.$executeRaw`UPDATE productvariant SET stockReserved = stockReserved - ${item.quantity}, updatedAt = NOW(3) WHERE id = ${item.variantId} AND stockReserved >= ${item.quantity}`;
+      if (released !== 1) throw new OrderError("INVENTORY_RESERVATION_INVALID");
+      await tx.inventoryMovement.create({
+        data: { variantId: item.variantId, orderId, type: "ORDER_RELEASED", quantityChange: item.quantity, reason, idempotencyKey: `order:${orderId}:${item.variantId}:release` },
+      });
     }
   });
 }
@@ -271,22 +221,8 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
 
   const order = await prisma.$transaction(async (tx) => {
     const quote = await calculateQuote(input, tx, userId);
-    let slotId: string | undefined;
-    if (input.scheduledFor) {
-      const startsAt = new Date(input.scheduledFor);
-      const slot = await tx.fulfillmentSlot.findUnique({
-        where: { fulfillmentType_startsAt: { fulfillmentType: input.fulfillmentType, startsAt } },
-      });
-      if (!slot || slot.closed) throw new OrderError("SLOT_UNAVAILABLE");
-      const reservation = await tx.fulfillmentSlot.updateMany({
-        where: { id: slot.id, closed: false, bookedCount: { lt: slot.capacity } },
-        data: { bookedCount: { increment: 1 }, updatedAt: new Date() },
-      });
-      if (reservation.count !== 1) throw new OrderError("SLOT_FULL");
-      slotId = slot.id;
-    }
     const status: OrderStatus = input.paymentMethod === "STRIPE" ? "PAYMENT_PENDING" : "CONFIRMED";
-    return tx.order.create({
+    const created = await tx.order.create({
       data: {
         checkoutKeyHash,
         guestTrackingTokenHash: userId ? null : checkoutKeyHash,
@@ -298,11 +234,6 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
         fulfillmentType: input.fulfillmentType,
         status,
         paymentMethod: input.paymentMethod,
-        slotId,
-        scheduledFor: input.scheduledFor ? new Date(input.scheduledFor) : null,
-        estimatedReadyAt: input.scheduledFor
-          ? new Date(input.scheduledFor)
-          : new Date(Date.now() + quote.estimatedMinutes * 60_000),
         note: input.note,
         subtotalRappen: quote.subtotalRappen,
         discountRappen: quote.discountRappen,
@@ -353,6 +284,25 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
       },
       include: { payment: true, items: { include: { options: true, product: { select: { imageKey: true } } } } },
     });
+    for (const item of quote.items) {
+      const variant = await tx.productVariant.findUniqueOrThrow({ where: { id: item.variantId }, select: { trackInventory: true } });
+      if (!variant.trackInventory) continue;
+      const changed = input.paymentMethod === "STRIPE"
+        ? await tx.$executeRaw`UPDATE productvariant SET stockReserved = stockReserved + ${item.quantity}, updatedAt = NOW(3) WHERE id = ${item.variantId} AND active = 1 AND stockOnHand - stockReserved >= ${item.quantity}`
+        : await tx.$executeRaw`UPDATE productvariant SET stockOnHand = stockOnHand - ${item.quantity}, updatedAt = NOW(3) WHERE id = ${item.variantId} AND active = 1 AND stockOnHand - stockReserved >= ${item.quantity}`;
+      if (changed !== 1) throw new OrderError("OUT_OF_STOCK");
+      await tx.inventoryMovement.create({
+        data: {
+          variantId: item.variantId,
+          orderId: created.id,
+          type: input.paymentMethod === "STRIPE" ? "ORDER_RESERVED" : "ORDER_SOLD",
+          quantityChange: -item.quantity,
+          reason: input.paymentMethod === "STRIPE" ? "Stripe checkout stock reservation" : "Order confirmed",
+          idempotencyKey: `order:${created.id}:${item.variantId}:${input.paymentMethod === "STRIPE" ? "reserve" : "sell"}`,
+        },
+      });
+    }
+    return created;
   }, { isolationLevel: "Serializable" });
 
   if (input.paymentMethod === "STRIPE") {
@@ -375,7 +325,7 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
         customer_email: order.customerEmail,
         line_items: lineItems,
         metadata: { orderId: order.id.toString(), orderNumber },
-        success_url: `${stripeEnv!.APP_URL}/${input.locale}/order/${orderNumber}?token=${input.checkoutKey}`,
+        success_url: `${stripeEnv!.APP_URL}/${input.locale}/orders/${orderNumber}?token=${input.checkoutKey}`,
         cancel_url: `${stripeEnv!.APP_URL}/${input.locale}/checkout?cancelled=1`,
         expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
       }, { idempotencyKey: input.checkoutKey });
@@ -425,7 +375,10 @@ async function finalizePaidStripeSession(session: Stripe.Checkout.Session) {
   if (session.payment_status !== "paid") throw new OrderError("STRIPE_EVENT_INVALID");
   return prisma.$transaction(async (tx) => {
     const orderId = stripeOrderId(session);
-    const current = await tx.order.findUniqueOrThrow({ where: { id: orderId }, include: { payment: true } });
+    const current = await tx.order.findUniqueOrThrow({
+      where: { id: orderId },
+      include: { payment: true, items: { include: { variant: { select: { trackInventory: true } } } } },
+    });
     assertStripeSession(current, session);
     if (current.status !== "PAYMENT_PENDING") {
       if (current.payment?.status !== "PAID") throw new OrderError("STRIPE_EVENT_INVALID");
@@ -439,6 +392,14 @@ async function finalizePaidStripeSession(session: Stripe.Checkout.Session) {
       data: { status: "PAID", stripePaymentIntentId: paymentIntentId, paidAt: now },
     });
     if (payment.count !== 1) throw new OrderError("STRIPE_EVENT_INVALID");
+    for (const item of current.items) {
+      if (!item.variantId || !item.variant?.trackInventory) continue;
+      const consumed = await tx.$executeRaw`UPDATE productvariant SET stockOnHand = stockOnHand - ${item.quantity}, stockReserved = stockReserved - ${item.quantity}, updatedAt = NOW(3) WHERE id = ${item.variantId} AND stockOnHand >= ${item.quantity} AND stockReserved >= ${item.quantity}`;
+      if (consumed !== 1) throw new OrderError("INVENTORY_RESERVATION_INVALID");
+      await tx.inventoryMovement.create({
+        data: { variantId: item.variantId, orderId, type: "ORDER_SOLD", quantityChange: -item.quantity, reason: "Stripe payment confirmed", idempotencyKey: `order:${orderId}:${item.variantId}:sell` },
+      });
+    }
     await tx.orderStatusEvent.create({
       data: { orderId, fromStatus: "PAYMENT_PENDING", toStatus: "CONFIRMED", reason: "STRIPE_PAID" },
     });
@@ -531,8 +492,6 @@ function orderDto(order: Prisma.OrderGetPayload<{ include: typeof orderInclude }
     status: order.status,
     paymentMethod: order.paymentMethod,
     paymentStatus: order.payment?.status,
-    scheduledFor: order.scheduledFor?.toISOString() ?? null,
-    estimatedReadyAt: order.estimatedReadyAt?.toISOString() ?? null,
     note: order.note,
     subtotalRappen: order.subtotalRappen,
     discountRappen: order.discountRappen,
@@ -592,7 +551,7 @@ export async function getCustomerOrders(userId: string) {
 
 export async function getAdminOrders() {
   const orders = await prisma.order.findMany({
-    where: { status: { in: ["PAYMENT_PENDING", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY"] } },
+    where: { status: { in: ["PAYMENT_PENDING", "CONFIRMED", "PROCESSING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY"] } },
     include: orderInclude,
     orderBy: { createdAt: "desc" },
   });
@@ -608,7 +567,7 @@ export async function advanceOrder(orderNumber: string, expectedVersion: number,
     if (!next) throw new OrderError("TRANSITION_NOT_ALLOWED");
     const result = await tx.order.updateMany({
       where: { id, version: expectedVersion, status: order.status },
-      data: { status: next, version: { increment: 1 }, ...(next === "COMPLETED" ? { completedAt: new Date() } : {}) },
+      data: { status: next, version: { increment: 1 }, ...(["DELIVERED", "PICKED_UP"].includes(next) ? { completedAt: new Date() } : {}) },
     });
     if (result.count !== 1) throw new OrderError("ORDER_CHANGED");
     await tx.orderStatusEvent.create({

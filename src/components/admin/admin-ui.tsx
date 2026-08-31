@@ -21,10 +21,16 @@ export function AdminPage({
 }) {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E1E3E5] pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-[#202223] tracking-tight">{title}</h1>
-          {description && <p className="mt-1 text-xs text-muted leading-normal">{description}</p>}
+          <h1 className="font-display text-2xl font-bold text-[#202223] tracking-tight">
+            {title}
+          </h1>
+          {description && (
+            <p className="mt-1 text-xs text-muted leading-normal">
+              {description}
+            </p>
+          )}
         </div>
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
@@ -33,7 +39,15 @@ export function AdminPage({
   );
 }
 
-export function Notice({ saved, error, warning }: { saved?: string; error?: string; warning?: string }) {
+export function Notice({
+  saved,
+  error,
+  warning,
+}: {
+  saved?: string;
+  error?: string;
+  warning?: string;
+}) {
   if (!saved && !error && !warning) return null;
   return (
     <div
@@ -44,7 +58,7 @@ export function Notice({ saved, error, warning }: { saved?: string; error?: stri
           ? "border-destructive/40 bg-destructive/5 text-destructive"
           : warning
             ? "border-amber-500/40 bg-amber-50 text-amber-900"
-          : "border-emerald-500/40 bg-emerald-50 text-emerald-800"
+            : "border-emerald-500/40 bg-emerald-50 text-emerald-800",
       )}
     >
       {error ? (
@@ -52,7 +66,13 @@ export function Notice({ saved, error, warning }: { saved?: string; error?: stri
       ) : (
         <CheckCircle2 className="h-4 w-4 shrink-0" />
       )}
-      <span>{error ? error.replaceAll("_", " ") : warning ? "Invitation saved, but the email could not be sent. Check the Resend configuration and invite again." : "Changes successfully saved."}</span>
+      <span>
+        {error
+          ? error.replaceAll("_", " ")
+          : warning
+            ? "Invitation saved, but the email could not be sent. Check the Resend configuration and invite again."
+            : "Changes successfully saved."}
+      </span>
     </div>
   );
 }
@@ -74,7 +94,7 @@ export function Field({
         {...props}
         id={inputId}
         name={name}
-        className="h-10 rounded-lg border-[#C9CCCF] bg-white px-3 text-xs shadow-2xs focus:border-primary focus:ring-1 focus:ring-primary"
+        className="min-h-11 rounded-control border-border bg-surface px-3 text-sm shadow-2xs focus:border-primary focus:ring-1 focus:ring-ring"
       />
     </div>
   );
@@ -86,12 +106,14 @@ export function TextareaField({
   defaultValue,
   rows = 3,
   id,
+  required,
 }: {
   label: string;
   name: string;
   defaultValue?: string | null;
   rows?: number;
   id?: string;
+  required?: boolean;
 }) {
   const generatedId = useId();
   const inputId = id ?? `${name}-${generatedId}`;
@@ -105,7 +127,8 @@ export function TextareaField({
         name={name}
         defaultValue={defaultValue ?? ""}
         rows={rows}
-        className="w-full rounded-lg border border-[#C9CCCF] bg-white px-3 py-2 text-xs shadow-2xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+        required={required}
+        className="min-h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm shadow-2xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
       />
     </div>
   );
@@ -135,7 +158,7 @@ export function SelectField({
         id={inputId}
         name={name}
         defaultValue={defaultValue}
-        className="h-10 w-full rounded-lg border border-[#C9CCCF] bg-white px-3 text-xs font-medium shadow-2xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+        className="min-h-11 w-full rounded-control border border-border bg-surface px-3 text-sm font-medium shadow-2xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
       >
         {children}
       </select>
@@ -143,7 +166,15 @@ export function SelectField({
   );
 }
 
-export function Check({ label, name, defaultChecked = false }: { label: string; name: string; defaultChecked?: boolean }) {
+export function Check({
+  label,
+  name,
+  defaultChecked = false,
+}: {
+  label: string;
+  name: string;
+  defaultChecked?: boolean;
+}) {
   return (
     <label className="flex items-center gap-2.5 text-xs font-bold text-[#303030] cursor-pointer py-1">
       <input
@@ -157,11 +188,21 @@ export function Check({ label, name, defaultChecked = false }: { label: string; 
   );
 }
 
-export function SaveBar({ returnTo, label = "Save changes" }: { returnTo: string; label?: string }) {
+export function SaveBar({
+  returnTo,
+  label = "Save changes",
+}: {
+  returnTo: string;
+  label?: string;
+}) {
   return (
-    <div className="flex justify-end border-t border-[#E1E3E5] pt-4 mt-6">
+    <div className="mt-6 flex justify-end border-t border-border pt-4">
       <input type="hidden" name="returnTo" value={returnTo} />
-      <Button type="submit" size="default" className="shadow-xs font-bold bg-primary hover:bg-primary-light text-xs">
+      <Button
+        type="submit"
+        size="default"
+        className="shadow-xs font-bold bg-primary hover:bg-primary-light text-xs"
+      >
         {label}
       </Button>
     </div>
@@ -170,20 +211,25 @@ export function SaveBar({ returnTo, label = "Save changes" }: { returnTo: string
 
 export function Empty({ children }: { children: ReactNode }) {
   return (
-    <Card className="p-8 text-center border-[#E1E3E5] bg-white">
+    <Card className="border-border bg-surface p-8 text-center">
       <p className="text-xs font-medium text-muted">{children}</p>
     </Card>
   );
 }
 
-export function EditLink({ href, children = "Manage" }: { href: string; children?: ReactNode }) {
+export function EditLink({
+  href,
+  children = "Manage",
+}: {
+  href: string;
+  children?: ReactNode;
+}) {
   return (
     <Link
       href={href}
-      className="inline-flex min-h-9 items-center rounded-lg border border-[#C9CCCF] bg-white px-3 text-xs font-bold text-[#303030] shadow-2xs hover:bg-[#F6F6F7] transition-all"
+      className="inline-flex min-h-11 items-center rounded-control border border-border bg-surface px-3 text-sm font-bold text-foreground shadow-2xs transition-colors hover:bg-surface-warm"
     >
       {children}
     </Link>
   );
 }
-

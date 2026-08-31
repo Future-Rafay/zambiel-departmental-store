@@ -64,13 +64,6 @@ export function advanceOrder(accessToken: string, order: Pick<Order, "orderNumbe
   }, accessToken);
 }
 
-export function updateEta(accessToken: string, order: Pick<Order, "orderNumber" | "version">, estimatedReadyAt: string) {
-  return request<{ estimatedReadyAt: string | null; version: number }>(`/api/v1/staff/orders/${order.orderNumber}/eta`, {
-    method: "PATCH",
-    body: JSON.stringify({ version: order.version, estimatedReadyAt }),
-  }, accessToken);
-}
-
 export function confirmCash(accessToken: string, orderNumber: string) {
   return request<{ paymentStatus: "PAID" }>(`/api/v1/staff/orders/${orderNumber}/cash-payment`, { method: "PATCH" }, accessToken);
 }

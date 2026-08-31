@@ -93,7 +93,7 @@ class SaltNPepperPrinterModule(private val context: ReactApplicationContext) : R
             .setMinMargins(PrintAttributes.Margins(80, 80, 80, 80))
             .setColorMode(PrintAttributes.COLOR_MODE_MONOCHROME)
             .build()
-          manager.print("SaltNPepper-$documentName", adapter, attributes)
+          manager.print("Zambiel-$documentName", adapter, attributes)
           promise.resolve(null)
         }
       }

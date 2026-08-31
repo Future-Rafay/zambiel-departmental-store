@@ -15,10 +15,11 @@ export type Session = {
 export type OrderStatus =
   | "PAYMENT_PENDING"
   | "CONFIRMED"
-  | "PREPARING"
+  | "PROCESSING"
   | "READY_FOR_PICKUP"
   | "OUT_FOR_DELIVERY"
-  | "COMPLETED"
+  | "DELIVERED"
+  | "PICKED_UP"
   | "CANCELLED";
 
 export type PaymentStatus = "PENDING" | "PAID" | "FAILED" | "PARTIALLY_REFUNDED" | "REFUNDED";
@@ -48,8 +49,6 @@ export type Order = {
   } | null;
   createdAt: string;
   updatedAt: string;
-  scheduledFor: string | null;
-  estimatedReadyAt: string | null;
   subtotalRappen: number;
   discountRappen: number;
   deliveryFeeRappen: number;

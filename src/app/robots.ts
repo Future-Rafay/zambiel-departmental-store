@@ -15,6 +15,8 @@ export default function robots(): MetadataRoute.Robots {
         "/en/checkout",
         "/de/order/",
         "/en/order/",
+        "/de/orders/",
+        "/en/orders/",
       ],
     },
     sitemap: `${origin}/sitemap.xml`,

@@ -11,12 +11,29 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export default async function LocaleLayout({ children, params }: { children: ReactNode; params: Promise<{ locale: string }> }) {
+export default async function LocaleLayout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
   const { locale } = await params;
   if (!isAppLocale(locale)) notFound();
-  
-  const [currentUser, publicConfig] = await Promise.all([getCurrentUser(), getPublicConfig()]);
-  const user = currentUser ? { id: currentUser.id, name: currentUser.name, email: currentUser.email, image: currentUser.image, role: currentUser.role } : null;
+
+  const [currentUser, publicConfig] = await Promise.all([
+    getCurrentUser(),
+    getPublicConfig(),
+  ]);
+  const user = currentUser
+    ? {
+        id: currentUser.id,
+        name: currentUser.name,
+        email: currentUser.email,
+        image: currentUser.image,
+        role: currentUser.role,
+      }
+    : null;
 
   return (
     <CartProvider>
@@ -34,4 +51,3 @@ export default async function LocaleLayout({ children, params }: { children: Rea
     </CartProvider>
   );
 }
-

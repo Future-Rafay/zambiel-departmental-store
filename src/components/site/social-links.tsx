@@ -13,11 +13,22 @@ export function SocialLinks({
   locale: "de" | "en";
 }) {
   const links = [
-    facebookUrl && { href: facebookUrl, label: "Foodeez on Facebook", icon: FaFacebookF },
-    instagramUrl && { href: instagramUrl, label: "Foodeez on Instagram", icon: FaInstagram },
+    facebookUrl && {
+      href: facebookUrl,
+      label: "Foodeez on Facebook",
+      icon: FaFacebookF,
+    },
+    instagramUrl && {
+      href: instagramUrl,
+      label: "Foodeez on Instagram",
+      icon: FaInstagram,
+    },
     {
       href: whatsappUrl,
-      label: locale === "de" ? "SaltNPepper auf WhatsApp kontaktieren" : "Contact SaltNPepper on WhatsApp",
+      label:
+        locale === "de"
+          ? "Zambiel auf WhatsApp kontaktieren"
+          : "Contact Zambiel on WhatsApp",
       icon: FaWhatsapp,
     },
   ].filter(Boolean) as Array<{ href: string; label: string; icon: IconType }>;

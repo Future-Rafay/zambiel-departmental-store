@@ -16,35 +16,13 @@ async function audit(db: Db, actorUserId: string, action: string, entityType: st
   await db.auditLog.create({ data: { actorUserId, action, entityType, entityId, metadata } });
 }
 
-export async function getMenuAdminData() {
-  const [categories, products, allergens] = await Promise.all([
-    prisma.category.findMany({ where: { deletedAt: null }, orderBy: [{ sortOrder: "asc" }, { nameEn: "asc" }] }),
-    prisma.product.findMany({
-      where: { deletedAt: null },
-      include: {
-        category: { select: { nameEn: true } },
-        variants: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } },
-        optionGroups: { where: { deletedAt: null }, include: { choices: { where: { deletedAt: null }, orderBy: { sortOrder: "asc" } } }, orderBy: { sortOrder: "asc" } },
-        suggestions: { include: { suggestedVariant: { include: { product: true } } }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
-        availabilityWindows: { orderBy: [{ weekday: "asc" }, { startMinute: "asc" }] },
-        allergens: { select: { allergenId: true } },
-      },
-      orderBy: [{ sortOrder: "asc" }, { nameEn: "asc" }],
-    }),
-    prisma.allergen.findMany({ orderBy: { sortOrder: "asc" } }),
-  ]);
-  return { categories, products, allergens };
-}
-
 export async function getSettingsAdminData() {
-  const [site, fulfillment, windows, exceptions, zones] = await Promise.all([
+  const [site, fulfillment, zones] = await Promise.all([
     prisma.siteSettings.findUniqueOrThrow({ where: { id: 1 } }),
     prisma.fulfillmentSettings.findUniqueOrThrow({ where: { id: 1 } }),
-    prisma.openingWindow.findMany({ orderBy: [{ weekday: "asc" }, { fulfillmentType: "asc" }, { sortOrder: "asc" }] }),
-    prisma.serviceException.findMany({ where: { date: { gte: new Date(new Date().toISOString().slice(0, 10)) } }, orderBy: { date: "asc" }, take: 100 }),
     prisma.deliveryZone.findMany({ include: { postalCodes: { orderBy: { postalCode: "asc" } } }, orderBy: [{ sortOrder: "asc" }, { nameEn: "asc" }] }),
   ]);
-  return { site, fulfillment, windows, exceptions, zones };
+  return { site, fulfillment, zones };
 }
 
 export async function getPromosAdminData() {
@@ -64,6 +42,7 @@ const adminOrderInclude = {
   items: { include: { options: true } },
   payment: { include: { refunds: { include: { requestedBy: { select: { name: true, email: true } } }, orderBy: { createdAt: "desc" as const } } } },
   statusEvents: { include: { actor: { select: { name: true, email: true } } }, orderBy: { createdAt: "asc" as const } },
+  inventoryMovements: { include: { variant: { select: { nameEn: true, sku: true } } }, orderBy: { createdAt: "asc" as const } },
 } satisfies Prisma.OrderInclude;
 
 function adminOrderDto(order: Prisma.OrderGetPayload<{ include: typeof adminOrderInclude }>) {
@@ -73,14 +52,12 @@ function adminOrderDto(order: Prisma.OrderGetPayload<{ include: typeof adminOrde
     orderNumber: formatOrderNumber(order.id),
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
-    scheduledFor: order.scheduledFor?.toISOString() ?? null,
-    estimatedReadyAt: order.estimatedReadyAt?.toISOString() ?? null,
     remainingRefundableRappen: order.payment?.provider === "STRIPE" ? Math.max(0, order.payment.amountRappen - order.payment.refundedRappen) : 0,
   };
 }
 
 export async function getOrderHistory(status?: string) {
-  const allowed = ["PAYMENT_PENDING", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "COMPLETED", "CANCELLED"] as const;
+  const allowed = ["PAYMENT_PENDING", "CONFIRMED", "PROCESSING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "DELIVERED", "PICKED_UP", "CANCELLED"] as const;
   const where = allowed.includes(status as typeof allowed[number]) ? { status: status as typeof allowed[number] } : {};
   const orders = await prisma.order.findMany({ where, include: adminOrderInclude, orderBy: { createdAt: "desc" }, take: 200 });
   return orders.map(adminOrderDto);
@@ -98,7 +75,7 @@ export async function getAuditLogs() {
 }
 
 export async function getDashboardData() {
-  const [payments, totalOrders, totalProducts, availableProducts, activeOrders, pendingStripe, recentRows] = await Promise.all([
+  const [payments, totalOrders, totalProducts, availableProducts, activeOrders, pendingStripe, recentRows, inventory] = await Promise.all([
     prisma.payment.aggregate({
       where: { status: { in: ["PAID", "PARTIALLY_REFUNDED", "REFUNDED"] } },
       _sum: { amountRappen: true, refundedRappen: true },
@@ -106,9 +83,10 @@ export async function getDashboardData() {
     prisma.order.count(),
     prisma.product.count({ where: { deletedAt: null } }),
     prisma.product.count({ where: { deletedAt: null, active: true, available: true } }),
-    prisma.order.count({ where: { status: { in: ["PAYMENT_PENDING", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY"] } } }),
+    prisma.order.count({ where: { status: { in: ["PAYMENT_PENDING", "CONFIRMED", "PROCESSING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY"] } } }),
     prisma.payment.count({ where: { provider: "STRIPE", status: "PENDING", order: { status: "PAYMENT_PENDING" } } }),
     prisma.order.findMany({ include: adminOrderInclude, orderBy: { createdAt: "desc" }, take: 10 }),
+    prisma.productVariant.findMany({ where: { active: true, deletedAt: null, trackInventory: true }, select: { stockOnHand: true, stockReserved: true, lowStockThreshold: true } }),
   ]);
   return {
     revenueRappen: Math.max(0, (payments._sum.amountRappen ?? 0) - (payments._sum.refundedRappen ?? 0)),
@@ -118,6 +96,7 @@ export async function getDashboardData() {
     unavailableProducts: totalProducts - availableProducts,
     activeOrders,
     pendingStripe,
+    lowStock: inventory.filter((variant) => variant.stockOnHand - variant.stockReserved <= (variant.lowStockThreshold ?? 5)).length,
     recentOrders: recentRows.map(adminOrderDto),
   };
 }
@@ -129,114 +108,6 @@ export async function saveCategory(actorId: string, data: Prisma.CategoryUncheck
     : await prisma.category.create({ data: values });
   await audit(prisma, actorId, id ? "CATEGORY_UPDATED" : "CATEGORY_CREATED", "Category", row.id);
   return row;
-}
-
-export async function saveProduct(actorId: string, data: Omit<Prisma.ProductUncheckedCreateInput, "allergens"> & { id?: string; allergenIds: string[] }) {
-  const { id, allergenIds, ...values } = data;
-  return prisma.$transaction(async (tx) => {
-    const row = id
-      ? await tx.product.update({ where: { id, deletedAt: null }, data: values })
-      : await tx.product.create({ data: values });
-    await tx.productAllergen.deleteMany({ where: { productId: row.id } });
-    if (allergenIds.length) await tx.productAllergen.createMany({ data: allergenIds.map((allergenId) => ({ productId: row.id, allergenId })) });
-    await audit(tx, actorId, id ? "PRODUCT_UPDATED" : "PRODUCT_CREATED", "Product", row.id);
-    return row;
-  });
-}
-
-export async function saveVariant(actorId: string, data: Prisma.ProductVariantUncheckedCreateInput & { id?: string }) {
-  const { id, ...values } = data;
-  const row = id ? await prisma.productVariant.update({ where: { id, deletedAt: null }, data: values }) : await prisma.productVariant.create({ data: values });
-  await audit(prisma, actorId, id ? "VARIANT_UPDATED" : "VARIANT_CREATED", "ProductVariant", row.id);
-  return row;
-}
-
-export async function saveOptionGroup(actorId: string, data: Prisma.OptionGroupUncheckedCreateInput & { id?: string }) {
-  const { id, ...values } = data;
-  const row = id ? await prisma.optionGroup.update({ where: { id, deletedAt: null }, data: values }) : await prisma.optionGroup.create({ data: values });
-  await audit(prisma, actorId, id ? "OPTION_GROUP_UPDATED" : "OPTION_GROUP_CREATED", "OptionGroup", row.id);
-  return row;
-}
-
-export async function saveOptionChoice(actorId: string, data: Prisma.OptionChoiceUncheckedCreateInput & { id?: string }) {
-  const { id, ...values } = data;
-  const row = id ? await prisma.optionChoice.update({ where: { id, deletedAt: null }, data: values }) : await prisma.optionChoice.create({ data: values });
-  await audit(prisma, actorId, id ? "OPTION_CHOICE_UPDATED" : "OPTION_CHOICE_CREATED", "OptionChoice", row.id);
-  return row;
-}
-
-export async function saveProductSuggestion(actorId: string, data: Prisma.ProductSuggestionUncheckedCreateInput & { id?: string }) {
-  const { id, ...values } = data;
-  return prisma.$transaction(async (tx) => {
-    const row = id ? await tx.productSuggestion.update({ where: { id }, data: values }) : await tx.productSuggestion.create({ data: values });
-    await audit(tx, actorId, id ? "PRODUCT_SUGGESTION_UPDATED" : "PRODUCT_SUGGESTION_CREATED", "ProductSuggestion", row.id, { productId: row.productId, suggestedVariantId: row.suggestedVariantId });
-    return row;
-  });
-}
-
-export async function deleteProductSuggestion(actorId: string, id: string) {
-  await prisma.$transaction(async (tx) => {
-    const row = await tx.productSuggestion.delete({ where: { id } });
-    await audit(tx, actorId, "PRODUCT_SUGGESTION_DELETED", "ProductSuggestion", row.id, { productId: row.productId, suggestedVariantId: row.suggestedVariantId });
-  });
-}
-
-export async function saveAvailabilityWindow(actorId: string, data: Prisma.ProductAvailabilityWindowUncheckedCreateInput & { id?: string }) {
-  const { id, ...values } = data;
-  const row = id ? await prisma.productAvailabilityWindow.update({ where: { id }, data: values }) : await prisma.productAvailabilityWindow.create({ data: values });
-  await audit(prisma, actorId, id ? "PRODUCT_WINDOW_UPDATED" : "PRODUCT_WINDOW_CREATED", "ProductAvailabilityWindow", row.id);
-  return row;
-}
-
-const softDeleteModels = {
-  category: "category",
-  product: "product",
-  variant: "productVariant",
-  optionGroup: "optionGroup",
-  optionChoice: "optionChoice",
-} as const;
-
-export async function softDeleteMenuEntity(actorId: string, kind: keyof typeof softDeleteModels, id: string) {
-  await prisma.$transaction(async (tx) => {
-    if (kind === "category") await tx.category.update({ where: { id }, data: { deletedAt: new Date(), active: false } });
-    if (kind === "product") await tx.product.update({ where: { id }, data: { deletedAt: new Date(), active: false, available: false } });
-    if (kind === "variant") await tx.productVariant.update({ where: { id }, data: { deletedAt: new Date(), active: false } });
-    if (kind === "optionGroup") await tx.optionGroup.update({ where: { id }, data: { deletedAt: new Date(), active: false } });
-    if (kind === "optionChoice") await tx.optionChoice.update({ where: { id }, data: { deletedAt: new Date(), active: false } });
-    await audit(tx, actorId, `${kind.toUpperCase()}_DELETED`, softDeleteModels[kind], id);
-  });
-}
-
-export async function deleteAvailabilityWindow(actorId: string, id: string) {
-  await prisma.$transaction(async (tx) => { await tx.productAvailabilityWindow.delete({ where: { id } }); await audit(tx, actorId, "PRODUCT_WINDOW_DELETED", "ProductAvailabilityWindow", id); });
-}
-
-export async function saveFulfillment(actorId: string, data: Prisma.FulfillmentSettingsUpdateInput) {
-  const row = await prisma.fulfillmentSettings.update({ where: { id: 1 }, data });
-  await audit(prisma, actorId, "FULFILLMENT_SETTINGS_UPDATED", "FulfillmentSettings", "1");
-  return row;
-}
-
-export async function saveOpeningWindow(actorId: string, data: Prisma.OpeningWindowUncheckedCreateInput & { id?: string }) {
-  const { id, ...values } = data;
-  const row = id ? await prisma.openingWindow.update({ where: { id }, data: values }) : await prisma.openingWindow.create({ data: values });
-  await audit(prisma, actorId, id ? "OPENING_WINDOW_UPDATED" : "OPENING_WINDOW_CREATED", "OpeningWindow", row.id);
-  return row;
-}
-
-export async function saveServiceException(actorId: string, data: Prisma.ServiceExceptionUncheckedCreateInput & { id?: string }) {
-  const { id, ...values } = data;
-  const row = id ? await prisma.serviceException.update({ where: { id }, data: values }) : await prisma.serviceException.create({ data: values });
-  await audit(prisma, actorId, id ? "SERVICE_EXCEPTION_UPDATED" : "SERVICE_EXCEPTION_CREATED", "ServiceException", row.id);
-  return row;
-}
-
-export async function deleteScheduleEntity(actorId: string, kind: "window" | "exception", id: string) {
-  await prisma.$transaction(async (tx) => {
-    if (kind === "window") await tx.openingWindow.delete({ where: { id } });
-    else await tx.serviceException.delete({ where: { id } });
-    await audit(tx, actorId, `${kind.toUpperCase()}_DELETED`, kind === "window" ? "OpeningWindow" : "ServiceException", id);
-  });
 }
 
 export async function saveZone(actorId: string, data: Prisma.DeliveryZoneUncheckedCreateInput & { id?: string }) {
@@ -277,17 +148,52 @@ export async function setStaffActive(actorId: string, staffId: string, active: b
   return row;
 }
 
+async function restoreOrderInventory(
+  tx: Prisma.TransactionClient,
+  orderId: bigint,
+  payment: { provider: "STRIPE" | "CASH"; status: string } | null,
+  actorUserId: string | null,
+  reason: string,
+) {
+  const items = await tx.orderItem.findMany({
+    where: { orderId, variantId: { not: null } },
+    select: { variantId: true, quantity: true, variant: { select: { trackInventory: true } } },
+  });
+  for (const item of items) {
+    if (!item.variantId || !item.variant?.trackInventory) continue;
+    const reservationOnly = payment?.provider === "STRIPE" && payment.status === "PENDING";
+    const idempotencyKey = `order:${orderId}:${item.variantId}:${reservationOnly ? "release" : "restore"}`;
+    if (await tx.inventoryMovement.findUnique({ where: { idempotencyKey } })) continue;
+    const changed = reservationOnly
+      ? await tx.$executeRaw`UPDATE productvariant SET stockReserved = stockReserved - ${item.quantity}, updatedAt = NOW(3) WHERE id = ${item.variantId} AND stockReserved >= ${item.quantity}`
+      : await tx.productVariant.updateMany({ where: { id: item.variantId }, data: { stockOnHand: { increment: item.quantity }, updatedAt: new Date() } });
+    const count = typeof changed === "number" ? changed : changed.count;
+    if (count !== 1) throw new AdminError("INVENTORY_RESTORE_FAILED");
+    await tx.inventoryMovement.create({
+      data: {
+        variantId: item.variantId,
+        orderId,
+        actorUserId,
+        type: reservationOnly ? "ORDER_RELEASED" : "ORDER_RESTORED",
+        quantityChange: item.quantity,
+        reason,
+        idempotencyKey,
+      },
+    });
+  }
+}
+
 export async function cancelOrder(actorId: string, orderNumber: string, reason: string) {
   const id = parseOrderNumber(orderNumber);
   if (!id) throw new AdminError("ORDER_NOT_FOUND");
   return prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id }, include: { payment: true } });
     if (!order) throw new AdminError("ORDER_NOT_FOUND");
-    if (["COMPLETED", "CANCELLED"].includes(order.status)) throw new AdminError("CANCELLATION_NOT_ALLOWED");
+    if (["DELIVERED", "PICKED_UP", "CANCELLED"].includes(order.status)) throw new AdminError("CANCELLATION_NOT_ALLOWED");
     if (order.payment?.provider === "STRIPE" && ["PAID", "PARTIALLY_REFUNDED"].includes(order.payment.status)) throw new AdminError("OWNER_REFUND_REQUIRED");
     await tx.order.update({ where: { id }, data: { status: "CANCELLED", cancelledAt: new Date(), cancellationReason: reason, version: { increment: 1 } } });
     await tx.orderStatusEvent.create({ data: { orderId: id, actorUserId: actorId, fromStatus: order.status, toStatus: "CANCELLED", reason } });
-    if (order.slotId) await tx.fulfillmentSlot.updateMany({ where: { id: order.slotId, bookedCount: { gt: 0 } }, data: { bookedCount: { decrement: 1 }, updatedAt: new Date() } });
+    await restoreOrderInventory(tx, id, order.payment, actorId, reason);
     await audit(tx, actorId, "ORDER_CANCELLED", "Order", id.toString(), { reason });
   });
 }
@@ -305,7 +211,7 @@ export async function refundOrder(actorId: string, input: { orderNumber: string;
   const remaining = payment.amountRappen - payment.refundedRappen;
   if (input.amountRappen > remaining || (input.cancelOrder && input.amountRappen !== remaining)) throw new AdminError("REFUND_AMOUNT_INVALID");
   if (actor.role === "STAFF" && (!input.cancelOrder || input.amountRappen !== remaining)) throw new AdminError("FULL_REFUND_REQUIRED");
-  if (input.cancelOrder && ["COMPLETED", "CANCELLED"].includes(order.status)) throw new AdminError("CANCELLATION_NOT_ALLOWED");
+  if (input.cancelOrder && ["DELIVERED", "PICKED_UP", "CANCELLED"].includes(order.status)) throw new AdminError("CANCELLATION_NOT_ALLOWED");
 
   const stripeRefund = await getStripe().refunds.create({ payment_intent: payment.stripePaymentIntentId, amount: input.amountRappen, metadata: { orderId: id.toString(), reason: input.reason, cancelOrder: String(input.cancelOrder), actorUserId: actorId } }, { idempotencyKey: input.refundKey });
   const refund = await prisma.$transaction(async (tx) => {
@@ -334,10 +240,10 @@ async function settleSucceededRefund(stripeRefundId: string, cancelOrder: boolea
     await tx.refund.update({ where: { id: refund.id }, data: { status: "SUCCEEDED", failureMessage: null } });
     await tx.payment.update({ where: { id: payment.id }, data: { refundedRappen, status: refundedRappen === payment.amountRappen ? "REFUNDED" : "PARTIALLY_REFUNDED" } });
     await tx.auditLog.create({ data: { actorUserId: refund.requestedByUserId, action: "STRIPE_REFUND_SUCCEEDED", entityType: "Order", entityId: order.id.toString(), metadata: { amountRappen: refund.amountRappen, stripeRefundId } } });
-    if (cancelOrder && refundedRappen === payment.amountRappen && !["COMPLETED", "CANCELLED"].includes(order.status)) {
+    if (cancelOrder && refundedRappen === payment.amountRappen && !["DELIVERED", "PICKED_UP", "CANCELLED"].includes(order.status)) {
       await tx.order.update({ where: { id: order.id }, data: { status: "CANCELLED", cancelledAt: new Date(), cancellationReason: refund.reason, version: { increment: 1 } } });
       await tx.orderStatusEvent.create({ data: { orderId: order.id, actorUserId: refund.requestedByUserId, fromStatus: order.status, toStatus: "CANCELLED", reason: refund.reason } });
-      if (order.slotId) await tx.fulfillmentSlot.updateMany({ where: { id: order.slotId, bookedCount: { gt: 0 } }, data: { bookedCount: { decrement: 1 }, updatedAt: new Date() } });
+      await restoreOrderInventory(tx, order.id, { provider: payment.provider, status: "REFUNDED" }, refund.requestedByUserId, refund.reason);
       await tx.auditLog.create({ data: { actorUserId: refund.requestedByUserId, action: "ORDER_CANCELLED_AFTER_REFUND", entityType: "Order", entityId: order.id.toString(), metadata: { stripeRefundId } } });
     }
   });

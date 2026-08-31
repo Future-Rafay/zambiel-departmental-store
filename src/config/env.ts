@@ -48,7 +48,7 @@ const productionSchema = databaseSchema
     }
 
     const databaseUrl = new URL(values.DATABASE_URL);
-    if (["127.0.0.1", "localhost"].includes(databaseUrl.hostname) || /saltnpepper_(dev|test)/i.test(databaseUrl.pathname)) {
+    if (["127.0.0.1", "localhost"].includes(databaseUrl.hostname) || /zambiel_(dev|test)/i.test(databaseUrl.pathname)) {
       context.addIssue({ code: "custom", path: ["DATABASE_URL"], message: "Production must use its dedicated managed database." });
     }
     if (!values.DATABASE_SSL || databaseUrl.searchParams.get("sslaccept") !== "strict") {

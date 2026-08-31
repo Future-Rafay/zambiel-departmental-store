@@ -21,9 +21,8 @@ test("order schemas compare normalized delivery and address postal codes", () =>
   assert.equal(deliveryQuoteSchema.parse({ postcode: " sw1a   1aa ", subtotalRappen: 1000 }).postcode, "SW1A 1AA");
 
   const order = createOrderSchema.safeParse({
-    items: [{ variantId: "variant", choiceIds: [], quantity: 1 }],
+    items: [{ variantId: "variant", quantity: 1 }],
     fulfillmentType: "DELIVERY",
-    scheduledFor: null,
     postcode: "sw1a   1aa",
     checkoutKey: crypto.randomUUID(),
     locale: siteConfig.locale,

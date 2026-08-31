@@ -4,24 +4,17 @@ import { postalCodeValueSchema } from "@/server/validators/postal-code";
 
 const cartItemSchema = z.object({
   variantId: z.string().min(1).max(191),
-  choiceIds: z.array(z.string().min(1).max(191)).max(20).default([]),
   quantity: z.number().int().min(1).max(20),
 });
 
 const fulfillmentFields = {
   fulfillmentType: z.enum(["DELIVERY", "PICKUP"]),
-  scheduledFor: z.iso.datetime().nullable().optional(),
   postcode: postalCodeValueSchema.optional(),
 };
 
 export const deliveryQuoteSchema = z.object({
   postcode: postalCodeValueSchema,
   subtotalRappen: z.number().int().min(0).max(1_000_000),
-});
-
-export const slotsQuerySchema = z.object({
-  fulfillmentType: z.enum(["DELIVERY", "PICKUP"]),
-  date: z.iso.date(),
 });
 
 const quoteSchemaBase = z.object({

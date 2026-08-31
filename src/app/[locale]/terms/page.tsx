@@ -1,5 +1,4 @@
 import { Card } from "@/components/ui/card";
-import { siteConfig } from "@/config/site";
 
 export default async function TermsPage({ params }: { params: Promise<{ locale: string }> }) {
   const de = (await params).locale !== "en";
@@ -8,7 +7,7 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8 space-y-8">
       <div className="border-b border-border/60 pb-5">
         <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary">
-          SALTNPPEPPER
+          ZAMBIEL
         </span>
         <h1 className="font-display text-4xl font-extrabold text-primary mt-1">
           {de ? "Allgemeine Geschäftsbedingungen" : "Terms and Conditions"}
@@ -21,8 +20,8 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
         </p>
         <p className="text-sm text-muted leading-relaxed">
           {de
-            ? `Alle Bestellungen bei SaltNPepper unterliegen den Schweizer Bestimmungen für Gastronomie und Online-Handel. Alle Preise verstehen sich in ${siteConfig.currency} inklusive aller gesetzlichen Abgaben.`
-            : `All orders placed with SaltNPepper are subject to Swiss gastronomy and e-commerce regulations. All prices are stated in ${siteConfig.currency} inclusive of applicable duties.`}
+            ? "Die rechtlich geprüften Geschäftsbedingungen sind noch nicht konfiguriert. Der Shop darf vor ihrer Freigabe nicht für Produktionsbestellungen aktiviert werden."
+            : "Legally reviewed terms have not been configured. The store must not accept production orders until they are approved."}
         </p>
         <p className="text-xs text-muted/80 pt-2 border-t border-border/60">
           {de

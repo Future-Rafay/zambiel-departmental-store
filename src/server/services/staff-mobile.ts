@@ -7,7 +7,7 @@ import { allowedOrderActions } from "@/server/services/staff-mobile-actions";
 import { resolvePublicImageUrl } from "@/server/storage/s3";
 import { staffOrderFilterSchema } from "@/server/validators/staff-mobile";
 
-const activeStatuses: OrderStatus[] = ["PAYMENT_PENDING", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY"];
+const activeStatuses: OrderStatus[] = ["PAYMENT_PENDING", "CONFIRMED", "PROCESSING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY"];
 
 const staffOrderSelect = {
   id: true,
@@ -19,8 +19,6 @@ const staffOrderSelect = {
   customerPhone: true,
   fulfillmentType: true,
   paymentMethod: true,
-  scheduledFor: true,
-  estimatedReadyAt: true,
   note: true,
   subtotalRappen: true,
   discountRappen: true,
@@ -86,8 +84,6 @@ export function staffOrderDto(order: StaffOrderRow) {
     customerPhone: order.customerPhone,
     fulfillmentType: order.fulfillmentType,
     paymentMethod: order.paymentMethod,
-    scheduledFor: order.scheduledFor?.toISOString() ?? null,
-    estimatedReadyAt: order.estimatedReadyAt?.toISOString() ?? null,
     note: order.note,
     subtotalRappen: order.subtotalRappen,
     discountRappen: order.discountRappen,
@@ -138,8 +134,6 @@ export async function getStaffContext() {
     fulfillment: {
       deliveryEnabled: fulfillment.deliveryEnabled,
       pickupEnabled: fulfillment.pickupEnabled,
-      asapEnabled: fulfillment.asapEnabled,
-      scheduledEnabled: fulfillment.scheduledEnabled,
     },
     activeStatuses,
     pollSeconds: 10,

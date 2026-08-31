@@ -1,72 +1,49 @@
-# SaltNPepper project guide
+# Zambiel project guide
+
+Read `PROJECT-CONTEXT.md` and `PLAN.md` before making changes. Then read `BRANDING.md` for identity/configuration work, `CATALOG-IMPORT.md` for catalog imports, and `PHASE-1-AUDIT.md` when historical architecture or migration rationale matters.
+
+## Start-of-task checklist
+
+1. Inspect available skills/plugins and use relevant ones. Development work must use the available Ponytail skill before editing.
+2. Run `git status --short` and preserve unrelated/user changes.
+3. Read the relevant current code at the shared seam before adding a page, service, API, or abstraction.
+4. Check the installed Next.js guidance in `node_modules/next/dist/docs/` before Next.js framework changes.
+5. Keep changes inside this repository. Do not initialize, clone, copy, or create a sibling project.
+6. Never read, print, replace, or commit real secrets. `.env` is local; `.env.example` is documentation only.
 
 ## Scope
 
-This is the standalone SaltNPepper restaurant website, admin panel, backend API, and React Native staff companion app. Read `PLAN.md` before architecture, schema, route, payment, or workflow changes.
+- This is a single-seller Swiss departmental store. Never add vendor, tenant, organization, commission, payout, or order-splitting architecture.
+- Public routes are German/English under `/de` and `/en`; admin is `/admin`; Android uses authenticated `/api/v1` HTTPS services and never connects to MariaDB.
+- Preserve the shared seams: `src/server/db.ts`, `src/server/services/ordering.ts`, admin services/actions, explicit DTOs, and `resolvePublicImageUrl`.
+- Legacy restaurant schema fields and enum members remain temporarily for forward expand/contract compatibility. Do not use them in new behavior, UI, routes, seeds, or APIs; remove them only through a reviewed forward migration after all historical-data requirements are confirmed.
 
-- Public routes are German and English under `/de` and `/en`; `/` redirects to the default locale configured in `src/config/site.ts`.
-- Admin stays under `/admin` in the same Next.js app.
-- The Android project lives at `apps/saltnpepper-staff-android` and uses only authenticated HTTPS APIs. It never connects to MySQL.
-- This is a single-restaurant system. Do not add tenant or organization abstractions.
+## Configuration and content
 
-## Brand and content
+- Store defaults live in `src/config/store.ts`; runtime settings merge through `src/server/services/store-config.ts`. Do not scatter brand, currency, timezone, contact, delivery, or storage constants.
+- Use CHF integer rappen, UTC storage, `Europe/Zurich` display, and normalized string postal codes.
+- Missing contact, address, social, hours, legal, media, and commercial claims remain hidden or production-blocking. Do not invent them.
+- Product/category content is generic and bilingual. Active products require reviewed German public copy. Variants support arbitrary option values; never reduce them to size/color assumptions.
 
-- Central supplied identity and draft copy live in `src/content/restaurant.ts`.
-- Exact contact: Allmendstrasse 18, 8154 Oberglatt; +41 76 408 94 30; info@saltnpepper.ch; saltnpepper.ch.
-- Use the shared `BrandLogo` text treatment, semantic CSS variables, Archivo Black display font, and DM Sans UI font.
-- Do not invent cuisine, menu, prices, hours, delivery rules, VAT, social links, or legal claims. Hide unconfirmed content and keep `content-todo.md` current.
-- Temporary editorial imagery must be credited and must not be presented as actual SaltNPepper dishes or premises.
+## Data, ordering, and payments
 
-## Public content integrations
-
-- The user approved a provisional development catalog: 15 bilingual Pakistani grill products including Raita/Salad suggestion fixtures and a Biryani drink-choice fixture, daily 11:00–22:00 pickup/delivery, and delivery to 8154 for CHF 5 with CHF 30 minimum and free delivery from CHF 60. These remain production-blocking drafts in `content-todo.md`, not confirmed restaurant claims.
-- New uploads use the `SaltNPepper/{brand|menu|products}/` S3 key prefix. Prisma stores object keys, `resolvePublicImageUrl` remains the only public URL resolver, and the bucket policy grants read-only access to `SaltNPepper/*`; do not broaden it.
-- The global announcement is derived from the active delivery zone so its postcode, minimum, and free-delivery threshold stay aligned with checkout. `SiteSettings.announcementActive` remains the display switch.
-- The contact map is a native lazy Google Maps embed for the supplied address. CSP permits frames only from `www.google.com`; do not add a map SDK or API key unless the embed is insufficient.
-- Facebook and Instagram intentionally point to Foodeez until SaltNPepper-owned profiles are supplied. WhatsApp is derived from the existing restaurant phone as `https://wa.me/41764089430`.
-- `/de/blog` and `/en/blog` read the shared `sweetnsavour` WordPress category from `mydaytogo.com`. Fetches stay server-side with bounded revalidation, external payloads are Zod-validated, and article HTML passes the `sanitize-html` allowlist. Blog content is not copied into Prisma, admin, or Android.
-
-## Architecture
-
-- Server Components are the default. Add client components only for real interactivity.
-- `src/server/db.ts` is the only Prisma client constructor; `prisma/schema.prisma` is the schema source of truth.
-- Ordering rules stay in `src/server/services/ordering.ts`; admin rules stay in `src/server/services/admin.ts`.
-- Public web and versioned mobile routes must call shared server services instead of duplicating pricing, authorization, availability, payment, or transition rules.
-- Customer notification/history surfaces consume the explicit activities returned by the ordering DTO; do not infer status events from `Order.updatedAt`.
-- Staff order queues sort by `Order.updatedAt` latest-first. Payment mutations that count as order activity must touch the order in the same transaction.
-- Checkout validates delivery postcode/address details before applying a promo; preserve structured field errors through the web form instead of collapsing them into generic alerts.
-- Customer order tracking may reconcile a saved pending Stripe Checkout Session, but only through the same idempotent server finalizer used by signature-verified webhooks.
-- Product suggestions pin one target `ProductVariant`, are configured in admin, and reach checkout as ordinary independent cart/order lines; public pricing and orderability remain server-authoritative.
-- Validate trust boundaries with shared schemas and return explicit DTOs.
-- Use integer two-decimal minor units, the single active currency in `src/config/site.ts`, UTC storage, and `Europe/Zurich` display/calculation. Legacy `*Rappen` field names remain for compatibility.
-- Postal codes remain normalized strings with exact delivery-zone matching; preserve leading zeroes and alphanumeric formats.
-- Public order labels use `SNP-000001`; raw IDs remain internal.
-
-## Database and integrations
-
-- Local migrations and seeds target only lowercase `saltnpepper_dev`. Never reuse or modify an unrelated schema.
-- Prisma owns tables and indexes. Local work uses `prisma migrate dev`; preview/production uses committed `prisma migrate deploy`.
-- Never edit a migration already deployed outside disposable local development; create a forward migration.
-- Keep network calls outside long database transactions.
-- Stripe webhooks are authoritative and signature verified. Paid checkout finalization handles both immediate `checkout.session.completed` and delayed `checkout.session.async_payment_succeeded` events through the same idempotent service path; the authorized order tracker may reconcile a still-pending saved Checkout Session through that same finalizer. Stripe identifiers belong on `Payment`, and refund actor/provider data belongs on `Refund`, not `Order`. S3 writes are server-authorized. Secrets remain server-only.
-- A paid Stripe order must be fully refunded through the existing refund-and-cancel flow before it can be cancelled; never expose direct cancellation for that state.
+- Local seed/import targets only lowercase `zambiel_dev` or `zambiel_test`. Never use `saltnpepper_dev`, another client database, or production. Preserve deployed migrations and add forward migrations.
+- Stock belongs to variants. Changes require ledger entries and idempotency keys. Stripe reserves stock until signature-verified finalization; cancellation/terminal failure restores it exactly once. Paid orders use the refund-and-cancel flow.
+- Delivery: Stripe or COD. Pickup: Stripe or cash at pickup. Server code validates stock, price, promotion, postal zone, fulfillment, and payment.
+- Retail transitions are `CONFIRMED → PROCESSING → OUT_FOR_DELIVERY → DELIVERED` or `CONFIRMED → PROCESSING → READY_FOR_PICKUP → PICKED_UP`, plus cancellation. Legacy enum values remain only during expand/contract migration.
+- Keep network calls outside long database transactions. Secrets and provider identifiers remain server-only.
 
 ## UI and safety
 
-- Keep cards, buttons, forms, dialogs, terminology, and brand treatment consistent across public, admin, and Android.
-- Single-choice option groups use labelled native radio inputs; multi-choice groups use bounded checkboxes.
-- Target WCAG 2.2 AA: semantic HTML, labels/errors, keyboard support, visible focus, contrast, reduced motion, and 44px touch targets.
-- Keep return, reject, cancel, refund, delete, clear, logout, and other dangerous actions visually and spatially separate from routine actions.
-- Dangerous actions require confirmation and a reason when applicable. Refund confirmation shows the exact configured-currency amount.
-- Use Lucide icons on web; do not use emoji as UI icons.
-- Android order details render inside the inset-safe app root, not a separate modal window. Keep its only body scrollable and leave final actions clear of system navigation controls.
-- Android receipts use the selected 58 mm or 80 mm setting end-to-end. Keep the formatter width-aware and compact, pass the width to the native print bridge, and do not reintroduce an in-app receipt preview.
+- Reuse the shared UI system. Target WCAG 2.2 AA, semantic labels/errors, keyboard operation, visible focus, reduced motion, and 44px targets. Single-choice options use labelled native radios.
+- Archive records with history. Separate destructive controls from routine actions and require confirmation/reason where applicable; refund dialogs show exact CHF amounts.
+- Use Lucide icons, no emoji icons. Product/category administration uses dedicated pages.
 
 ## Verification
 
-- Non-trivial pricing, scheduling, transition, authorization, and payment changes need the smallest runnable regression check.
-- Before completion run Prisma validation/generation, tests, type checking, lint, production build, and responsive browser checks.
-- Android hardware printing remains adapter-based until the terminal, printer, connection, and paper width are physically confirmed.
+- Non-trivial money, stock, transitions, authorization, import, and payment changes need a runnable regression check.
+- Before completion run Prisma validation/generation, fresh guarded migration/seed where available, tests, typecheck, lint, build, responsive browser checks, and Android verification. State credential/provider/hardware-dependent checks honestly.
+- Do not claim live Stripe, webhook, refund, destructive admin, concurrent oversell, production provider, or physical printer behavior without direct evidence from the relevant environment.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

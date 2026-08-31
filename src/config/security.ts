@@ -5,7 +5,7 @@ const contentSecurityPolicy = [
   "font-src 'self' data:",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  "frame-src 'self' https://www.google.com",
+  "frame-src 'self'",
   "img-src 'self' blob: data: https:",
   "object-src 'none'",
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,

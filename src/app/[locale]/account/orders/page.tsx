@@ -20,10 +20,11 @@ export default async function AccountOrdersPage({ params }: { params: Promise<{ 
 
   const statusColors: Record<string, string> = {
     CONFIRMED: "bg-blue-600 text-white",
-    PREPARING: "bg-amber-600 text-white",
+    PROCESSING: "bg-amber-600 text-white",
     READY_FOR_PICKUP: "bg-emerald-600 text-white",
     OUT_FOR_DELIVERY: "bg-secondary text-secondary-foreground",
-    COMPLETED: "bg-success text-white",
+    DELIVERED: "bg-success text-white",
+    PICKED_UP: "bg-success text-white",
     CANCELLED: "bg-destructive text-white",
     PAYMENT_PENDING: "bg-muted text-foreground",
   };
@@ -33,7 +34,7 @@ export default async function AccountOrdersPage({ params }: { params: Promise<{ 
       {/* Header */}
       <div className="border-b border-border/60 pb-5">
         <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary">
-          SALTNPPEPPER ACCOUNT
+          ZAMBIEL ACCOUNT
         </span>
         <h1 className="font-display text-4xl font-extrabold text-primary mt-1">
           {de ? "Meine Bestellungen" : "My Orders"}
@@ -60,7 +61,7 @@ export default async function AccountOrdersPage({ params }: { params: Promise<{ 
           </div>
           <div className="pt-2">
             <Link
-              href={`/${locale}/menu`}
+              href={`/${locale}/products`}
               className="inline-flex min-h-11 items-center justify-center rounded-xl bg-secondary px-8 text-sm font-bold text-secondary-foreground shadow hover:bg-secondary-light transition-all"
             >
               {de ? "Jetzt bestellen" : "Order now"}
@@ -70,7 +71,7 @@ export default async function AccountOrdersPage({ params }: { params: Promise<{ 
       ) : (
         <div className="grid gap-6 sm:grid-cols-2">
           {orders.map((order) => (
-            <Link key={order.orderNumber} href={`/${locale}/order/${order.orderNumber}`}>
+            <Link key={order.orderNumber} href={`/${locale}/orders/${order.orderNumber}`}>
               <Card hover className="p-6 h-full flex flex-col justify-between space-y-4 group">
                 <div className="flex items-center justify-between border-b border-border/60 pb-3">
                   <span className="font-display font-extrabold text-lg text-primary group-hover:text-secondary transition-colors">

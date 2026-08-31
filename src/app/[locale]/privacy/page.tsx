@@ -7,7 +7,7 @@ export default async function PrivacyPage({ params }: { params: Promise<{ locale
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8 space-y-8">
       <div className="border-b border-border/60 pb-5">
         <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary">
-          SALTNPPEPPER
+          ZAMBIEL
         </span>
         <h1 className="font-display text-4xl font-extrabold text-primary mt-1">
           {de ? "Datenschutzerklärung" : "Privacy Policy"}
@@ -16,7 +16,7 @@ export default async function PrivacyPage({ params }: { params: Promise<{ locale
 
       <Card className="p-8 space-y-4">
         <p className="text-base text-foreground font-semibold">
-          {de ? "Datenschutz bei SaltNPepper" : "Data privacy at SaltNPepper"}
+          {de ? "Datenschutz bei Zambiel" : "Data privacy at Zambiel"}
         </p>
         <p className="text-sm text-muted leading-relaxed">
           {de

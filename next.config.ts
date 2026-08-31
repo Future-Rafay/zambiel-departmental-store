@@ -19,7 +19,8 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "mydaytogo.com"
+        hostname: "cdn.shopify.com",
+        pathname: "/s/files/**"
       }
     ]
   }

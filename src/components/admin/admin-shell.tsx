@@ -5,9 +5,8 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  AlertTriangle,
+  Archive,
   ChevronDown,
-  Clock,
   ClipboardList,
   ExternalLink,
   Download,
@@ -20,7 +19,9 @@ import {
   ShoppingBag,
   Tag,
   Truck,
-  UtensilsCrossed,
+  Boxes,
+  CreditCard,
+  FolderTree,
   Users,
   X,
   Zap,
@@ -63,9 +64,9 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
       title: "Operations",
       items: [
         { label: "Dashboard", href: "/admin", icon: <LayoutDashboard className="h-4 w-4" /> },
-        { label: "Live Queue", href: "/admin/orders/live", icon: <Zap className="h-4 w-4" /> },
-        { label: "Orders History", href: "/admin/orders", icon: <ShoppingBag className="h-4 w-4" /> },
-        { label: "Availability", href: "/admin/availability", icon: <AlertTriangle className="h-4 w-4" /> },
+        { label: "Order Queue", href: "/admin/orders/live", icon: <Zap className="h-4 w-4" /> },
+        { label: "Orders", href: "/admin/orders", icon: <ShoppingBag className="h-4 w-4" /> },
+        { label: "Inventory", href: "/admin/inventory", icon: <Boxes className="h-4 w-4" /> },
       ],
     },
     ...(isOwner
@@ -73,17 +74,19 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
           {
             title: "Store Management",
             items: [
-              { label: "Menu Products", href: "/admin/menu/products", icon: <UtensilsCrossed className="h-4 w-4" /> },
-              { label: "Opening Hours", href: "/admin/settings/hours", icon: <Clock className="h-4 w-4" /> },
+              { label: "Products", href: "/admin/products", icon: <Archive className="h-4 w-4" /> },
+              { label: "Categories", href: "/admin/categories", icon: <FolderTree className="h-4 w-4" /> },
               { label: "Delivery Zones", href: "/admin/settings/delivery-zones", icon: <Truck className="h-4 w-4" /> },
-              { label: "Promotions & Codes", href: "/admin/promos", icon: <Tag className="h-4 w-4" /> },
+              { label: "Discounts", href: "/admin/discounts", icon: <Tag className="h-4 w-4" /> },
+              { label: "Payments", href: "/admin/payments", icon: <CreditCard className="h-4 w-4" /> },
             ],
           },
           {
             title: "Administration",
             items: [
               { label: "Staff Accounts", href: "/admin/staff", icon: <Users className="h-4 w-4" /> },
-              { label: "General Settings", href: "/admin/settings/general", icon: <Settings className="h-4 w-4" /> },
+              { label: "Customers", href: "/admin/customers", icon: <Users className="h-4 w-4" /> },
+              { label: "Settings", href: "/admin/settings", icon: <Settings className="h-4 w-4" /> },
               { label: "Audit Logs", href: "/admin/audit", icon: <ClipboardList className="h-4 w-4" /> },
             ],
           },
@@ -93,12 +96,12 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
 
   function isActive(href: string) {
     if (href === "/admin") return pathname === "/admin";
-    if (href === "/admin/orders") return pathname === "/admin/orders" || /^\/admin\/orders\/SNP-/i.test(pathname ?? "");
+    if (href === "/admin/orders") return pathname === "/admin/orders" || /^\/admin\/orders\/(?:ZAM|SNP)-/i.test(pathname ?? "");
     return pathname?.startsWith(href);
   }
 
   return (
-    <div className="min-h-dvh bg-[#F6F6F7] text-[#202223]">
+    <div className="min-h-dvh bg-background text-foreground">
       {/* Skip Link */}
       <a
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-white focus:shadow-lg"
@@ -109,7 +112,7 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
 
       <div className="flex min-h-dvh">
         {/* SIDEBAR - DESKTOP */}
-        <aside className="hidden w-64 shrink-0 border-r border-[#E1E3E5] bg-[#EBECEF] lg:flex lg:flex-col justify-between">
+        <aside className="hidden w-64 shrink-0 border-r border-border bg-surface-warm lg:flex lg:flex-col justify-between">
           <div className="p-4 space-y-6">
             {/* Brand Box */}
             <div className="flex items-center justify-between px-2 py-1">
@@ -149,7 +152,7 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
           </div>
 
           {/* Sidebar Footer Link */}
-          <div className="p-4 border-t border-[#E1E3E5]">
+          <div className="border-t border-border p-4">
             <Link
               href={`/${siteConfig.locale}`}
               target="_blank"
@@ -168,7 +171,7 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
         {/* MAIN AREA */}
         <div className="flex flex-1 flex-col min-w-0">
           {/* TOP APP BAR */}
-          <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-[#E1E3E5] bg-white px-4 sm:px-6 shadow-xs">
+          <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-surface px-4 shadow-xs sm:px-6">
             
             {/* Left: Mobile hamburger & title */}
             <div className="flex items-center gap-3">
@@ -182,7 +185,7 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
               </button>
               <div className="flex items-center gap-2">
                 <LayoutDashboard className="h-4 w-4 text-primary hidden sm:block" />
-                <span className="font-display text-lg text-primary">SaltNPepper Admin</span>
+                <span className="font-display text-lg text-primary">Zambiel Admin</span>
                 <span className="hidden sm:inline-block text-xs text-muted">/ Control Center</span>
               </div>
             </div>
@@ -191,7 +194,7 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
             <div className="flex items-center gap-3">
               <div className="group relative hidden sm:block">
                 {staffApkUrl ? <a href={staffApkUrl} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border/80 bg-surface-warm/70 px-3 text-xs font-bold text-primary transition-all hover:border-secondary hover:bg-surface-warm" aria-describedby="apk-download-help"><Download aria-hidden="true" className="h-3.5 w-3.5" /><span>Download staff app</span></a> : <button type="button" disabled className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border/80 bg-surface-warm/70 px-3 text-xs font-bold text-muted"><Download aria-hidden="true" className="h-3.5 w-3.5" /><span>Staff app unavailable</span></button>}
-                <span id="apk-download-help" role="tooltip" className="pointer-events-none absolute right-0 top-12 z-50 hidden w-64 rounded-lg bg-[#202223] p-3 text-xs font-medium leading-5 text-white shadow-xl group-hover:block group-focus-within:block">{staffApkUrl ? "Downloads the signed SaltNPepper staff Android app." : "A signed production APK has not been published yet."}</span>
+                <span id="apk-download-help" role="tooltip" className="pointer-events-none absolute right-0 top-12 z-50 hidden w-64 rounded-lg bg-[#202223] p-3 text-xs font-medium leading-5 text-white shadow-xl group-hover:block group-focus-within:block">{staffApkUrl ? "Downloads the signed Zambiel staff Android app." : "A signed production APK has not been published yet."}</span>
               </div>
 
               {/* FAR-RIGHT USER PROFILE DROPDOWN */}
@@ -260,9 +263,9 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
                 className="fixed inset-0 bg-black/50 backdrop-blur-sm"
                 onClick={() => setMobileSidebarOpen(false)}
               />
-              <div className="relative flex w-72 max-w-full flex-col bg-[#EBECEF] p-4 shadow-2xl">
-                <div className="flex items-center justify-between border-b border-[#E1E3E5] pb-3">
-                  <span className="font-display text-primary">SaltNPepper Admin Menu</span>
+              <div className="relative flex w-72 max-w-full flex-col bg-surface-warm p-4 shadow-2xl">
+                <div className="flex items-center justify-between border-b border-border pb-3">
+                  <span className="font-display text-primary">Zambiel Admin Menu</span>
                   <button
                     type="button"
                     onClick={() => setMobileSidebarOpen(false)}
@@ -297,7 +300,7 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
                     </div>
                   ))}
                 </nav>
-                <div className="pt-3 border-t border-[#E1E3E5]">
+                <div className="border-t border-border pt-3">
                   <Link
                     href={`/${siteConfig.locale}`}
                     target="_blank"

@@ -11,7 +11,7 @@ test("staff allowed actions keep refund-required Stripe orders out of routine ca
       fulfillmentType: "DELIVERY",
       payment: { provider: "STRIPE", status: "PAID" },
     }),
-    { nextStatus: "PREPARING", canConfirmCash: false, canCancel: false, canRefundAndCancel: true },
+    { nextStatus: "PROCESSING", canConfirmCash: false, canCancel: false, canRefundAndCancel: true },
   );
 });
 
@@ -22,19 +22,19 @@ test("staff allowed actions expose routine cash confirmation and cancellation", 
       fulfillmentType: "PICKUP",
       payment: { provider: "CASH", status: "PENDING" },
     }),
-    { nextStatus: "PREPARING", canConfirmCash: true, canCancel: true, canRefundAndCancel: false },
+    { nextStatus: "PROCESSING", canConfirmCash: true, canCancel: true, canRefundAndCancel: false },
   );
 });
 
 
 test("staff order status filter accepts known values and rejects unknown input", () => {
   assert.equal(staffOrderFilterSchema.parse(undefined), undefined);
-  assert.equal(staffOrderFilterSchema.parse("PREPARING"), "PREPARING");
+  assert.equal(staffOrderFilterSchema.parse("PROCESSING"), "PROCESSING");
   assert.throws(() => staffOrderFilterSchema.parse("NOT_A_STATUS"));
 });
 
 test("staff order DTO exposes presentation data without internal identifiers or payment secrets", async () => {
-  process.env.DATABASE_URL = "mysql://test:test@127.0.0.1:3306/saltnpepper_test";
+  process.env.DATABASE_URL = "mysql://test:test@127.0.0.1:3306/zambiel_test";
   process.env.AWS_REGION = "eu-central-1";
   process.env.AWS_ACCESS_KEY_ID = "test";
   process.env.AWS_SECRET_ACCESS_KEY = "test";
@@ -52,8 +52,6 @@ test("staff order DTO exposes presentation data without internal identifiers or 
     customerPhone: "+41000000000",
     fulfillmentType: "DELIVERY",
     paymentMethod: "STRIPE",
-    scheduledFor: null,
-    estimatedReadyAt: now,
     note: "Ring bell",
     subtotalRappen: 3000,
     discountRappen: 0,
@@ -78,7 +76,7 @@ test("staff order DTO exposes presentation data without internal identifiers or 
       unitPriceRappen: 1500,
       quantity: 2,
       lineSubtotalRappen: 3000,
-      product: { imageKey: "SaltNPepper/products/burger.webp" },
+      product: { imageKey: "Zambiel/products/item.webp" },
       options: [{ nameDeSnapshot: "Scharf", nameEnSnapshot: "Spicy", priceDeltaRappen: 0 }],
     }],
     statusEvents: [{ fromStatus: "PAYMENT_PENDING", toStatus: "CONFIRMED", reason: null, note: null, createdAt: now, actor: { name: "Owner" } }],
@@ -87,8 +85,8 @@ test("staff order DTO exposes presentation data without internal identifiers or 
     stripePaymentIntentId: "must-not-leak",
   } as never);
 
-  assert.equal(dto.orderNumber, "SNP-000042");
-  assert.equal(dto.items[0]?.imageUrl, "https://media.example.com/SaltNPepper/products/burger.webp");
+  assert.equal(dto.orderNumber, "ZAM-000042");
+  assert.equal(dto.items[0]?.imageUrl, "https://media.example.com/Zambiel/products/item.webp");
   assert.equal(dto.remainingRefundableRappen, 3000);
   assert.equal(dto.statusEvents[0]?.actorName, "Owner");
   assert.equal("id" in dto, false);

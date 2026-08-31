@@ -1,16 +1,13 @@
-import type { Locale } from "@/generated/prisma/enums";
 import { cache } from "react";
 import { buildDeliveryAnnouncement } from "@/lib/delivery-announcement";
 import { prisma } from "@/server/db";
-import { zurichParts } from "@/lib/zurich-time";
 import { resolvePublicImageUrl } from "@/server/storage/s3";
-import { restaurantContent } from "@/content/restaurant";
+import { storeConfig } from "@/config/store";
 
 export const getPublicConfig = cache(async function getPublicConfig() {
-  const [site, fulfillment, hours, deliveryZones] = await Promise.all([
+  const [site, fulfillment, deliveryZones] = await Promise.all([
     prisma.siteSettings.findUniqueOrThrow({ where: { id: 1 } }),
     prisma.fulfillmentSettings.findUniqueOrThrow({ where: { id: 1 } }),
-    prisma.openingWindow.findMany({ where: { active: true }, orderBy: [{ weekday: "asc" }, { sortOrder: "asc" }] }),
     prisma.deliveryZone.findMany({
       where: { active: true },
       orderBy: { sortOrder: "asc" },
@@ -36,9 +33,9 @@ export const getPublicConfig = cache(async function getPublicConfig() {
       address: [site.street, site.postalCode, site.city].filter(Boolean).join(", "),
       primaryColor: site.primaryColor,
       secondaryColor: site.secondaryColor,
-      logoKey: resolvePublicImageUrl(site.logoKey) ?? restaurantContent.logo,
-      compactLogoKey: resolvePublicImageUrl(site.compactLogoKey) ?? restaurantContent.compactLogo,
-      heroImageKey: resolvePublicImageUrl(site.heroImageKey) ?? restaurantContent.heroImage,
+      logoKey: resolvePublicImageUrl(site.logoKey) ?? storeConfig.brand.logo,
+      compactLogoKey: resolvePublicImageUrl(site.compactLogoKey) ?? storeConfig.brand.compactLogo,
+      heroImageKey: resolvePublicImageUrl(site.heroImageKey),
       heroTitleDe: site.heroTitleDe,
       heroTitleEn: site.heroTitleEn,
       heroSubtitleDe: site.heroSubtitleDe,
@@ -54,8 +51,6 @@ export const getPublicConfig = cache(async function getPublicConfig() {
     fulfillment: {
       deliveryEnabled: fulfillment.deliveryEnabled,
       pickupEnabled: fulfillment.pickupEnabled,
-      asapEnabled: fulfillment.asapEnabled,
-      scheduledEnabled: fulfillment.scheduledEnabled,
     },
     announcement:
       site.announcementActive && announcementInput
@@ -64,123 +59,5 @@ export const getPublicConfig = cache(async function getPublicConfig() {
             en: buildDeliveryAnnouncement(announcementInput, "en"),
           }
         : null,
-    hours,
   };
 });
-
-export async function getPublicMenu(locale: Locale, at = new Date()) {
-  const current = zurichParts(at);
-  const categories = await prisma.category.findMany({
-    where: { active: true, deletedAt: null },
-    orderBy: { sortOrder: "asc" },
-    include: {
-      products: {
-        where: { active: true, deletedAt: null },
-        orderBy: { sortOrder: "asc" },
-        include: {
-          variants: { where: { active: true, deletedAt: null }, orderBy: { sortOrder: "asc" } },
-          optionGroups: {
-            where: { active: true, deletedAt: null },
-            orderBy: { sortOrder: "asc" },
-            include: { choices: { where: { active: true, deletedAt: null }, orderBy: { sortOrder: "asc" } } },
-          },
-          availabilityWindows: true,
-          suggestions: {
-            orderBy: { sortOrder: "asc" },
-            include: {
-              suggestedVariant: {
-                include: {
-                  product: {
-                    include: {
-                      availabilityWindows: true,
-                      optionGroups: { where: { active: true, deletedAt: null } },
-                    },
-                  },
-                },
-              },
-            },
-          },
-          allergens: { include: { allergen: true } },
-        },
-      },
-    },
-  });
-
-  return categories.map((category) => ({
-    id: category.id,
-    slug: category.slug,
-    name: locale === "DE" ? category.nameDe : category.nameEn,
-    description: locale === "DE" ? category.descriptionDe : category.descriptionEn,
-    products: category.products.filter((product) => product.variants.length > 0).map((product) => {
-      const timedAvailable =
-        product.availabilityWindows.length === 0 ||
-        product.availabilityWindows.some(
-          (window) =>
-            window.weekday === current.weekday &&
-            current.minute >= window.startMinute &&
-            current.minute < window.endMinute,
-        );
-      return {
-        id: product.id,
-        slug: product.slug,
-        name: locale === "DE" ? product.nameDe : product.nameEn,
-        description: locale === "DE" ? product.descriptionDe : product.descriptionEn,
-        imageKey: resolvePublicImageUrl(product.imageKey),
-        available: product.available && timedAvailable,
-        isHalal: product.isHalal,
-        isVegetarian: product.isVegetarian,
-        isVegan: product.isVegan,
-        spiceLevel: product.spiceLevel,
-        allergens: product.allergens.map(({ allergen }) => ({
-          code: allergen.code,
-          name: locale === "DE" ? allergen.nameDe : allergen.nameEn,
-        })),
-        variants: product.variants.map((variant) => ({
-          id: variant.id,
-          name: locale === "DE" ? variant.nameDe : variant.nameEn,
-          priceRappen: variant.priceRappen,
-        })),
-        suggestedItems: product.suggestions.flatMap(({ suggestedVariant }) => {
-          const suggestedProduct = suggestedVariant.product;
-          const timedAvailable =
-            suggestedProduct.availabilityWindows.length === 0 ||
-            suggestedProduct.availabilityWindows.some(
-              (window) =>
-                window.weekday === current.weekday &&
-                current.minute >= window.startMinute &&
-                current.minute < window.endMinute,
-            );
-          if (
-            !suggestedVariant.active ||
-            suggestedVariant.deletedAt ||
-            !suggestedProduct.active ||
-            suggestedProduct.deletedAt ||
-            !suggestedProduct.available ||
-            !timedAvailable ||
-            suggestedProduct.optionGroups.some((group) => group.minimumSelections > 0)
-          ) return [];
-          return [{
-            productId: suggestedProduct.id,
-            productName: locale === "DE" ? suggestedProduct.nameDe : suggestedProduct.nameEn,
-            variantId: suggestedVariant.id,
-            variantName: locale === "DE" ? suggestedVariant.nameDe : suggestedVariant.nameEn,
-            priceRappen: suggestedVariant.priceRappen,
-            imageKey: resolvePublicImageUrl(suggestedProduct.imageKey),
-          }];
-        }),
-        optionGroups: product.optionGroups.map((group) => ({
-          id: group.id,
-          name: locale === "DE" ? group.nameDe : group.nameEn,
-          required: group.minimumSelections > 0,
-          minimumSelections: group.minimumSelections,
-          maximumSelections: group.maximumSelections,
-          choices: group.choices.map((choice) => ({
-            id: choice.id,
-            name: locale === "DE" ? choice.nameDe : choice.nameEn,
-            priceDeltaRappen: choice.priceDeltaRappen,
-          })),
-        })),
-      };
-    }),
-  }));
-}

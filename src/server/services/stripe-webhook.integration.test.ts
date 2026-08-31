@@ -6,17 +6,16 @@ import { siteConfig } from "@/config/site";
 import { formatOrderNumber } from "@/lib/orders";
 import { createOrderSchema, quoteSchema } from "@/server/validators/order";
 
-const cart = [{ variantId: "variant", choiceIds: [], quantity: 1 }];
+const cart = [{ variantId: "variant", quantity: 1 }];
 
 test("checkout schemas require delivery details and compatible payment", () => {
-  const quote = quoteSchema.safeParse({ items: cart, fulfillmentType: "DELIVERY", scheduledFor: null });
+  const quote = quoteSchema.safeParse({ items: cart, fulfillmentType: "DELIVERY" });
   assert.equal(quote.success, false);
   assert.deepEqual(quote.error?.issues[0]?.path, ["postcode"]);
 
   const order = createOrderSchema.safeParse({
     items: cart,
     fulfillmentType: "DELIVERY",
-    scheduledFor: null,
     postcode: "8154",
     checkoutKey: crypto.randomUUID(),
     locale: siteConfig.locale,
@@ -30,7 +29,7 @@ test("checkout schemas require delivery details and compatible payment", () => {
   assert.deepEqual(order.error?.issues.map((issue) => issue.path), [["address", "postalCode"], ["paymentMethod"]]);
 });
 
-test("Stripe events are replayable, delayed payments settle, failures release slots, and cash creates activity", async (context) => {
+test("Stripe events are replayable, delayed payments settle, failures cancel, and cash creates activity", async (context) => {
   const testDatabaseUrl = process.env.TEST_DATABASE_URL;
   if (!testDatabaseUrl || testDatabaseUrl === process.env.DATABASE_URL) {
     context.skip("TEST_DATABASE_URL must point to a separate isolated database.");
@@ -48,10 +47,9 @@ test("Stripe events are replayable, delayed payments settle, failures release sl
   const suffix = crypto.randomUUID();
   const eventIds: string[] = [];
   const orderIds: bigint[] = [];
-  let slotId: string | undefined;
   let actorId: string | undefined;
 
-  const createStripeOrder = async (sessionId: string, slot?: string) => {
+  const createStripeOrder = async (sessionId: string) => {
     const order = await prisma.order.create({
       data: {
         checkoutKeyHash: crypto.randomUUID().replaceAll("-", "").padEnd(64, "0"),
@@ -59,10 +57,9 @@ test("Stripe events are replayable, delayed payments settle, failures release sl
         customerName: "Webhook Test",
         customerEmail: `webhook-${suffix}@example.com`,
         customerPhone: "123456",
-        fulfillmentType: slot ? "DELIVERY" : "PICKUP",
+        fulfillmentType: "PICKUP",
         status: "PAYMENT_PENDING",
         paymentMethod: "STRIPE",
-        slotId: slot,
         subtotalRappen: 1000,
         totalRappen: 1000,
         payment: { create: { provider: "STRIPE", status: "PENDING", amountRappen: 1000, stripeCheckoutSessionId: sessionId } },
@@ -115,16 +112,13 @@ test("Stripe events are replayable, delayed payments settle, failures release sl
     assert.equal(settled.payment?.stripePaymentIntentId, `pi_${suffix}`);
     assert.equal(settled.statusEvents.filter((event) => event.reason === "STRIPE_PAID").length, 1);
 
-    const slot = await prisma.fulfillmentSlot.create({ data: { fulfillmentType: "DELIVERY", startsAt: new Date(Date.now() + 86_400_000), capacity: 1, bookedCount: 1 } });
-    slotId = slot.id;
-    const failedOrder = await createStripeOrder(`cs_failed_${suffix}`, slot.id);
+    const failedOrder = await createStripeOrder(`cs_failed_${suffix}`);
     const failedId = `evt_failed_${suffix}`;
     eventIds.push(failedId);
     await processStripeEvent(checkoutEvent(failedId, "checkout.session.async_payment_failed", `cs_failed_${suffix}`, failedOrder.id, "unpaid"));
     const failed = await prisma.order.findUniqueOrThrow({ where: { id: failedOrder.id }, include: { statusEvents: true } });
     assert.equal(failed.status, "CANCELLED");
     assert.equal(failed.statusEvents.at(-1)?.reason, "STRIPE_PAYMENT_FAILED");
-    assert.equal((await prisma.fulfillmentSlot.findUniqueOrThrow({ where: { id: slot.id } })).bookedCount, 0);
 
     const actor = await prisma.user.create({ data: { email: `cash-${suffix}@example.com`, role: "OWNER" } });
     actorId = actor.id;
@@ -155,7 +149,6 @@ test("Stripe events are replayable, delayed payments settle, failures release sl
     await prisma.auditLog.deleteMany({ where: { entityType: "Order", entityId: { in: orderIds.map(String) } } });
     await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
     await prisma.stripeWebhookEvent.deleteMany({ where: { eventId: { in: eventIds } } });
-    if (slotId) await prisma.fulfillmentSlot.deleteMany({ where: { id: slotId } });
     if (actorId) await prisma.user.deleteMany({ where: { id: actorId } });
     await prisma.$disconnect();
   }
