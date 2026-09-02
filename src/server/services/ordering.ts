@@ -6,11 +6,11 @@ import type { Locale, OrderStatus } from "@/generated/prisma/enums";
 import { getStripeEnv } from "@/config/env";
 import { allocateDiscount, formatOrderNumber, hashToken, nextOrderStatus, parseOrderNumber, promoDiscount, publicOrderAddress } from "@/lib/orders";
 import { prisma } from "@/server/db";
-import { sendEmail } from "@/server/email/client";
 import { orderConfirmationEmail, orderStatusEmail } from "@/server/email/templates";
 import { getStripe } from "@/server/payments/stripe";
 import { resolveProductMediaUrl, resolvePublicImageUrl } from "@/server/storage/s3";
 import { syncStripeRefund } from "@/server/services/admin";
+import { sendOrderNotification } from "@/server/services/order-notifications";
 import type { CreateOrderInput, QuoteInput } from "@/server/validators/order";
 
 type Db = Prisma.TransactionClient | typeof prisma;
@@ -131,30 +131,6 @@ export async function calculateQuote(input: QuoteInput, db: Db = prisma, userId?
     promo,
     delivery,
   };
-}
-
-type EmailContent = { subject: string; text: string; html: string };
-
-async function sendOrderNotification(orderId: bigint, kind: string, email: string, message: EmailContent) {
-  const deduplicationKey = `order:${orderId}:${kind}:email`;
-  const delivery = await prisma.notificationDelivery.upsert({
-    where: { deduplicationKey },
-    create: { orderId, channel: "EMAIL", kind, recipient: email, deduplicationKey },
-    update: {},
-  });
-  if (delivery.status === "SENT") return;
-  try {
-    const result = await sendEmail({ to: email, ...message });
-    await prisma.notificationDelivery.update({
-      where: { id: delivery.id },
-      data: { status: "SENT", attemptCount: { increment: 1 }, providerId: result?.id, sentAt: new Date(), lastError: null },
-    });
-  } catch (error) {
-    await prisma.notificationDelivery.update({
-      where: { id: delivery.id },
-      data: { status: "FAILED", attemptCount: { increment: 1 }, lastError: error instanceof Error ? error.message : "Email failed" },
-    });
-  }
 }
 
 function createdOrderDto(order: { id: bigint; status: OrderStatus; totalRappen: number }, trackingToken: string) {
@@ -585,16 +561,18 @@ export async function advanceOrder(orderNumber: string, expectedVersion: number,
 }
 
 export async function setProductAvailability(productId: string, available: boolean, actorUserId: string) {
-  const product = await prisma.product.update({ where: { id: productId }, data: { available } });
-  await prisma.auditLog.create({
-    data: {
-      actorUserId,
-      action: available ? "PRODUCT_AVAILABLE" : "PRODUCT_SOLD_OUT",
-      entityType: "Product",
-      entityId: product.id,
-    },
+  return prisma.$transaction(async (tx) => {
+    const product = await tx.product.update({ where: { id: productId }, data: { available } });
+    await tx.auditLog.create({
+      data: {
+        actorUserId,
+        action: available ? "PRODUCT_AVAILABLE" : "PRODUCT_SOLD_OUT",
+        entityType: "Product",
+        entityId: product.id,
+      },
+    });
+    return { id: product.id, available: product.available };
   });
-  return { id: product.id, available: product.available };
 }
 
 export async function confirmCashPayment(orderNumber: string, actorUserId: string) {
