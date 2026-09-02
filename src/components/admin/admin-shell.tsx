@@ -1,5 +1,6 @@
 "use client";
 
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -9,7 +10,6 @@ import {
   ChevronDown,
   ClipboardList,
   ExternalLink,
-  Download,
   Globe,
   LayoutDashboard,
   LogOut,
@@ -36,7 +36,42 @@ type AdminUser = {
   role: "OWNER" | "STAFF";
 };
 
-export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; children: ReactNode; staffApkUrl?: string }) {
+type NavGroup = { title: string; items: Array<{ label: string; href: string; icon: ReactNode }> };
+
+function isActive(pathname: string | null, href: string) {
+  if (href === "/admin") return pathname === "/admin";
+  if (href === "/admin/orders") return pathname === "/admin/orders" || /^\/admin\/orders\/(?:ZAM|SNP)-/i.test(pathname ?? "");
+  return pathname?.startsWith(href);
+}
+
+function AdminNavigation({ groups, pathname, mobile = false, onNavigate }: { groups: NavGroup[]; pathname: string | null; mobile?: boolean; onNavigate?: () => void }) {
+  return (
+    <nav aria-label="Admin navigation" className={mobile ? "mt-4 flex-1 space-y-4 overflow-y-auto" : "space-y-5"}>
+      {groups.map((group) => (
+        <div key={group.title} className="space-y-1">
+          <p className={`${mobile ? "px-2 text-[10px]" : "px-3 text-[11px]"} font-bold uppercase tracking-wider text-muted`}>{group.title}</p>
+          {group.items.map((item) => {
+            const active = isActive(pathname, item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onNavigate}
+                aria-current={active ? "page" : undefined}
+                className={`flex min-h-11 items-center rounded-lg font-semibold ${mobile ? "gap-2 px-3 py-2 text-sm" : "gap-2.5 px-3 py-2 text-sm transition-colors"} ${active ? "border border-border/50 bg-white text-primary shadow-xs" : "text-[#4A4A4A] hover:bg-black/5 hover:text-foreground"}`}
+              >
+                <span aria-hidden="true" className={active ? "text-primary" : "text-muted"}>{item.icon}</span>
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      ))}
+    </nav>
+  );
+}
+
+export function AdminShell({ user, children }: { user: AdminUser; children: ReactNode }) {
   const pathname = usePathname();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
@@ -59,7 +94,7 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
 
   const isOwner = user.role === "OWNER";
 
-  const navGroups = [
+  const navGroups: NavGroup[] = [
     {
       title: "Operations",
       items: [
@@ -94,13 +129,8 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
       : []),
   ];
 
-  function isActive(href: string) {
-    if (href === "/admin") return pathname === "/admin";
-    if (href === "/admin/orders") return pathname === "/admin/orders" || /^\/admin\/orders\/(?:ZAM|SNP)-/i.test(pathname ?? "");
-    return pathname?.startsWith(href);
-  }
-
   return (
+    <DialogPrimitive.Root open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
     <div className="min-h-dvh bg-background text-foreground">
       {/* Skip Link */}
       <a
@@ -123,32 +153,7 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
             </div>
 
             {/* Navigation Sections */}
-            <nav className="space-y-5">
-              {navGroups.map((group) => (
-                <div key={group.title} className="space-y-1">
-                  <p className="px-3 text-[11px] font-bold text-muted uppercase tracking-wider">
-                    {group.title}
-                  </p>
-                  {group.items.map((item) => {
-                    const active = isActive(item.href);
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
-                          active
-                            ? "bg-white text-primary shadow-xs border border-border/50"
-                            : "text-[#4A4A4A] hover:bg-black/5 hover:text-foreground"
-                        }`}
-                      >
-                        <span className={active ? "text-primary" : "text-muted"}>{item.icon}</span>
-                        <span>{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              ))}
-            </nav>
+            <AdminNavigation groups={navGroups} pathname={pathname} />
           </div>
 
           {/* Sidebar Footer Link */}
@@ -175,14 +180,15 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
             
             {/* Left: Mobile hamburger & title */}
             <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-surface text-foreground hover:bg-surface-warm lg:hidden"
-                aria-label="Toggle admin sidebar"
-              >
-                <Menu className="h-5 w-5" />
-              </button>
+              <DialogPrimitive.Trigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-border bg-surface text-foreground hover:bg-surface-warm lg:hidden"
+                  aria-label="Open admin navigation"
+                >
+                  <Menu aria-hidden="true" className="h-5 w-5" />
+                </button>
+              </DialogPrimitive.Trigger>
               <div className="flex items-center gap-2">
                 <LayoutDashboard className="h-4 w-4 text-primary hidden sm:block" />
                 <span className="font-display text-lg text-primary">Zambiel Admin</span>
@@ -192,11 +198,6 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
 
             {/* Right Action Cluster */}
             <div className="flex items-center gap-3">
-              <div className="group relative hidden sm:block">
-                {staffApkUrl ? <a href={staffApkUrl} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border/80 bg-surface-warm/70 px-3 text-xs font-bold text-primary transition-all hover:border-secondary hover:bg-surface-warm" aria-describedby="apk-download-help"><Download aria-hidden="true" className="h-3.5 w-3.5" /><span>Download staff app</span></a> : <button type="button" disabled className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border/80 bg-surface-warm/70 px-3 text-xs font-bold text-muted"><Download aria-hidden="true" className="h-3.5 w-3.5" /><span>Staff app unavailable</span></button>}
-                <span id="apk-download-help" role="tooltip" className="pointer-events-none absolute right-0 top-12 z-50 hidden w-64 rounded-lg bg-[#202223] p-3 text-xs font-medium leading-5 text-white shadow-xl group-hover:block group-focus-within:block">{staffApkUrl ? "Downloads the signed Zambiel staff Android app." : "A signed production APK has not been published yet."}</span>
-              </div>
-
               {/* FAR-RIGHT USER PROFILE DROPDOWN */}
               <div className="relative" ref={dropdownRef}>
                 <button
@@ -257,49 +258,19 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
           </header>
 
           {/* MOBILE SIDEBAR DRAWER */}
-          {mobileSidebarOpen && (
-            <div className="fixed inset-0 z-50 flex lg:hidden">
-              <div
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-                onClick={() => setMobileSidebarOpen(false)}
-              />
-              <div className="relative flex w-72 max-w-full flex-col bg-surface-warm p-4 shadow-2xl">
+          <DialogPrimitive.Portal>
+            <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden" />
+            <DialogPrimitive.Content className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[calc(100vw-2rem)] flex-col bg-surface-warm p-4 shadow-2xl focus:outline-none lg:hidden">
                 <div className="flex items-center justify-between border-b border-border pb-3">
-                  <span className="font-display text-primary">Zambiel Admin Menu</span>
-                  <button
-                    type="button"
-                    onClick={() => setMobileSidebarOpen(false)}
-                    className="rounded-lg p-1 text-muted hover:text-foreground hover:bg-black/5"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
+                  <DialogPrimitive.Title className="font-display text-primary">Zambiel Admin Menu</DialogPrimitive.Title>
+                  <DialogPrimitive.Description className="sr-only">Navigate Zambiel administration.</DialogPrimitive.Description>
+                  <DialogPrimitive.Close asChild>
+                    <button type="button" className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted hover:bg-black/5 hover:text-foreground" aria-label="Close admin navigation">
+                      <X aria-hidden="true" className="h-5 w-5" />
+                    </button>
+                  </DialogPrimitive.Close>
                 </div>
-                <nav className="mt-4 space-y-4 flex-1 overflow-y-auto">
-                  {navGroups.map((group) => (
-                    <div key={group.title} className="space-y-1">
-                      <p className="px-2 text-[10px] font-bold text-muted uppercase tracking-wider">
-                        {group.title}
-                      </p>
-                      {group.items.map((item) => (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setMobileSidebarOpen(false)}
-                          className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold ${
-                            isActive(item.href)
-                              ? "bg-white text-primary"
-                              : "text-foreground hover:bg-black/5"
-                          }`}
-                        >
-                          <span className={isActive(item.href) ? "text-primary" : "text-muted"}>
-                            {item.icon}
-                          </span>
-                          <span>{item.label}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  ))}
-                </nav>
+                <AdminNavigation groups={navGroups} pathname={pathname} mobile onNavigate={() => setMobileSidebarOpen(false)} />
                 <div className="border-t border-border pt-3">
                   <Link
                     href={`/${siteConfig.locale}`}
@@ -312,9 +283,8 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
                     <ExternalLink className="h-3 w-3 text-muted" />
                   </Link>
                 </div>
-              </div>
-            </div>
-          )}
+            </DialogPrimitive.Content>
+          </DialogPrimitive.Portal>
 
           {/* PAGE CONTENT */}
           <main id="admin-main" tabIndex={-1} className="flex-1 p-4 sm:p-6 lg:p-8">
@@ -323,5 +293,6 @@ export function AdminShell({ user, children, staffApkUrl }: { user: AdminUser; c
         </div>
       </div>
     </div>
+    </DialogPrimitive.Root>
   );
 }
