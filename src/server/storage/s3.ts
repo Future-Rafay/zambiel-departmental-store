@@ -46,7 +46,7 @@ export async function createImageUploadUrl(
 ) {
   const values = uploadInputSchema.parse(input);
   const env = getS3Env();
-  const key = `${storeConfig.identity.storagePrefix}/${values.scope}/${randomUUID()}.${extensions[values.contentType]}`;
+  const key = `uploads/${storeConfig.identity.storagePrefix}/${values.scope}/${randomUUID()}.${extensions[values.contentType]}`;
   const command = new PutObjectCommand({
     Bucket: env.S3_BUCKET_NAME,
     Key: key,
@@ -76,7 +76,7 @@ export async function importExternalProductImage(url: string) {
   if (!body.length || body.length > 10 * 1024 * 1024)
     throw new Error("Image size is invalid");
   const contentHash = createHash("sha256").update(body).digest("hex");
-  const key = `${storeConfig.identity.storagePrefix}/products/import/${contentHash}.${extensions[contentType]}`;
+  const key = `uploads/${storeConfig.identity.storagePrefix}/products/import/${contentHash}.${extensions[contentType]}`;
   const env = getS3Env();
   await getS3Client().send(
     new PutObjectCommand({

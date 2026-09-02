@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { RetailProductCard } from "@/components/site/retail-product-card";
 import type { StoreLocale } from "@/config/store";
+import { parsePriceRappen } from "@/lib/catalog-display";
 import { getRetailCategories, listRetailProducts } from "@/server/services/retail-catalog";
 
 type Params = Record<string, string | string[] | undefined>;
@@ -43,8 +44,6 @@ export default async function ProductsPage({ params, searchParams }: { params: P
   const locale: StoreLocale = (await params).locale === "en" ? "en" : "de";
   const values = await searchParams;
   const de = locale === "de";
-  const min = Number(one(values.min));
-  const max = Number(one(values.max));
   const sortValue = one(values.sort);
   const sort = ["featured", "newest", "price-asc", "price-desc", "name"].includes(sortValue ?? "")
     ? sortValue as "featured" | "newest" | "price-asc" | "price-desc" | "name"
@@ -56,8 +55,8 @@ export default async function ProductsPage({ params, searchParams }: { params: P
       categorySlug: one(values.category),
       query: one(values.q),
       tag: one(values.tag),
-      minPriceRappen: Number.isFinite(min) && min >= 0 ? Math.round(min * 100) : undefined,
-      maxPriceRappen: Number.isFinite(max) && max >= 0 ? Math.round(max * 100) : undefined,
+      minPriceRappen: parsePriceRappen(one(values.min)),
+      maxPriceRappen: parsePriceRappen(one(values.max)),
       availableOnly: one(values.available) === "1",
       sort,
       page: Number(one(values.page)) || 1,

@@ -15,15 +15,14 @@ export function RecentlyViewedTracker({ slug }: { slug: string }) {
   return null;
 }
 
-export function ProductShare({ name, imageUrl, locale, url }: { name: string; imageUrl: string | null; locale: "de" | "en"; url: string }) {
+export function ProductShare({ name, locale, url }: { name: string; locale: "de" | "en"; url: string }) {
   const [message, setMessage] = useState("");
   const encodedUrl = encodeURIComponent(url);
   const encodedName = encodeURIComponent(name);
-  const image = imageUrl ? encodeURIComponent(new URL(imageUrl, url).href) : "";
   const links = [
     { href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`, label: "Facebook", Icon: FaFacebookF },
     { href: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedName}`, label: "X", Icon: FaXTwitter },
-    { href: `https://pinterest.com/pin/create/button/?url=${encodedUrl}&media=${image}&description=${encodedName}`, label: "Pinterest", Icon: FaPinterestP },
+    { href: `https://pinterest.com/pin/create/button/?url=${encodedUrl}&description=${encodedName}`, label: "Pinterest", Icon: FaPinterestP },
     { href: `https://wa.me/?text=${encodedName}%20${encodedUrl}`, label: "WhatsApp", Icon: FaWhatsapp },
   ];
   const de = locale === "de";
