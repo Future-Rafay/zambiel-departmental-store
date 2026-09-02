@@ -17,10 +17,12 @@ export function ContactForm({
   const de = locale === "de";
   const request = kind === "product_request";
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [errorCode, setErrorCode] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus("sending");
+    setErrorCode("");
     const form = event.currentTarget;
     const data = Object.fromEntries(new FormData(form));
     const response = await fetch("/api/v1/public/contact", {
@@ -29,6 +31,8 @@ export function ContactForm({
       body: JSON.stringify({ ...data, kind, locale }),
     }).catch(() => null);
     if (!response?.ok) {
+      const body = await response?.json().catch(() => null);
+      setErrorCode(typeof body?.error === "string" ? body.error : "");
       setStatus("error");
       return;
     }
@@ -94,7 +98,11 @@ export function ContactForm({
           {status === "sent"
             ? de ? "Nachricht gesendet. Wir melden uns bald." : "Message sent. We will reply soon."
             : status === "error"
-              ? de ? "Senden fehlgeschlagen. Bitte versuchen Sie es erneut." : "Sending failed. Please try again."
+              ? errorCode === "RATE_LIMITED"
+                ? de ? "Zu viele Anfragen. Bitte versuchen Sie es später erneut." : "Too many requests. Please try again later."
+                : errorCode === "EMAIL_NOT_CONFIGURED"
+                  ? de ? "E-Mail ist derzeit nicht verfügbar. Bitte versuchen Sie es später erneut." : "Email is currently unavailable. Please try again later."
+                  : de ? "Senden fehlgeschlagen. Bitte versuchen Sie es erneut." : "Sending failed. Please try again."
               : ""}
         </p>
       </div>

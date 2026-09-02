@@ -741,3 +741,14 @@ model AuditLog {
   @@index([requestCorrelationId], map: "AuditLog_requestCorrelationId_idx")
   @@map("auditlog")
 }
+
+model PublicRequestRateLimit {
+  key             String   @id @db.VarChar(80)
+  count           Int      @default(0)
+  windowStartedAt DateTime
+  expiresAt       DateTime
+  updatedAt       DateTime @updatedAt
+
+  @@index([expiresAt], map: "PublicRequestRateLimit_expiresAt_idx")
+  @@map("publicrequestratelimit")
+}

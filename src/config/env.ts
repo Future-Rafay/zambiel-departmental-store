@@ -83,6 +83,10 @@ export function getAuthEnv() {
   return authSchema.parse(process.env);
 }
 
+export function getRateLimitSecret() {
+  return z.string().min(16).parse(process.env.AUTH_SECRET);
+}
+
 export function getS3Env() {
   return s3Schema.parse(process.env);
 }
