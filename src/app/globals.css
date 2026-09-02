@@ -20,8 +20,8 @@
   --brand-ring: #d6a84b;
   --radius-control: 0.625rem;
   --radius-card: 0.875rem;
-  --font-display: var(--font-bricolage), "Arial", sans-serif;
-  --font-body: var(--font-manrope), "Segoe UI", sans-serif;
+  --font-display: var(--font-inter), "Segoe UI", sans-serif;
+  --font-body: var(--font-archivo), "Segoe UI", sans-serif;
 }
 
 @theme inline {
@@ -55,6 +55,15 @@ html {
   color: var(--brand-foreground);
   font-family: var(--font-body);
   scroll-behavior: smooth;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
 }
 
 body {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Manrope } from "next/font/google";
+import { Archivo, Inter } from "next/font/google";
 import { headers } from "next/headers";
 import type { CSSProperties, ReactNode } from "react";
 
@@ -10,11 +10,14 @@ import "./globals.css";
 
 export const dynamic = "force-dynamic";
 
-const bricolage = Bricolage_Grotesque({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-bricolage",
+  variable: "--font-inter",
 });
-const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
+const archivo = Archivo({
+  subsets: ["latin"],
+  variable: "--font-archivo",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
@@ -62,7 +65,7 @@ export default async function RootLayout({
     <html
       lang={language}
       data-scroll-behavior="smooth"
-      className={`${manrope.variable} ${bricolage.variable}`}
+      className={`${archivo.variable} ${inter.variable}`}
     >
       <body suppressHydrationWarning style={brandStyle}>
         <script

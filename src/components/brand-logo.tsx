@@ -19,7 +19,7 @@ export function BrandLogo({
       height={106}
       priority={priority}
       className={cn(
-        compact ? "h-9 w-auto max-w-24" : "h-11 w-auto max-w-36",
+        compact ? "h-9 w-auto max-w-24" : "h-16 w-auto max-w-36",
         "object-contain",
         className,
       )}

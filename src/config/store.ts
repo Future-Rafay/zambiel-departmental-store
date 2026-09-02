@@ -30,7 +30,7 @@ export const storeConfig = {
       muted: "#60716B",
       border: "#D7E1DB",
     },
-    fonts: { display: "Bricolage Grotesque", body: "Manrope" },
+    fonts: { display: "Inter", body: "Archivo" },
   },
   contact: {
     phone: null as string | null,
