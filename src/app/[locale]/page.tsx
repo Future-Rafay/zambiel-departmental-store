@@ -2,7 +2,7 @@ import { CategoryCard } from "@/components/site/category-card";
 import { HeroShowcase } from "@/components/site/hero-showcase";
 import {
   InstagramSpotlight,
-  NewsletterComingSoon,
+  NewsletterSignup,
   RetailProductSection,
   StoryAndRequest,
   WhyZambiel,
@@ -136,7 +136,7 @@ export default async function HomePage({
       <WhyZambiel locale={locale} />
       <StoryAndRequest locale={locale} />
       <InstagramSpotlight locale={locale} />
-      <NewsletterComingSoon locale={locale} />
+      <NewsletterSignup locale={locale} />
     </div>
   );
 }

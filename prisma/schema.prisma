@@ -752,3 +752,17 @@ model PublicRequestRateLimit {
   @@index([expiresAt], map: "PublicRequestRateLimit_expiresAt_idx")
   @@map("publicrequestratelimit")
 }
+
+model NewsletterSubscriber {
+  id                   String    @id @default(cuid())
+  email                String    @unique(map: "NewsletterSubscriber_email_key") @db.VarChar(320)
+  locale               Locale    @default(DE)
+  unsubscribeTokenHash String    @unique(map: "NewsletterSubscriber_unsubscribeTokenHash_key") @db.Char(64)
+  subscribedAt         DateTime  @default(now())
+  unsubscribedAt       DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([unsubscribedAt, subscribedAt], map: "NewsletterSubscriber_unsubscribedAt_subscribedAt_idx")
+  @@map("newslettersubscriber")
+}

@@ -8,7 +8,7 @@ export type RateLimitResult =
   | { allowed: true; remaining: number }
   | { allowed: false; retryAfterSeconds: number };
 
-export function hashRateLimitIdentifier(scope: "ip" | "email", identifier: string, secret = getRateLimitSecret()) {
+export function hashRateLimitIdentifier(scope: string, identifier: string, secret = getRateLimitSecret()) {
   return `${scope}:${createHmac("sha256", secret).update(identifier.trim().toLowerCase()).digest("hex")}`;
 }
 
@@ -23,7 +23,7 @@ export async function pruneExpiredPublicRateLimits(now = new Date()) {
 }
 
 export async function consumePublicRateLimit(input: {
-  scope: "ip" | "email";
+  scope: string;
   identifier: string;
   limit: number;
   windowMs: number;

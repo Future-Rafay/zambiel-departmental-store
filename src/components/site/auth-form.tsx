@@ -58,11 +58,12 @@ export function AuthForm({ locale, mode, admin = false }: { locale: "de" | "en";
           required
           className="mt-1"
         />
+        {mode === "login" ? <a href={`/${locale}/forgot-password`} className="mt-2 block text-right text-xs font-bold text-primary underline">{de ? "Passwort vergessen?" : "Forgot password?"}</a> : null}
       </div>
 
       {error && (
         <div role="alert" className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs font-semibold text-destructive">
-          ⚠️ {error}
+          {error}
         </div>
       )}
 

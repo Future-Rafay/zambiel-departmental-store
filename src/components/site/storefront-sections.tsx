@@ -10,6 +10,7 @@ import Link from "next/link";
 import { FaInstagram } from "react-icons/fa6";
 
 import { ContactForm } from "@/components/site/contact-form";
+import { NewsletterForm } from "@/components/site/newsletter-form";
 import {
   RetailProductCard,
   type RetailProductCardData,
@@ -247,7 +248,7 @@ export function StoryAndRequest({ locale }: { locale: StoreLocale }) {
   );
 }
 
-export function NewsletterComingSoon({ locale }: { locale: StoreLocale }) {
+export function NewsletterSignup({ locale }: { locale: StoreLocale }) {
   const de = locale === "de";
   return (
     <section
@@ -258,7 +259,7 @@ export function NewsletterComingSoon({ locale }: { locale: StoreLocale }) {
         <div className="grid gap-6 md:grid-cols-[1fr_0.8fr] md:items-end">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
-              {de ? "Demnächst" : "Coming soon"}
+              {de ? "Newsletter" : "Newsletter"}
             </p>
             <h2
               id="newsletter-heading"
@@ -272,30 +273,7 @@ export function NewsletterComingSoon({ locale }: { locale: StoreLocale }) {
                 : "Be the first to know about new collections and exclusive offers."}
             </p>
           </div>
-          <div>
-            <label
-              htmlFor="newsletter-email"
-              className="mb-2 block text-sm font-bold"
-            >
-              Email
-            </label>
-            <div className="flex gap-2">
-              <input
-                id="newsletter-email"
-                type="email"
-                disabled
-                placeholder="Email"
-                className="min-h-12 min-w-0 flex-1 rounded-control border border-border bg-background px-4 disabled:cursor-not-allowed disabled:opacity-60"
-              />
-              <button
-                type="button"
-                disabled
-                className="min-h-12 rounded-control bg-primary px-5 font-bold text-white opacity-50"
-              >
-                {de ? "Demnächst" : "Coming soon"}
-              </button>
-            </div>
-          </div>
+          <NewsletterForm locale={locale} />
         </div>
       </div>
     </section>

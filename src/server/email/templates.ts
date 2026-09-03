@@ -66,6 +66,41 @@ export function staffInvitationEmail(input: { invitationUrl: string }) {
     }),
   };
 }
+
+export function newsletterWelcomeEmail(input: { locale: "de" | "en"; unsubscribeUrl: string }) {
+  const de = input.locale === "de";
+  return {
+    subject: de ? `Willkommen bei ${storeConfig.identity.name}` : `Welcome to ${storeConfig.identity.name}`,
+    text: de
+      ? `Sie erhalten jetzt Neuigkeiten von ${storeConfig.identity.name}. Abmelden: ${input.unsubscribeUrl}`
+      : `You are now subscribed to ${storeConfig.identity.name} updates. Unsubscribe: ${input.unsubscribeUrl}`,
+    html: brandedEmail({
+      eyebrow: de ? "Newsletter" : "Newsletter",
+      title: de ? "Schön, dass Sie dabei sind" : "Glad to have you with us",
+      body: de
+        ? `<p>Sie erhalten jetzt Neuigkeiten und Angebote von ${storeConfig.identity.name}.</p><p><a href="${escapeHtml(input.unsubscribeUrl)}">Newsletter abbestellen</a></p>`
+        : `<p>You will now receive news and offers from ${storeConfig.identity.name}.</p><p><a href="${escapeHtml(input.unsubscribeUrl)}">Unsubscribe from these emails</a></p>`,
+    }),
+  };
+}
+
+export function passwordResetEmail(input: { locale: "de" | "en"; resetUrl: string }) {
+  const de = input.locale === "de";
+  return {
+    subject: de ? "Passwort zurücksetzen" : "Reset your password",
+    text: de
+      ? `Setzen Sie Ihr Passwort innerhalb einer Stunde zurück: ${input.resetUrl}`
+      : `Reset your password within one hour: ${input.resetUrl}`,
+    html: brandedEmail({
+      eyebrow: de ? "Kontosicherheit" : "Account security",
+      title: de ? "Passwort zurücksetzen" : "Reset your password",
+      body: de
+        ? "<p>Dieser sichere Link ist eine Stunde gültig. Falls Sie die Anfrage nicht gestellt haben, können Sie diese E-Mail ignorieren.</p>"
+        : "<p>This secure link is valid for one hour. If you did not request it, you can ignore this email.</p>",
+      action: { href: input.resetUrl, label: de ? "Neues Passwort wählen" : "Choose a new password" },
+    }),
+  };
+}
 export function orderConfirmationEmail(input: { orderNumber: string }) {
   const number = escapeHtml(input.orderNumber);
   return {
