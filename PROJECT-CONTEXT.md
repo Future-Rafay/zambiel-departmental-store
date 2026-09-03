@@ -116,6 +116,21 @@ Import is dry-run by default, applies only to `zambiel_dev`/`zambiel_test`, stor
 
 ## Current verified local state (2026-09-03)
 
+### Email and footer correction (2026-09-04)
+
+- Follow-up: Facebook, Instagram, and WhatsApp footer icons are restored with user-requested platform-homepage defaults in store configuration. Configured Facebook/Instagram profiles take precedence; generic links are not verified store profiles.
+
+- Public page shells align to `max-w-7xl`, including legal and account pages. Authentication forms retain compact inner cards. The footer removes the About anchor, uses a green/gold branded layout, and retains functional shop/legal/support links plus the social links described above. Contact uses runtime contact settings and no longer advertises live chat.
+- All outgoing email families reuse the single table-based branded shell in `src/server/email/templates.ts`, deriving colors, Inter/Archivo font stacks, tagline, and footer text from `src/config/store.ts`. Email clients may fall back to Arial; web fonts are not guaranteed. Email bodies remain 600px wide for inbox compatibility, independent of the website's 7xl width.
+- Width/email follow-up verification: 43 tests (38 passed, 5 isolated-database skips), typecheck, and production build passed; lint retains the unrelated category-card warning. Privacy, returns, terms, and contact report a 1280px maximum at 375/1440 viewports without overflow or an About footer link. The generated email preview fits 375px; Outlook/Gmail client-specific rendering was not directly tested.
+
+- Public rate-limit keys now HMAC the scope and normalized identifier together into 64 hexadecimal characters, fitting the existing `VARCHAR(80)` without a migration. Existing old-format counters expire naturally; the rollout starts fresh counters once.
+- Ignored `.env.development.local` selects `Zambiel <onboarding@resend.dev>` and `CONTACT_EMAIL_TO_DEV` for local contact inquiries only. Public store contact information and acknowledgement/newsletter/reset/order recipients remain unchanged. The override is rejected outside development and by production configuration validation.
+- Contact and newsletter requests to the approved Resend account Gmail returned HTTP 200, including the contact acknowledgement. Provider acceptance is verified, not inbox receipt. Other recipient addresses still require a verified sending domain; this supersedes the older invalid-key test below.
+- The shared footer no longer advertises live chat. German/English `/returns` draft pages are linked alongside Terms and Privacy; checkout links Terms/Privacy and newsletter links Privacy. Legal text remains unapproved and is not a production policy.
+- Regression checks cover fixed key sizes, recipient safety, provider rejection, and production guards. Guarded `zambiel_dev` checks passed long-scope concurrent throttling and expiry, with only generated test counters cleaned up.
+- Verification: 42 tests (37 passed, 5 isolated-database skips); corrected email tests also passed independently. Typecheck, production build, and diff whitespace checks passed. Lint has no errors and one unrelated unused-import warning in the user-edited category card. Browser checks at 375/1440 verified both localized returns pages, footer legal links, no chat placeholder, and no horizontal overflow.
+
 - Eight migrations define the independent Zambiel schema. `20260902000000_add_public_request_rate_limit` and the forward-only `20260903190000_add_newsletter_subscriber` migration are applied to local `zambiel_dev`; migration status is current.
 - Catalog statistics: 50 imported products, 223 imported variants, 950 Shopify-source media records, 62 active categories, 52 active products, 225 active variants, 5,568 stock units, 1 reserved unit, and 223 opening-stock movements.
 - Demo business tables: 5 customers and addresses, 2 delivery zones, 10 orders, `WELCOME10`, 1 refund, 10 notification deliveries, 10 audit entries, and 12 order inventory movements.

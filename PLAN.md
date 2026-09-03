@@ -29,6 +29,18 @@ Run Prisma format/validate/generate and fresh-database migration/seed; importer 
 
 ## Current verification (2026-09-03)
 
+### Follow-up: email forms and footer (2026-09-04)
+
+- Public page shells now align to 7xl, with compact authentication cards inside. The footer has stronger Zambiel branding and no About link; Contact uses runtime settings and contains no live-chat card. Facebook, Instagram, and WhatsApp icons use user-requested platform-homepage defaults, with configured Facebook/Instagram profiles taking precedence.
+- Every email family shares configured brand colors and Inter/Archivo fallback stacks in an email-safe 600px table layout, with localized shell text and accessible action links. The website's 7xl width does not apply to inbox messages.
+
+- Fixed the rate-limit key overflow at the shared helper with a 64-character scoped HMAC; no migration or counter truncation.
+- Local development uses the Resend onboarding sender and a development-only contact-recipient override; private/customer recipients are not redirected and production rejects the override.
+- Live contact and newsletter API checks returned HTTP 200 for the approved Gmail, including contact acknowledgement. This supersedes the previous invalid-key result; inbox receipt and arbitrary-recipient delivery are not claimed.
+- Removed chat placeholders, linked localized returns drafts, and added checkout/newsletter legal links. Reviewed production legal copy remains outstanding.
+- Guarded local database checks passed long-scope throttling, concurrent limits, and expiry. Only generated test counters were removed. Unrelated UI edits remain preserved.
+- Verification: 38 passing tests and 5 isolated-database skips, passing typecheck/build/diff checks, and zero lint errors (one existing category-card unused-import warning). German/English returns/footer checks passed at 375/1440 with no overflow or chat placeholder. Social-link follow-up passed typecheck and targeted lint. Inbox-client rendering remains unverified.
+
 - Eight migrations now define the independent Zambiel schema. The public-rate-limit and newsletter-subscriber migrations are applied to local `zambiel_dev`.
 - Catalog: 50 imported products, 223 imported variants, 950 Shopify-source media rows, 62 active categories, 52 active products, and 225 active variants. Stock is 5,568 on hand and 1 reserved after demo order movements.
 - Demo business data: 5 customers, 2 delivery zones, 10 orders, `WELCOME10`, 1 successful refund, 10 notifications, 10 audits, and 12 idempotent order movements.
