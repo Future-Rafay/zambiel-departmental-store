@@ -33,14 +33,22 @@ const fieldByPath: Record<string, string> = {
   "address.city": "city",
 };
 
-export function CheckoutForm({ locale, user }: { locale: "de" | "en"; user?: CheckoutUser }) {
+export function CheckoutForm({
+  locale,
+  user,
+}: {
+  locale: "de" | "en";
+  user?: CheckoutUser;
+}) {
   const { items, clear } = useCart();
   const de = locale === "de";
   const formRef = useRef<HTMLFormElement>(null);
   const checkoutKey = useRef("");
   const [quoteRequests] = useState(createLatestRequest);
-  const [fulfillmentType, setFulfillmentType] = useState<FulfillmentType>("PICKUP");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PAY_AT_PICKUP");
+  const [fulfillmentType, setFulfillmentType] =
+    useState<FulfillmentType>("PICKUP");
+  const [paymentMethod, setPaymentMethod] =
+    useState<PaymentMethod>("PAY_AT_PICKUP");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -51,19 +59,49 @@ export function CheckoutForm({ locale, user }: { locale: "de" | "en"; user?: Che
     return () => quoteRequests.cancel();
   }, [quoteRequests]);
 
-  const payloadItems = items.map(({ variantId, quantity }) => ({ variantId, quantity }));
+  const payloadItems = items.map(({ variantId, quantity }) => ({
+    variantId,
+    quantity,
+  }));
   function message(code = "") {
     const messages: Record<string, [string, string]> = {
-      POSTCODE_NOT_DELIVERABLE: ["An diese Postleitzahl liefern wir derzeit nicht.", "We do not currently deliver to this postcode."],
-      DELIVERY_MINIMUM_NOT_MET: ["Der Mindestbestellwert ist noch nicht erreicht.", "The delivery minimum has not been reached."],
-      OUT_OF_STOCK: ["Ein Artikel ist nicht mehr in der gewünschten Menge verfügbar.", "An item is no longer available in the requested quantity."],
-      PRODUCT_UNAVAILABLE: ["Ein Artikel ist nicht mehr verfügbar.", "An item is no longer available."],
-      PROMO_INVALID: ["Dieser Gutscheincode ist ungültig.", "This discount code is invalid."],
-      PAYMENT_NOT_CONFIGURED: ["Kartenzahlung ist noch nicht konfiguriert.", "Card payment is not configured yet."],
-      PAYMENT_OR_ADDRESS_INVALID: ["Zahlungsart oder Lieferadresse ist ungültig.", "The payment method or delivery address is invalid."],
-      INVALID_INPUT: ["Bitte prüfen Sie Ihre Eingaben.", "Please check your details."],
+      POSTCODE_NOT_DELIVERABLE: [
+        "An diese Postleitzahl liefern wir derzeit nicht.",
+        "We do not currently deliver to this postcode.",
+      ],
+      DELIVERY_MINIMUM_NOT_MET: [
+        "Der Mindestbestellwert ist noch nicht erreicht.",
+        "The delivery minimum has not been reached.",
+      ],
+      OUT_OF_STOCK: [
+        "Ein Artikel ist nicht mehr in der gewünschten Menge verfügbar.",
+        "An item is no longer available in the requested quantity.",
+      ],
+      PRODUCT_UNAVAILABLE: [
+        "Ein Artikel ist nicht mehr verfügbar.",
+        "An item is no longer available.",
+      ],
+      PROMO_INVALID: [
+        "Dieser Gutscheincode ist ungültig.",
+        "This discount code is invalid.",
+      ],
+      PAYMENT_NOT_CONFIGURED: [
+        "Kartenzahlung ist noch nicht konfiguriert.",
+        "Card payment is not configured yet.",
+      ],
+      PAYMENT_OR_ADDRESS_INVALID: [
+        "Zahlungsart oder Lieferadresse ist ungültig.",
+        "The payment method or delivery address is invalid.",
+      ],
+      INVALID_INPUT: [
+        "Bitte prüfen Sie Ihre Eingaben.",
+        "Please check your details.",
+      ],
     };
-    return (messages[code] ?? ["Bestellung konnte nicht abgeschlossen werden.", "The order could not be completed."])[de ? 0 : 1];
+    return (messages[code] ?? [
+      "Bestellung konnte nicht abgeschlossen werden.",
+      "The order could not be completed.",
+    ])[de ? 0 : 1];
   }
 
   function applyApiError(value: unknown) {
@@ -73,11 +111,13 @@ export function CheckoutForm({ locale, user }: { locale: "de" | "en"; user?: Che
       const field = fieldByPath[issue.path.join(".")];
       if (field) next[field] = message("INVALID_INPUT");
     }
-    if (api.error === "POSTCODE_NOT_DELIVERABLE") next.postalCode = message(api.error);
+    if (api.error === "POSTCODE_NOT_DELIVERABLE")
+      next.postalCode = message(api.error);
     setFieldErrors(next);
     setError(Object.keys(next).length ? "" : message(api.error));
     const first = Object.keys(next)[0];
-    if (first) requestAnimationFrame(() => document.getElementById(first)?.focus());
+    if (first)
+      requestAnimationFrame(() => document.getElementById(first)?.focus());
   }
 
   async function readResponse(response: Response) {
@@ -101,7 +141,8 @@ export function CheckoutForm({ locale, user }: { locale: "de" | "en"; user?: Che
         body: JSON.stringify({
           items: payloadItems,
           fulfillmentType,
-          postcode: fulfillmentType === "DELIVERY" ? data.get("postalCode") : undefined,
+          postcode:
+            fulfillmentType === "DELIVERY" ? data.get("postalCode") : undefined,
           promoCode: data.get("promoCode") || undefined,
           customerEmail: data.get("customerEmail") || undefined,
         }),
@@ -125,7 +166,9 @@ export function CheckoutForm({ locale, user }: { locale: "de" | "en"; user?: Che
   function chooseFulfillment(value: FulfillmentType) {
     quoteRequests.cancel();
     setFulfillmentType(value);
-    setPaymentMethod(value === "DELIVERY" ? "CASH_ON_DELIVERY" : "PAY_AT_PICKUP");
+    setPaymentMethod(
+      value === "DELIVERY" ? "CASH_ON_DELIVERY" : "PAY_AT_PICKUP",
+    );
     setQuote(null);
   }
 
@@ -154,35 +197,77 @@ export function CheckoutForm({ locale, user }: { locale: "de" | "en"; user?: Che
           customerPhone: data.get("customerPhone"),
           paymentMethod,
           note: data.get("note") || undefined,
-          address: fulfillmentType === "DELIVERY" ? {
-            recipientName: data.get("customerName"),
-            phone: data.get("customerPhone"),
-            street: data.get("street"),
-            streetExtra: data.get("streetExtra") || undefined,
-            postalCode,
-            city: data.get("city"),
-          } : undefined,
+          address:
+            fulfillmentType === "DELIVERY"
+              ? {
+                  recipientName: data.get("customerName"),
+                  phone: data.get("customerPhone"),
+                  street: data.get("street"),
+                  streetExtra: data.get("streetExtra") || undefined,
+                  postalCode,
+                  city: data.get("city"),
+                }
+              : undefined,
         }),
       }).then(readResponse);
       clear();
-      window.location.assign(order.checkoutUrl ?? `/${locale}/orders/${order.orderNumber}?token=${encodeURIComponent(order.trackingToken)}`);
+      window.location.assign(
+        order.checkoutUrl ??
+          `/${locale}/orders/${order.orderNumber}?token=${encodeURIComponent(order.trackingToken)}`,
+      );
     } catch (caught) {
       applyApiError(caught);
       setBusy(false);
     }
   }
 
-  if (items.length === 0) return <Card className="rounded-none p-8 text-center"><p>{de ? "Ihr Warenkorb ist leer." : "Your cart is empty."}</p></Card>;
+  if (items.length === 0)
+    return (
+      <Card className="rounded-none p-8 text-center">
+        <p>{de ? "Ihr Warenkorb ist leer." : "Your cart is empty."}</p>
+      </Card>
+    );
 
   return (
-    <form ref={formRef} onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_22rem]" noValidate>
+    <form
+      ref={formRef}
+      onSubmit={submit}
+      className="grid gap-6 lg:grid-cols-[1fr_22rem]"
+      noValidate
+    >
       <div className="space-y-6">
-        <FulfillmentChoices de={de} value={fulfillmentType} onChange={chooseFulfillment} />
+        <FulfillmentChoices
+          de={de}
+          value={fulfillmentType}
+          onChange={chooseFulfillment}
+        />
         <CustomerFields de={de} user={user} errors={fieldErrors} />
-        {fulfillmentType === "DELIVERY" ? <AddressFields de={de} user={user} errors={fieldErrors} refreshQuote={() => void refreshQuote()} /> : null}
-        <PaymentChoices de={de} fulfillmentType={fulfillmentType} paymentMethod={paymentMethod} errors={fieldErrors} onChange={setPaymentMethod} />
+        {fulfillmentType === "DELIVERY" ? (
+          <AddressFields
+            de={de}
+            user={user}
+            errors={fieldErrors}
+            refreshQuote={() => void refreshQuote()}
+          />
+        ) : null}
+        <PaymentChoices
+          de={de}
+          fulfillmentType={fulfillmentType}
+          paymentMethod={paymentMethod}
+          errors={fieldErrors}
+          onChange={setPaymentMethod}
+        />
       </div>
-      <CheckoutSummary de={de} locale={locale} items={items} quote={quote} error={error} errors={fieldErrors} busy={busy} refreshQuote={() => void refreshQuote()} />
+      <CheckoutSummary
+        de={de}
+        locale={locale}
+        items={items}
+        quote={quote}
+        error={error}
+        errors={fieldErrors}
+        busy={busy}
+        refreshQuote={() => void refreshQuote()}
+      />
     </form>
   );
 }

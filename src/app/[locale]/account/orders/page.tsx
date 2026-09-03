@@ -10,7 +10,11 @@ import { getCustomerOrders } from "@/server/services/ordering";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
-export default async function AccountOrdersPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function AccountOrdersPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
   const locale = (await params).locale === "en" ? "en" : "de";
   const de = locale === "de";
   const user = await getCurrentUser();
@@ -30,7 +34,7 @@ export default async function AccountOrdersPage({ params }: { params: Promise<{ 
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8 space-y-8">
+    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-8">
       {/* Header */}
       <div className="border-b border-border/60 pb-5">
         <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary">
@@ -45,7 +49,7 @@ export default async function AccountOrdersPage({ params }: { params: Promise<{ 
       </div>
 
       {orders.length === 0 ? (
-        <Card className="max-w-xl mx-auto space-y-6 rounded-none p-12 text-center">
+        <Card className="max-w-7xl mx-auto space-y-6 rounded-none p-12 text-center">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-secondary/10 text-secondary">
             <ShoppingBag className="h-10 w-10" strokeWidth={1.5} />
           </div>
@@ -71,13 +75,21 @@ export default async function AccountOrdersPage({ params }: { params: Promise<{ 
       ) : (
         <div className="grid gap-6 sm:grid-cols-2">
           {orders.map((order) => (
-            <Link key={order.orderNumber} href={`/${locale}/orders/${order.orderNumber}`}>
-              <Card hover className="group flex h-full flex-col justify-between space-y-4 rounded-none p-6">
+            <Link
+              key={order.orderNumber}
+              href={`/${locale}/orders/${order.orderNumber}`}
+            >
+              <Card
+                hover
+                className="group flex h-full flex-col justify-between space-y-4 rounded-none p-6"
+              >
                 <div className="flex items-center justify-between border-b border-border/60 pb-3">
                   <span className="font-display font-extrabold text-lg text-primary group-hover:text-secondary transition-colors">
                     {order.orderNumber}
                   </span>
-                  <span className={`rounded-full px-3 py-1 text-[11px] font-bold shadow-sm ${statusColors[order.status] ?? "bg-primary text-white"}`}>
+                  <span
+                    className={`rounded-full px-3 py-1 text-[11px] font-bold shadow-sm ${statusColors[order.status] ?? "bg-primary text-white"}`}
+                  >
                     {orderStatusLabel(order.status, locale)}
                   </span>
                 </div>
@@ -91,16 +103,28 @@ export default async function AccountOrdersPage({ params }: { params: Promise<{ 
                   </strong>
                 </div>
 
-                {order.activities[0] && <p className="text-xs text-muted">
-                  {order.activities[0].kind === "CASH_PAYMENT_CONFIRMED"
-                    ? de ? "Barzahlung bestätigt" : "Cash payment confirmed"
-                    : orderStatusLabel(order.activities[0].status, locale)}
-                  {" · "}
-                  {new Intl.DateTimeFormat(de ? "de-CH" : "en-CH", { timeZone: "Europe/Zurich", dateStyle: "short", timeStyle: "short" }).format(new Date(order.activities[0].at))}
-                </p>}
+                {order.activities[0] && (
+                  <p className="text-xs text-muted">
+                    {order.activities[0].kind === "CASH_PAYMENT_CONFIRMED"
+                      ? de
+                        ? "Barzahlung bestätigt"
+                        : "Cash payment confirmed"
+                      : orderStatusLabel(order.activities[0].status, locale)}
+                    {" · "}
+                    {new Intl.DateTimeFormat(de ? "de-CH" : "en-CH", {
+                      timeZone: "Europe/Zurich",
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    }).format(new Date(order.activities[0].at))}
+                  </p>
+                )}
 
                 <div className="pt-2 flex items-center justify-between text-xs font-bold text-secondary border-t border-border/40">
-                  <span>{de ? "Details & Status verfolgen" : "Track details & status"}</span>
+                  <span>
+                    {de
+                      ? "Details & Status verfolgen"
+                      : "Track details & status"}
+                  </span>
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </div>
               </Card>
@@ -111,4 +135,3 @@ export default async function AccountOrdersPage({ params }: { params: Promise<{ 
     </div>
   );
 }
-

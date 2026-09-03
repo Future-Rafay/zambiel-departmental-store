@@ -37,7 +37,7 @@ export const storeConfig = {
     email: null as string | null,
     address: null as null | { street: string; postalCode: string; city: string },
     website: null as string | null,
-    social: { instagram: null as string | null, facebook: null as string | null, whatsapp: null as string | null },
+    social: { instagram: "https://www.instagram.com/", facebook: "https://www.facebook.com/", whatsapp: "https://www.whatsapp.com/" },
   },
   seo: {
     title: { de: "Zambiel – Schweizer Warenhaus", en: "Zambiel – Swiss department store" },

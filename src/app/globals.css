@@ -18,8 +18,8 @@
   --brand-success: #287a54;
   --brand-destructive: #b42318;
   --brand-ring: #d6a84b;
-  --radius-control: 0.625rem;
-  --radius-card: 0.875rem;
+  --radius-control: 0;
+  --radius-card: 0;
   --font-display: var(--font-inter), "Segoe UI", sans-serif;
   --font-body: var(--font-archivo), "Segoe UI", sans-serif;
 }

@@ -12,8 +12,8 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
   const de = locale === "de";
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16 sm:py-24">
-      <Card className="p-8 space-y-6 shadow-xl border-secondary/30">
+    <div className="mx-auto max-w-7xl px-4 py-16 sm:py-24">
+      <Card className="mx-auto max-w-md p-8 space-y-6 shadow-xl border-secondary/30">
         <div className="text-center space-y-3">
           <BrandLogo className="mx-auto h-11 w-auto object-contain" />
           <h1 className="font-display text-2xl font-bold text-primary">

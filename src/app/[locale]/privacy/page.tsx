@@ -4,7 +4,7 @@ export default async function PrivacyPage({ params }: { params: Promise<{ locale
   const de = (await params).locale !== "en";
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8 space-y-8">
+    <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 space-y-8">
       <div className="border-b border-border/60 pb-5">
         <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary">
           ZAMBIEL

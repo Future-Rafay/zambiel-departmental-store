@@ -14,15 +14,11 @@ import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  FaFacebookF,
-  FaInstagram,
-  FaPinterestP,
-  FaXTwitter,
-} from "react-icons/fa6";
+import { FaFacebookF, FaInstagram, FaWhatsapp } from "react-icons/fa6";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { useCart } from "@/components/site/cart-context";
+import { storeConfig } from "@/config/store";
 
 type SiteUser = {
   id: string;
@@ -364,40 +360,34 @@ export function SiteShell({
         {children}
       </main>
 
-      <footer className="border-t border-border bg-primary text-white">
-        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.2fr_repeat(3,1fr)]">
+      <footer className="border-t-4 border-secondary bg-primary text-white">
+        <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.35fr_repeat(3,1fr)]">
           <div>
             <BrandLogo inverted className="h-16 max-w-36" />
-            <p className="mt-5 max-w-sm text-sm leading-6 text-white/75">
-              Zambiel – Where Shopping Meets Storytelling
+            <p className="mt-6 max-w-sm font-display text-2xl font-bold leading-tight text-white">
+              {de
+                ? "Wo Einkaufen Geschichten erzählt."
+                : "Where shopping meets storytelling."}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {publicConfig.instagramUrl ? (
-                <a
-                  href={publicConfig.instagramUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Zambiel on Instagram"
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border border-white/25 hover:border-secondary-light hover:text-secondary-light"
+            <p className="mt-3 max-w-sm text-sm leading-6 text-white/70">
+              {de
+                ? "Ausgewählte Produkte für Zuhause, unterwegs und den Alltag."
+                : "Selected products for home, life on the move, and every day."}
+            </p>
+          </div>
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-secondary-light">
+              {de ? "Schnellzugriff" : "Quick links"}
+            </h2>
+            <div className="mt-4 flex flex-col gap-3 text-sm">
+              {links.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="hover:text-secondary-light"
                 >
-                  <FaInstagram className="h-5 w-5" aria-hidden="true" />
-                </a>
-              ) : null}
-              {[
-                { Icon: FaXTwitter, label: "X" },
-                { Icon: FaFacebookF, label: "Facebook" },
-                { Icon: FaPinterestP, label: "Pinterest" },
-              ].map(({ Icon, label }) => (
-                <button
-                  key={label}
-                  type="button"
-                  disabled
-                  title={`${label} · Coming soon`}
-                  aria-label={`${label} · Coming soon`}
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border border-white/10 text-white/35"
-                >
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                </button>
+                  {link.label}
+                </Link>
               ))}
             </div>
           </div>
@@ -408,14 +398,6 @@ export function SiteShell({
             <ul className="mt-4 space-y-3 text-sm">
               <li>
                 <Link
-                  href={`/${locale}#about-zambiel`}
-                  className="hover:text-secondary-light"
-                >
-                  {de ? "Über uns" : "About us"}
-                </Link>
-              </li>
-              <li>
-                <Link
                   href={`/${locale}/privacy`}
                   className="hover:text-secondary-light"
                 >
@@ -423,10 +405,12 @@ export function SiteShell({
                 </Link>
               </li>
               <li>
-                <span aria-disabled="true" className="text-white/45">
-                  {de ? "Rückgabe & Erstattung" : "Return & refund"} ·{" "}
-                  {de ? "Demnächst" : "Coming soon"}
-                </span>
+                <Link
+                  href={`/${locale}/returns`}
+                  className="hover:text-secondary-light"
+                >
+                  {de ? "Rückgabe & Erstattung" : "Return & refund"}
+                </Link>
               </li>
               <li>
                 <Link
@@ -461,35 +445,53 @@ export function SiteShell({
                 {publicConfig.email}
               </a>
             ) : null}
-            <Link
-              href={`/${locale}/contact`}
-              className="mt-5 flex min-h-11 items-center font-bold hover:text-secondary-light"
-            >
-              {de ? "Kontakt" : "Contact"}
-            </Link>
-            <p className="mt-3 text-sm text-white/45">
-              {de ? "Chat mit uns · Demnächst" : "Chat with us · Coming soon"}
-            </p>
-          </div>
-          <div>
-            <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-secondary-light">
-              {de ? "Schnellzugriff" : "Quick links"}
-            </h2>
-            <div className="mt-4 flex flex-col gap-3 text-sm">
-              {links.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="hover:text-secondary-light"
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[
+                {
+                  label: "Facebook",
+                  href:
+                    publicConfig.facebookUrl ||
+                    storeConfig.contact.social.facebook,
+                  Icon: FaFacebookF,
+                },
+                {
+                  label: "Instagram",
+                  href:
+                    publicConfig.instagramUrl ||
+                    storeConfig.contact.social.instagram,
+                  Icon: FaInstagram,
+                },
+                {
+                  label: "WhatsApp",
+                  href: storeConfig.contact.social.whatsapp,
+                  Icon: FaWhatsapp,
+                },
+              ].map(({ label, href, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border border-white/25 hover:border-secondary-light hover:text-secondary-light focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary-light"
                 >
-                  {link.label}
-                </Link>
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </a>
               ))}
             </div>
           </div>
         </div>
-        <div className="border-t border-white/15 px-5 py-5 text-center text-xs text-white/60">
-          © {new Date().getFullYear()} Zambiel. {labels.rights}
+        <div className="border-t border-white/15">
+          <div className="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-5 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+            <span>
+              © {new Date().getFullYear()} Zambiel. {labels.rights}
+            </span>
+            <span>
+              {de
+                ? "Schweizer Warenhaus · Lieferung & Abholung"
+                : "Swiss department store · Delivery & pickup"}
+            </span>
+          </div>
         </div>
       </footer>
     </div>

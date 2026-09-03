@@ -1,8 +1,9 @@
-import { Mail, MessageCircle } from "lucide-react";
+import { Mail } from "lucide-react";
 import { FaInstagram } from "react-icons/fa6";
 
 import { ContactForm } from "@/components/site/contact-form";
-import { storeConfig, type StoreLocale } from "@/config/store";
+import { type StoreLocale } from "@/config/store";
+import { getRuntimeStoreConfig } from "@/server/services/store-config";
 import { localizedMetadata } from "@/lib/metadata";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
@@ -20,9 +21,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function ContactPage({ params }: { params: Promise<{ locale: string }> }) {
   const locale: StoreLocale = (await params).locale === "en" ? "en" : "de";
   const de = locale === "de";
+  const { contact } = await getRuntimeStoreConfig();
   return (
     <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-20">
-      <section className="max-w-4xl">
+      <section className="max-w-7xl">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">Zambiel</p>
         <h1 className="mt-3 font-display text-5xl leading-tight tracking-[-0.05em] text-primary sm:text-7xl">
           {de ? "Wie können wir helfen?" : "How can we help?"}
@@ -36,21 +38,16 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
 
       <div className="mt-12 grid gap-6 lg:grid-cols-[0.7fr_1.3fr]">
         <aside className="space-y-4">
-          <a href={`mailto:${storeConfig.contact.email}`} className="block rounded-card border border-border bg-surface p-6 hover:border-secondary">
+          {contact.email ? <a href={`mailto:${contact.email}`} className="block rounded-card border border-border bg-surface p-6 hover:border-secondary">
             <Mail className="h-6 w-6 text-secondary" aria-hidden="true" />
             <h2 className="mt-5 text-xl font-bold text-primary">Email</h2>
-            <p className="mt-2 break-all text-sm text-muted">{storeConfig.contact.email}</p>
-          </a>
-          <a href={storeConfig.contact.social.instagram!} target="_blank" rel="noreferrer" className="block rounded-card border border-border bg-surface p-6 hover:border-secondary">
+            <p className="mt-2 break-all text-sm text-muted">{contact.email}</p>
+          </a> : null}
+          {contact.social.instagram ? <a href={contact.social.instagram} target="_blank" rel="noreferrer" className="block rounded-card border border-border bg-surface p-6 hover:border-secondary">
             <FaInstagram className="h-6 w-6 text-secondary" aria-hidden="true" />
             <h2 className="mt-5 text-xl font-bold text-primary">Instagram</h2>
-            <p className="mt-2 text-sm text-muted">@zambiel.pk</p>
-          </a>
-          <div className="rounded-card border border-dashed border-white/20 bg-primary p-6 text-white">
-            <MessageCircle className="h-6 w-6 text-secondary-light" aria-hidden="true" />
-            <h2 className="mt-5 text-xl font-bold">{de ? "Live-Chat" : "Live chat"}</h2>
-            <p className="mt-2 text-sm text-white/70">{de ? "Demnächst verfügbar" : "Coming soon"}</p>
-          </div>
+            <p className="mt-2 text-sm text-muted">{de ? "Auf Instagram ansehen" : "Visit us on Instagram"}</p>
+          </a> : null}
         </aside>
         <section className="rounded-card border border-border bg-surface p-6 sm:p-10" aria-labelledby="contact-form-heading">
           <h2 id="contact-form-heading" className="font-display text-3xl tracking-[-0.03em] text-primary">

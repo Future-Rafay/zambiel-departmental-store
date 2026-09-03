@@ -17,7 +17,7 @@ export function CategoryCard({ category, locale }: { category: CategoryCardData;
   const de = locale === "de";
   return (
     <Link href={`/${locale}/categories/${category.slug}`} className="group overflow-hidden rounded-card border border-border bg-surface transition-[transform,box-shadow,border-color] hover:-translate-y-1 hover:border-primary/35 hover:shadow-lg">
-      <div className="relative aspect-[4/3] overflow-hidden bg-surface-warm">
+      {/* <div className="relative aspect-[4/3] overflow-hidden bg-surface-warm">
         <StorefrontImage
           src={category.imageUrl}
           alt={category.imageUrl ? category.name : ""}
@@ -25,7 +25,7 @@ export function CategoryCard({ category, locale }: { category: CategoryCardData;
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
           className="object-contain p-5 transition-transform duration-300 group-hover:scale-[1.03]"
         />
-      </div>
+      </div> */}
       <div className="p-5 sm:p-6">
         <p className="text-sm text-muted">{category.productCount} {de ? "Produkte" : "products"}</p>
         <h2 className="mt-2 flex items-center justify-between gap-3 text-xl font-bold text-primary">
