@@ -29,6 +29,7 @@ test("production environment accepts managed TLS configuration with the resilien
 });
 
 test("production environment rejects local, placeholder, and test payment values", () => {
+  assert.throws(() => assertProductionEnvironment({ ...valid, CONTACT_EMAIL_TO_DEV: "test@example.com" }));
   assert.throws(() => assertProductionEnvironment({
     ...valid,
     DATABASE_URL: "mysql://zambiel:change-me@127.0.0.1:3306/zambiel_dev",

@@ -10,6 +10,9 @@ test("rate-limit identifiers are scoped, normalized, and never stored raw", () =
   assert.equal(first, hashRateLimitIdentifier("email", "user@example.com", secret));
   assert.notEqual(first, hashRateLimitIdentifier("ip", "user@example.com", secret));
   assert.equal(first.includes("user@example.com"), false);
+  for (const scope of ["ip", "email", "newsletter-ip", "newsletter-email", "password-reset-ip", "password-reset-email", "password-reset-submit-ip"]) {
+    assert.match(hashRateLimitIdentifier(scope, "user@example.com", secret), /^[a-f0-9]{64}$/);
+  }
 });
 
 test("forwarded client IP parsing accepts only valid addresses", () => {

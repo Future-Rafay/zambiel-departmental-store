@@ -1,4 +1,5 @@
 import { ZodError } from "zod";
+import { getEmailEnv } from "@/config/env";
 
 import { EmailNotConfiguredError, sendEmail } from "@/server/email/client";
 import {
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
     const input = contactSchema.parse(await request.json());
     const emailLimit = await consumePublicRateLimit({ scope: "email", identifier: input.email, limit: 3, windowMs: 60 * 60_000 });
     if (!emailLimit.allowed) return rateLimited(emailLimit.retryAfterSeconds);
-    const recipient = (await getRuntimeStoreConfig()).contact.email;
+    const recipient = getEmailEnv().CONTACT_EMAIL_TO_DEV ?? (await getRuntimeStoreConfig()).contact.email;
     if (!recipient) {
       return Response.json({ error: "CONTACT_UNAVAILABLE" }, { status: 503 });
     }

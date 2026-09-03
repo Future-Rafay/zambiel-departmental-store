@@ -11,15 +11,21 @@ function escapeHtml(value: string) {
   );
 }
 function brandedEmail(input: {
+  locale?: "de" | "en";
   eyebrow: string;
   title: string;
   body: string;
   action?: { href: string; label: string };
 }) {
+  const locale = input.locale ?? "en";
+  const { colors, fonts } = storeConfig.brand;
+  const name = escapeHtml(storeConfig.identity.name);
+  const displayFont = `${escapeHtml(fonts.display)}, Arial, sans-serif`;
+  const bodyFont = `${escapeHtml(fonts.body)}, Arial, sans-serif`;
   const action = input.action
-    ? `<p style="margin:28px 0"><a href="${escapeHtml(input.action.href)}" style="display:inline-block;border-radius:10px;background:${storeConfig.brand.colors.primary};color:#fff;padding:13px 20px;text-decoration:none;font-weight:700">${escapeHtml(input.action.label)}</a></p>`
+    ? `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:28px 0"><tr><td bgcolor="${colors.primary}" style="border-radius:4px"><a href="${escapeHtml(input.action.href)}" style="display:inline-block;border:1px solid ${colors.primary};border-radius:4px;background:${colors.primary};color:${colors.surface};padding:16px 24px;text-decoration:none;font-family:${displayFont};font-weight:700">${escapeHtml(input.action.label)}</a></td></tr></table><p style="font-size:12px;color:${colors.muted};word-break:break-all">${locale === "de" ? "Falls der Button nicht funktioniert:" : "If the button does not work:"}<br><a href="${escapeHtml(input.action.href)}" style="color:${colors.primary}">${escapeHtml(input.action.href)}</a></p>`
     : "";
-  return `<!doctype html><html><body style="margin:0;background:#f3f3ef;color:#17251f;font-family:Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:28px 12px"><tr><td align="center"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;border:1px solid #d8ddd9;border-radius:18px;background:#fff;overflow:hidden"><tr><td style="padding:26px 32px;border-bottom:4px solid ${storeConfig.brand.colors.accent};font-size:28px;font-weight:900">${storeConfig.identity.name}</td></tr><tr><td style="padding:32px"><p style="color:${storeConfig.brand.colors.primary};font-size:12px;font-weight:700;text-transform:uppercase">${escapeHtml(input.eyebrow)}</p><h1>${escapeHtml(input.title)}</h1>${input.body}${action}<p style="margin-top:30px;border-top:1px solid #d8ddd9;padding-top:18px;color:#66736d;font-size:12px">${storeConfig.identity.name} · Automated service message</p></td></tr></table></td></tr></table></body></html>`;
+  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(input.title)}</title></head><body style="margin:0;padding:0;background:${colors.background};color:${colors.foreground};font-family:${bodyFont};-webkit-text-size-adjust:100%"><div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${escapeHtml(input.eyebrow)} — ${escapeHtml(input.title)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${colors.background}"><tr><td align="center" style="padding:32px 12px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;border:1px solid ${colors.border};background:${colors.surface}"><tr><td bgcolor="${colors.primary}" style="padding:28px 28px 24px;border-bottom:4px solid ${colors.accent};color:${colors.surface}"><p style="margin:0;font-family:${displayFont};font-size:32px;line-height:1.2;font-weight:800;letter-spacing:-1px">${name}</p><p style="margin:10px 0 0;font-size:12px;line-height:1.6;color:${colors.surface}">${escapeHtml(storeConfig.identity.tagline[locale])}</p></td></tr><tr><td style="padding:28px;font-size:16px;line-height:1.75;overflow-wrap:anywhere"><p style="margin:0 0 12px;color:${colors.primary};font-family:${displayFont};font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase">${escapeHtml(input.eyebrow)}</p><h1 style="margin:0 0 24px;font-family:${displayFont};font-size:28px;line-height:1.25;font-weight:750;letter-spacing:-0.5px;color:${colors.primary}">${escapeHtml(input.title)}</h1>${input.body}${action}</td></tr><tr><td style="padding:20px 28px;border-top:1px solid ${colors.border};background:${colors.background};font-size:12px;line-height:1.7;color:${colors.muted}"><strong style="font-family:${displayFont};color:${colors.primary}">${name}</strong><br>${escapeHtml(storeConfig.footer.text[locale])}<br>${locale === "de" ? "Automatisch versendete Nachricht" : "Automated email"}</td></tr></table></td></tr></table></body></html>`;
 }
 
 export function contactInquiryEmail(input: ContactInput) {
@@ -34,7 +40,7 @@ export function contactInquiryEmail(input: ContactInput) {
   return {
     subject: `${storeConfig.identity.name}: ${subject}`,
     text: `${requestLabel}\nName: ${input.name}\nEmail: ${input.email}\nPhone: ${input.phone || "-"}\n\n${input.message}`,
-    html: brandedEmail({ eyebrow: requestLabel, title: subject, body: details }),
+    html: brandedEmail({ locale: input.locale, eyebrow: requestLabel, title: subject, body: details }),
   };
 }
 
@@ -46,6 +52,7 @@ export function contactAcknowledgementEmail(input: ContactInput) {
       ? `Hallo ${input.name}, wir haben Ihre Nachricht erhalten und melden uns so bald wie möglich.`
       : `Hello ${input.name}, we received your message and will reply as soon as possible.`,
     html: brandedEmail({
+      locale: input.locale,
       eyebrow: de ? "Nachricht erhalten" : "Message received",
       title: de ? `Danke, ${input.name}` : `Thank you, ${input.name}`,
       body: de
@@ -75,6 +82,7 @@ export function newsletterWelcomeEmail(input: { locale: "de" | "en"; unsubscribe
       ? `Sie erhalten jetzt Neuigkeiten von ${storeConfig.identity.name}. Abmelden: ${input.unsubscribeUrl}`
       : `You are now subscribed to ${storeConfig.identity.name} updates. Unsubscribe: ${input.unsubscribeUrl}`,
     html: brandedEmail({
+      locale: input.locale,
       eyebrow: de ? "Newsletter" : "Newsletter",
       title: de ? "Schön, dass Sie dabei sind" : "Glad to have you with us",
       body: de
@@ -92,6 +100,7 @@ export function passwordResetEmail(input: { locale: "de" | "en"; resetUrl: strin
       ? `Setzen Sie Ihr Passwort innerhalb einer Stunde zurück: ${input.resetUrl}`
       : `Reset your password within one hour: ${input.resetUrl}`,
     html: brandedEmail({
+      locale: input.locale,
       eyebrow: de ? "Kontosicherheit" : "Account security",
       title: de ? "Passwort zurücksetzen" : "Reset your password",
       body: de
@@ -141,6 +150,7 @@ export function orderStatusEmail(input: {
     subject,
     text: body.replace(/<[^>]+>/g, ""),
     html: brandedEmail({
+      locale: input.locale === "DE" ? "de" : "en",
       eyebrow: input.locale === "DE" ? "Bestellstatus" : "Order status",
       title: subject,
       body: `<p>${body}</p>`,

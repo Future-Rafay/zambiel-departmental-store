@@ -19,7 +19,7 @@ test("database rate limits are atomic, scoped, and reset after expiry", async (c
     import("@/server/public-rate-limit"),
   ]);
   const identifier = `rate-${crypto.randomUUID()}@example.com`;
-  const key = hashRateLimitIdentifier("email", identifier);
+  const scopes = ["email", "ip", "newsletter-ip", "newsletter-email", "password-reset-ip", "password-reset-email", "password-reset-submit-ip"];
   const now = new Date("2026-09-02T00:00:00.000Z");
 
   try {
@@ -30,8 +30,12 @@ test("database rate limits are atomic, scoped, and reset after expiry", async (c
     assert.equal(results.filter(({ allowed }) => !allowed).length, 1);
     assert.equal((await consumePublicRateLimit({ scope: "ip", identifier, limit: 1, windowMs: 60_000, now })).allowed, true);
     assert.equal((await consumePublicRateLimit({ scope: "email", identifier, limit: 5, windowMs: 60_000, now: new Date(now.getTime() + 60_001) })).allowed, true);
+    for (const scope of scopes.slice(2)) {
+      assert.equal((await consumePublicRateLimit({ scope, identifier, limit: 1, windowMs: 60_000, now })).allowed, true);
+      assert.equal((await consumePublicRateLimit({ scope, identifier, limit: 1, windowMs: 60_000, now })).allowed, false);
+    }
   } finally {
-    await prisma.publicRequestRateLimit.deleteMany({ where: { key: { in: [key, hashRateLimitIdentifier("ip", identifier)] } } });
+    await prisma.publicRequestRateLimit.deleteMany({ where: { key: { in: scopes.map((scope) => hashRateLimitIdentifier(scope, identifier)) } } });
     await prisma.$disconnect();
   }
 });

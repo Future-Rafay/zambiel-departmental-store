@@ -25,6 +25,7 @@ const s3Schema = z.object({
 const emailSchema = z.object({
   RESEND_API_KEY: z.string().min(1),
   EMAIL_FROM: z.string().min(1),
+  CONTACT_EMAIL_TO_DEV: z.preprocess((value) => value === "" ? undefined : value, z.string().email().optional()),
   APP_URL: z.string().url(),
 });
 
@@ -40,6 +41,9 @@ const productionSchema = databaseSchema
   .and(emailSchema)
   .and(stripeSchema)
   .superRefine((values, context) => {
+    if (values.CONTACT_EMAIL_TO_DEV) {
+      context.addIssue({ code: "custom", path: ["CONTACT_EMAIL_TO_DEV"], message: "Development contact routing is forbidden in production." });
+    }
     const placeholders = Object.entries(values).filter(
       ([, value]) => typeof value === "string" && /change-me|placeholder|replace-with/i.test(value),
     );
@@ -92,7 +96,11 @@ export function getS3Env() {
 }
 
 export function getEmailEnv() {
-  return emailSchema.parse(process.env);
+  const env = emailSchema.parse(process.env);
+  if (env.CONTACT_EMAIL_TO_DEV && process.env.NODE_ENV !== "development") {
+    throw new Error("DEVELOPMENT_CONTACT_OVERRIDE_NOT_ALLOWED");
+  }
+  return env;
 }
 
 export function getStripeEnv() {

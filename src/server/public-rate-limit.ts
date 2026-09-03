@@ -9,7 +9,7 @@ export type RateLimitResult =
   | { allowed: false; retryAfterSeconds: number };
 
 export function hashRateLimitIdentifier(scope: string, identifier: string, secret = getRateLimitSecret()) {
-  return `${scope}:${createHmac("sha256", secret).update(identifier.trim().toLowerCase()).digest("hex")}`;
+  return createHmac("sha256", secret).update(JSON.stringify([scope, identifier.trim().toLowerCase()])).digest("hex");
 }
 
 export function getForwardedClientIp(headers: Headers) {
