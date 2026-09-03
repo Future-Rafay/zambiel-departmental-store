@@ -35,7 +35,7 @@ export function CartPage({ locale }: { locale: "de" | "en" }) {
         )}
       </div>
       {items.length === 0 ? (
-        <Card className="mx-auto max-w-xl space-y-5 p-10 text-center">
+        <Card className="mx-auto max-w-7xl space-y-5 p-10 text-center">
           <h2 className="font-display text-2xl font-bold text-primary">
             {de ? "Ihr Warenkorb ist noch leer" : "Your cart is empty"}
           </h2>
@@ -59,9 +59,7 @@ export function CartPage({ locale }: { locale: "de" | "en" }) {
                 <Card className="flex items-center gap-4 p-4">
                   <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-background">
                     <Image
-                      src={
-                        item.imageUrl ?? "/images/product-placeholder.svg"
-                      }
+                      src={item.imageUrl ?? "/images/product-placeholder.svg"}
                       alt=""
                       fill
                       sizes="80px"
@@ -107,7 +105,10 @@ export function CartPage({ locale }: { locale: "de" | "en" }) {
                   </div>
                   <div className="text-right">
                     <strong className="block text-primary">
-                      {formatMoney(item.unitPriceRappen * item.quantity, locale)}
+                      {formatMoney(
+                        item.unitPriceRappen * item.quantity,
+                        locale,
+                      )}
                     </strong>
                     <Button
                       type="button"

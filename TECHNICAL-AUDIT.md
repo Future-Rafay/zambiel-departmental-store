@@ -1,7 +1,18 @@
 # Zambiel technical audit
 
 Date: 2026-08-31
-Scope: the post-change Next.js storefront and shared server/admin seams. Generated Prisma output and `apps/saltnpepper-staff-android` are excluded. This report records findings only; none of its recommendations were applied.
+Scope: the post-change Next.js storefront and shared server/admin seams. Generated Prisma output and `apps/saltnpepper-staff-android` are excluded. The original findings were not changed during the audit itself; later resolution status is recorded below.
+
+## Resolution update (2026-09-03)
+
+- Contact abuse controls and truthful placeholder-email responses were implemented in `c6956cb`, with focused unit/integration coverage.
+- Database-backed catalogue filtering/pagination and safer media/share fallbacks were implemented in `013975c`.
+- Atomic notification claims, non-failing post-commit notification behavior, and transactional availability auditing were implemented in `cf081c0`.
+- The frozen-app promotion and duplicate social component were removed, and the admin mobile menu now uses the shared accessible dialog primitive (`326dea0`).
+- Checkout request ordering and its 555-line component were reduced to a controller plus presentation sections (`38fe10f`).
+- The remaining ordering, retail-action, product-form, and order-history monoliths were split behind their existing facades in the 2026-09-03 refactor. No generic repository/action framework or new dependency was added.
+
+The unresolved release work is operational: provide reviewed category imagery and legal/German content, apply the pending public-rate-limit migration, run isolated payment/concurrency tests, exercise authenticated destructive admin journeys, and validate real Resend/Stripe/S3 production configuration. Browser smoke checks still observe intermittent 403/500/504 responses from remote catalogue images. The global dynamic-rendering boundary and importer/admin-service size remain lower-priority code review items.
 
 ## Executive summary
 
@@ -49,7 +60,9 @@ The storefront build, typecheck, lint, Prisma validation/generation, catalogue s
 - **Admin shell:** keep the current design system, but remove the legacy app promotion and extract a shared navigation renderer plus an accessible mobile-dialog shell.
 - **Other long files:** import tooling is intentionally cohesive but can isolate CSV parsing/validation from apply/reporting. The admin service should split reads, catalogue mutations, and refund lifecycle only when those areas are changed.
 
-## Handwritten files at least 250 lines
+## Original handwritten files at least 250 lines
+
+This table is the audit snapshot. The resolution update above supersedes rows for ordering, checkout, retail actions, product editing, and order history; their current primary files are below 250 lines except the 277-line admin shell.
 
 | Lines | File | Suggested boundary |
 | ---: | --- | --- |
@@ -79,15 +92,14 @@ The storefront build, typecheck, lint, Prisma validation/generation, catalogue s
 - The isolated Stripe/database integration test was skipped because `TEST_DATABASE_URL` was not configured. Live Stripe checkout, signed webhook delivery, refund/cancel, delayed payment, and concurrent oversell remain unverified.
 - Authenticated/destructive admin flows were inspected statically, not executed against production data.
 - Browser checks covered representative German and English routes and 375/768/1024/1440 widths; assistive-technology screen-reader output and multiple physical browsers/devices were not tested.
-- The two HTTP 403 catalogue media records generate console errors even though the visual placeholder renders.
+- Remote S3/Shopify catalogue media still generate intermittent 403/500/504 console errors even though visual fallbacks render.
 - Category placeholder behavior was verified; no configured category image was available to verify the positive path.
 
-## Recommended next-round order
+## Updated next-round order
 
-1. Add contact submission rate limiting and make placeholder email mode truthful.
-2. Repair/validate active catalogue media and add reviewed category imagery.
-3. Fix notification claiming and post-commit order-action feedback; then run isolated concurrent/payment regression checks.
-4. Remove the frozen app promotion and correct the admin mobile drawer accessibility.
-5. Move product availability/price filtering to database pagination before catalogue growth.
-6. Split the listed long files along the boundaries above, running focused tests after each domain extraction.
-7. Narrow the global dynamic-rendering boundary after measuring route caching requirements.
+1. Supply reviewed category imagery plus final legal/German commercial content.
+2. Apply and verify migrations on the target environment, then run isolated concurrent ordering/payment regression checks.
+3. Exercise authenticated destructive admin journeys and real Resend/Stripe/S3 staging flows.
+4. Re-run responsive, keyboard, focus, overflow, placeholder, and console checks across both locales.
+5. Narrow the global dynamic-rendering boundary after measuring route caching requirements.
+6. Split importer/admin-service code only when those areas next change; keep the current direct modules and avoid a generic framework.

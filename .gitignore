@@ -8,6 +8,7 @@
 # local output
 /output
 /.artifacts
+/.playwright-cli
 
 # environment files
 .env

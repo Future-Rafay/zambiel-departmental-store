@@ -15,7 +15,7 @@ Read `PROJECT-CONTEXT.md` and `PLAN.md` before making changes. Then read `BRANDI
 
 - This is a single-seller Swiss departmental store. Never add vendor, tenant, organization, commission, payout, or order-splitting architecture.
 - Public routes are German/English under `/de` and `/en`; admin is `/admin`. Zambiel has no planned React Native application. Existing native artifacts and staff-mobile endpoints are frozen legacy code: do not transform, extend, advertise, or verify them as Zambiel functionality without a separately approved removal or migration task.
-- Preserve the shared seams: `src/server/db.ts`, `src/server/services/ordering.ts`, admin services/actions, explicit DTOs, and `resolvePublicImageUrl`.
+- Preserve the shared seams: `src/server/db.ts`; the stable `src/server/services/ordering.ts` facade and its focused `order-*.ts` modules; the stable admin `retail-actions.ts` facade and its domain modules; explicit DTOs; and `resolvePublicImageUrl`.
 - Legacy restaurant schema fields and enum members remain temporarily for forward expand/contract compatibility. Do not use them in new behavior, UI, routes, seeds, or APIs; remove them only through a reviewed forward migration after all historical-data requirements are confirmed.
 
 ## Configuration and content

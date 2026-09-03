@@ -23,8 +23,6 @@ import {
 
 import { BrandLogo } from "@/components/brand-logo";
 import { useCart } from "@/components/site/cart-context";
-import Image from "next/image";
-import { cn } from "@/lib/cn";
 
 type SiteUser = {
   id: string;
@@ -369,16 +367,7 @@ export function SiteShell({
       <footer className="border-t border-border bg-primary text-white">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 py-14 sm:px-8 lg:grid-cols-[1.2fr_repeat(3,1fr)]">
           <div>
-            <div className="inline-flex rounded-control bg-white p-2">
-              <Image
-                src="/images/zambiel-logo-white.png"
-                alt="Zambiel"
-                width={200}
-                height={106}
-                priority
-                className={cn("h-16 w-auto max-w-36 object-contain")}
-              />
-            </div>
+            <BrandLogo inverted className="h-16 max-w-36" />
             <p className="mt-5 max-w-sm text-sm leading-6 text-white/75">
               Zambiel – Where Shopping Meets Storytelling
             </p>

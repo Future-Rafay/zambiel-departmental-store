@@ -6,14 +6,20 @@ export function BrandLogo({
   compact = false,
   priority = false,
   className = "",
+  inverted = false,
 }: {
   compact?: boolean;
   priority?: boolean;
   className?: string;
+  inverted?: boolean;
 }) {
   return (
     <Image
-      src="/images/zambiel-logo.png"
+      src={
+        inverted
+          ? "/images/zambiel-logo-white.png"
+          : "/images/zambiel-logo.png"
+      }
       alt="Zambiel"
       width={200}
       height={106}

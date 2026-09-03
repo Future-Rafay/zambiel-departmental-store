@@ -27,10 +27,11 @@ Read installed Next.js documentation in `node_modules/next/dist/docs/` before fr
 - `src/config/store.ts`: release-managed identity, locale, currency, timezone, theme, order prefix, storage prefix, and safe defaults.
 - `src/server/services/store-config.ts`: merges admin/runtime settings over central defaults.
 - `src/server/db.ts`: only Prisma client construction seam.
-- `src/server/services/ordering.ts`: authoritative quote, repricing, order creation, inventory reservation/consumption/release, Stripe finalization, DTOs, and retail transitions.
+- `src/server/services/ordering.ts`: stable ordering facade and authoritative order creation, inventory reservation, retail transitions, and product-availability mutations.
+- `src/server/services/order-quotes.ts`, `order-stripe.ts`, `order-queries.ts`, `order-notifications.ts`, and `order-errors.ts`: focused quote/repricing, Stripe lifecycle, read DTO, delivery-claim, and error modules re-exported through the ordering facade.
 - `src/server/services/admin.ts`: order cancellation/refund, delivery/settings, staff, audit, and retained compatibility operations.
 - `src/server/services/retail-catalog.ts`: public catalog/category/search/product/home queries and variant availability.
-- `src/app/admin/(protected)/retail-actions.ts`: dedicated retail product, category, media, variant, and inventory mutations.
+- `src/app/admin/(protected)/retail-actions.ts`: stable server-action facade. Product/category, media, variant/option, and inventory/order implementations live in the adjacent `retail-actions/` directory.
 - `src/server/storage/s3.ts`: upload authorization, external image import, store-prefix keys, and `resolvePublicImageUrl`.
 - `src/server/import/shopify-csv.ts` and `scripts/import-products.ts`: guarded Shopify parsing/import.
 
@@ -43,7 +44,7 @@ Public storefront:
 - `/{locale}` homepage
 - `/{locale}/products` and `/{locale}/products/[slug]`
 - `/{locale}/categories` and `/{locale}/categories/[slug]`
-- `/{locale}/search`, `/cart`, `/checkout`
+- `/{locale}/search`, `/cart`, `/checkout`, and `/contact`
 - `/{locale}/account`, `/account/orders`, and `/orders/[orderNumber]`
 - `/{locale}/menu` and singular order routes are compatibility redirects only.
 
@@ -60,6 +61,7 @@ APIs:
 - Frozen compatibility endpoints remain under `/api/v1/staff/*`; do not extend or advertise them as a Zambiel mobile application.
 - Stripe: `/api/webhooks/stripe`; preserve signature verification, event claims, replay protection, and shared idempotent finalization.
 - Media: `/api/uploads/images`; owner-authorized and limited by MIME, size, and configured object prefix.
+- Public inquiries: `POST /api/v1/public/contact`; same-origin, Zod-validated, honeypot- and rate-limit-protected contact/product-request delivery.
 
 ## Catalog and inventory contract
 
@@ -108,15 +110,17 @@ npm.cmd run catalog:stats
 
 Import is dry-run by default, applies only to `zambiel_dev`/`zambiel_test`, stores drafts, groups by handle, upserts by handle/SKU, and skips unchanged hashes. Unavailable source media is reported without rejecting valid product data. Read `CATALOG-IMPORT.md` before changing it.
 
-## Current verified local state (2026-08-29)
+## Current verified local state (2026-09-03)
 
-- Six migrations applied to independent `zambiel_dev`; deterministic seed passed twice with stable counts and current migration status.
-- Demo catalog: 61 active categories, 50 active products, 223 active variants, 950 Shopify-source media records, 5,568 stock units, 1 reserved unit, and 223 opening-stock movements.
+- Seven migrations define the independent Zambiel schema, including durable public-inquiry rate limits. Local `zambiel_dev` is currently missing `20260902000000_add_public_request_rate_limit`; apply it through the normal reviewed migration workflow before exercising the contact endpoint.
+- Catalog statistics: 50 imported products, 223 imported variants, 950 Shopify-source media records, 62 active categories, 52 active products, 225 active variants, 5,568 stock units, 1 reserved unit, and 223 opening-stock movements.
 - Demo business tables: 5 customers and addresses, 2 delivery zones, 10 orders, `WELCOME10`, 1 refund, 10 notification deliveries, 10 audit entries, and 12 order inventory movements.
 - Identical second import: 50 skipped, zero imported, zero rejected.
 - Media: all 950 stored Shopify URLs passed bounded availability checks; product media prefers `sourceUrl` and retains S3 keys as fallback metadata.
-- Web: Prisma validation/generation, 27 passing tests, typecheck, lint, and production build passed. One isolated Stripe integration test is skipped without `TEST_DATABASE_URL`.
-- Browser: German/English storefront, catalogue filters, product variants, cart, checkout, and login redirects passed at 375/768/1024/1440 without broken images, console errors, or remaining horizontal overflow. Cart migration discards legacy `zambiel-cart-v1` state.
+- Web: the storefront includes the Zambiel logo and rounded system, Inter headings and Archivo body text, manual two-banner hero, image-led category cards, compact catalogue filters, contact/product-request forms, product gallery and category breadcrumbs, related/recent products, sharing, Instagram/Why Zambiel sections, and the expanded footer.
+- Maintainability: ordering, checkout, retail actions, product editing, and admin order history are split into focused modules while their existing route/action/service entry points remain stable.
+- Prisma format/validation/generation, 34 tests, typecheck, clean lint, and production build pass. Four isolated-database tests are skipped without `TEST_DATABASE_URL`.
+- Browser smoke checks passed German/English home, categories, contact, product detail/gallery, and a working search filter at 375/768/1024/1440 with no horizontal overflow. Remote S3/Shopify image responses still produce intermittent 403/500/504 console errors and remain a catalogue/provider cleanup item. Cart migration discards legacy `zambiel-cart-v1` state.
 - Product decision (2026-08-31): Zambiel will not have a React Native application. Historical native verification is no longer a release gate.
 - Not verified: live Stripe/webhook/refund flows, authenticated admin journeys, concurrent oversell against an isolated integration database, or production credentials/providers.
 
