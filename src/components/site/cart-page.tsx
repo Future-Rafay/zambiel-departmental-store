@@ -35,7 +35,7 @@ export function CartPage({ locale }: { locale: "de" | "en" }) {
         )}
       </div>
       {items.length === 0 ? (
-        <Card className="mx-auto max-w-7xl space-y-5 p-10 text-center">
+        <Card className="mx-auto max-w-7xl space-y-5 rounded-none p-10 text-center">
           <h2 className="font-display text-2xl font-bold text-primary">
             {de ? "Ihr Warenkorb ist noch leer" : "Your cart is empty"}
           </h2>
@@ -56,7 +56,7 @@ export function CartPage({ locale }: { locale: "de" | "en" }) {
           <ul className="min-w-0 space-y-3">
             {items.map((item) => (
               <li key={item.key}>
-                <Card className="flex items-center gap-4 p-4">
+                <Card className="flex items-center gap-4 rounded-none p-4">
                   <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-background">
                     <Image
                       src={item.imageUrl ?? "/images/product-placeholder.svg"}
@@ -129,7 +129,7 @@ export function CartPage({ locale }: { locale: "de" | "en" }) {
               </li>
             ))}
           </ul>
-          <Card className="h-fit space-y-5 p-5 lg:sticky lg:top-24">
+          <Card className="h-fit space-y-5 rounded-none p-5 lg:sticky lg:top-24">
             <h2 className="font-display text-xl font-bold text-primary">
               {de ? "Zusammenfassung" : "Summary"}
             </h2>

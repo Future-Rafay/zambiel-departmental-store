@@ -172,7 +172,7 @@ export function CheckoutForm({ locale, user }: { locale: "de" | "en"; user?: Che
     }
   }
 
-  if (items.length === 0) return <Card className="p-8 text-center"><p>{de ? "Ihr Warenkorb ist leer." : "Your cart is empty."}</p></Card>;
+  if (items.length === 0) return <Card className="rounded-none p-8 text-center"><p>{de ? "Ihr Warenkorb ist leer." : "Your cart is empty."}</p></Card>;
 
   return (
     <form ref={formRef} onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_22rem]" noValidate>

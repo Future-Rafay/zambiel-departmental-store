@@ -70,9 +70,10 @@ body {
   min-height: 100vh;
   margin: 0;
   background-image:
-    linear-gradient(rgba(21, 59, 53, 0.026) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(21, 59, 53, 0.026) 1px, transparent 1px);
-  background-size: 64px 64px;
+    radial-gradient(circle at 20% 30%, rgba(21, 59, 53, 0.045) 0 0.7px, transparent 0.9px),
+    radial-gradient(circle at 75% 65%, rgba(214, 168, 75, 0.055) 0 0.8px, transparent 1px);
+  background-position: 0 0, 7px 9px;
+  background-size: 13px 13px, 17px 17px;
 }
 
 :focus-visible {
@@ -257,6 +258,18 @@ body {
   background: var(--brand-primary);
   padding: 1rem;
   color: white;
+}
+
+.rich-editor-content p:empty::before {
+  color: var(--brand-muted);
+  content: "Start writing…";
+  pointer-events: none;
+}
+
+.rich-editor-content img {
+  margin-block: 1rem;
+  max-height: 32rem;
+  object-fit: contain;
 }
 
 @media (prefers-reduced-motion: reduce) {

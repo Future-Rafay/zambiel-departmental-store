@@ -45,7 +45,7 @@ export default async function AccountOrdersPage({ params }: { params: Promise<{ 
       </div>
 
       {orders.length === 0 ? (
-        <Card className="p-12 text-center space-y-6 max-w-xl mx-auto">
+        <Card className="max-w-xl mx-auto space-y-6 rounded-none p-12 text-center">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-secondary/10 text-secondary">
             <ShoppingBag className="h-10 w-10" strokeWidth={1.5} />
           </div>
@@ -72,7 +72,7 @@ export default async function AccountOrdersPage({ params }: { params: Promise<{ 
         <div className="grid gap-6 sm:grid-cols-2">
           {orders.map((order) => (
             <Link key={order.orderNumber} href={`/${locale}/orders/${order.orderNumber}`}>
-              <Card hover className="p-6 h-full flex flex-col justify-between space-y-4 group">
+              <Card hover className="group flex h-full flex-col justify-between space-y-4 rounded-none p-6">
                 <div className="flex items-center justify-between border-b border-border/60 pb-3">
                   <span className="font-display font-extrabold text-lg text-primary group-hover:text-secondary transition-colors">
                     {order.orderNumber}

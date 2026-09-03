@@ -1,6 +1,8 @@
 import { saveRetailProduct } from "@/app/admin/(protected)/retail-actions";
-import { Check, Field, SaveBar, SelectField, TextareaField } from "@/components/admin/admin-ui";
+import { Check, Field, SaveBar, SelectField } from "@/components/admin/admin-ui";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { RichTextEditor } from "@/components/admin/rich-text-editor";
+import { SlugField } from "@/components/admin/slug-field";
 import type { RetailCategoryOption, RetailProductEdit } from "@/components/admin/retail-product-types";
 import { Card } from "@/components/ui/card";
 
@@ -12,14 +14,14 @@ export function RetailProductBasics({ categories, product }: { categories: Retai
         <SelectField label="Category" name="categoryId" defaultValue={product?.categoryId}>
           {categories.map((category) => <option key={category.id} value={category.id}>{category.parent ? `${category.parent.nameEn} / ` : ""}{category.nameEn}</option>)}
         </SelectField>
-        <Field label="SEO slug" name="slug" defaultValue={product?.slug} required />
+        <SlugField defaultValue={product?.slug} />
         <Field label="English name" name="nameEn" defaultValue={product?.nameEn} required />
         <Field label="German name" name="nameDe" defaultValue={product?.nameDe} />
-        <div className="sm:col-span-2"><TextareaField label="English description" name="descriptionEn" rows={8} defaultValue={product?.descriptionEn} /></div>
+        <RichTextEditor label="English description" name="descriptionEn" defaultValue={product?.descriptionEn} />
         <div className="sm:col-span-2"><ImageUploadField initialKey={product?.imageKey ?? ""} initialUrl={product?.imageUrl} /></div>
-        <div className="sm:col-span-2"><TextareaField label="German description" name="descriptionDe" rows={8} defaultValue={product?.descriptionDe} /></div>
+        <RichTextEditor label="German description" name="descriptionDe" defaultValue={product?.descriptionDe} />
         <SelectField label="Publication state" name="status" defaultValue={product?.status ?? "DRAFT"}>
-          <option value="DRAFT">Draft</option><option value="ACTIVE">Active</option><option value="ARCHIVED">Archived</option>
+          <option value="DRAFT">Draft</option><option value="ACTIVE">Active</option>
         </SelectField>
         <Check label="Featured product" name="featured" defaultChecked={product?.featured} />
         <Field label="Tags (comma separated)" name="tags" defaultValue={product?.tags.map(({ name }) => name).join(", ") ?? ""} />

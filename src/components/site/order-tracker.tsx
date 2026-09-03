@@ -68,7 +68,7 @@ export function OrderTracker({
         ...event,
       }));
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 py-12 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-12 sm:px-6 lg:px-8">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
         <div>
           <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary">
@@ -88,7 +88,7 @@ export function OrderTracker({
       {order.status === "PAYMENT_PENDING" && (
         <div
           role="status"
-          className="rounded-xl border border-secondary/30 bg-secondary/10 p-4 text-sm"
+          className="border border-secondary/30 bg-secondary/10 p-4 text-sm"
         >
           <strong>
             {de ? "Zahlung wird bestätigt" : "Payment confirmation in progress"}
@@ -101,7 +101,7 @@ export function OrderTracker({
         </div>
       )}
       <div className="grid gap-6 sm:grid-cols-2">
-        <Card className="space-y-5 p-5">
+        <Card className="space-y-5 rounded-none p-5">
           <h2 className="font-display text-xl font-bold text-primary">
             {de ? "Bestellte Artikel" : "Ordered items"}
           </h2>
@@ -110,9 +110,7 @@ export function OrderTracker({
               <li key={item.id} className="flex gap-3 py-3">
                 <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-background">
                   <Image
-                    src={
-                      item.imageUrl ?? "/images/product-placeholder.svg"
-                    }
+                    src={item.imageUrl ?? "/images/product-placeholder.svg"}
                     alt=""
                     fill
                     sizes="56px"
@@ -162,7 +160,7 @@ export function OrderTracker({
             </div>
           </dl>
         </Card>
-        <Card className="space-y-5 p-5">
+        <Card className="space-y-5 rounded-none p-5">
           <h2 className="font-display text-xl font-bold text-primary">
             {de ? "Bestellverlauf" : "Order history"}
           </h2>

@@ -6,9 +6,7 @@ import { ImageIcon, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-
-const allowed = ["image/avif", "image/jpeg", "image/png", "image/webp"];
-const maxBytes = 10 * 1024 * 1024;
+import { productImageAccept, uploadProductImage } from "@/lib/product-image-upload";
 
 export function ImageUploadField({
   initialKey = "",
@@ -29,31 +27,12 @@ export function ImageUploadField({
 
   async function upload(file?: File) {
     if (!file) return;
-    if (!allowed.includes(file.type) || file.size > maxBytes)
-      return setError("Use an AVIF, JPG, PNG, or WebP image up to 10 MB.");
     setUploading(true);
     setError("");
     try {
-      const response = await fetch("/api/uploads/images", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contentType: file.type,
-          size: file.size,
-          scope: "products",
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok)
-        throw new Error(result.error ?? "Upload authorization failed.");
-      const put = await fetch(result.upload.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      if (!put.ok) throw new Error("Image upload failed.");
-      setKey(result.upload.key);
-      setPreview(result.upload.publicUrl);
+      const upload = await uploadProductImage(file);
+      setKey(upload.key);
+      setPreview(upload.publicUrl);
     } catch (caught) {
       setError(
         caught instanceof Error ? caught.message : "Image upload failed.",
@@ -71,7 +50,7 @@ export function ImageUploadField({
         ref={input}
         className="sr-only"
         type="file"
-        accept={allowed.join(",")}
+        accept={productImageAccept}
         onChange={(event) => upload(event.target.files?.[0])}
       />
       <div className="rounded-xl border border-dashed bg-white p-3">
