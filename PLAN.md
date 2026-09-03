@@ -11,7 +11,10 @@ Zambiel is one Swiss store and one seller. German is primary, English secondary,
 - `src/server/services/ordering.ts` remains the stable public ordering facade. Focused `order-*.ts` modules own quotes, reads, notification claims, and Stripe lifecycle without changing callers; COD and cash-at-pickup remain retail flows.
 - Localized product, category, search, cart, checkout, account, and tracking routes; dedicated product/category/inventory admin workflows plus customers, discounts, payments, settings, orders, and audit surfaces.
 - Localized contact pages, durable contact/product-request delivery controls, compact database-backed filters, descendant-aware category counts, product breadcrumbs/gallery/sharing/recommendations/history, and a richer branded homepage/footer.
-- Inter headings, Archivo body text, the supplied Zambiel marks, shared rounded public components, and accessible manual hero/gallery/navigation controls.
+- Immediate newsletter subscription/unsubscribe and localized password recovery reuse the existing Resend, rate-limit, session, and password-token seams without adding campaign tooling.
+- Safe catalog deletion hides products, variants, and categories operationally while preserving historical relations. Inventory defaults to low/empty stock and admin money fields accept decimal CHF while retaining integer-rappen storage.
+- Product/category forms generate slugs from English names. Product descriptions use a minimal bilingual TipTap editor with sanitized HTML and store-owned uploaded images.
+- Inter headings, Archivo body text, the supplied Zambiel marks, subtle paper grain, sharper commerce panels, and accessible manual hero/gallery/navigation controls.
 - Checkout, ordering, retail actions, product editing, and admin order history have focused modules while their established entry points remain compatible.
 - Guarded Shopify importer and report workflow documented in `CATALOG-IMPORT.md`. Imports remain draft and start at 25 units; the guarded demo seed publishes the reviewed local fixture set.
 - Restaurant WordPress/contact/map/menu content was removed; `/de/menu` and `/en/menu` remain redirects to products for compatibility.
@@ -26,10 +29,11 @@ Run Prisma format/validate/generate and fresh-database migration/seed; importer 
 
 ## Current verification (2026-09-03)
 
-- Seven migrations now define the independent Zambiel schema, including persistent inquiry throttling. Local `zambiel_dev` still needs `20260902000000_add_public_request_rate_limit` applied through the reviewed migration workflow.
+- Eight migrations now define the independent Zambiel schema. The public-rate-limit and newsletter-subscriber migrations are applied to local `zambiel_dev`.
 - Catalog: 50 imported products, 223 imported variants, 950 Shopify-source media rows, 62 active categories, 52 active products, and 225 active variants. Stock is 5,568 on hand and 1 reserved after demo order movements.
 - Demo business data: 5 customers, 2 delivery zones, 10 orders, `WELCOME10`, 1 successful refund, 10 notifications, 10 audits, and 12 idempotent order movements.
-- Prisma format/validation/generation, 34 tests, typecheck, clean lint, and production build pass; four isolated-database tests are skipped without `TEST_DATABASE_URL`.
-- Browser smoke checks pass German/English home, categories, contact, product gallery, and catalogue search filtering at 375/768/1024/1440 without horizontal overflow. Intermittent remote S3/Shopify image 403/500/504 responses remain an operational catalogue/provider issue.
+- Prisma format/validation/generation, 41 tests (36 passing and 5 isolated-database skips), typecheck, clean lint, production build, and `git diff --check` pass.
+- Authenticated browser checks pass inventory defaults, decimal CHF fields, rich-editor controls, safe delete controls, and slug generation; cart/checkout layouts pass at 375/768/1024/1440 without horizontal overflow. Remote S3 image 403 responses remain an operational provider issue; tracking with an authorized fixture and live rich-image upload were not exercised.
+- The requested labelled live Resend check failed at the provider with HTTP 401 because the configured API key is invalid. Mocked-delivery tests pass, but live email is a release blocker until the key is replaced.
 - Product decision (2026-08-31): Zambiel has no planned React Native application. Existing native artifacts are frozen and excluded from implementation and release verification.
-- Authenticated admin mutations, live Stripe/webhook/refund, and production-provider checks remain blocked until a browser session and staging credentials/endpoints are supplied.
+- Destructive admin mutations, live Stripe/webhook/refund, concurrent oversell, live S3 editor upload, and production-provider checks remain unverified.

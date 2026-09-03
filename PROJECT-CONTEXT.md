@@ -62,6 +62,8 @@ APIs:
 - Stripe: `/api/webhooks/stripe`; preserve signature verification, event claims, replay protection, and shared idempotent finalization.
 - Media: `/api/uploads/images`; owner-authorized and limited by MIME, size, and configured object prefix.
 - Public inquiries: `POST /api/v1/public/contact`; same-origin, Zod-validated, honeypot- and rate-limit-protected contact/product-request delivery.
+- Newsletter: `POST /api/v1/public/newsletter` and `POST /api/v1/public/newsletter/unsubscribe`; immediate idempotent subscription, token-protected unsubscribe, and durable IP/email throttling.
+- Password recovery: `POST /api/auth/password/forgot` and `POST /api/auth/password/reset`; generic forgot responses, one-hour single-use hashed tokens, password rehashing, and session revocation.
 
 ## Catalog and inventory contract
 
@@ -71,7 +73,9 @@ APIs:
 - Every purchasable item is a variant; choice-less products use a default variant.
 - Variant fields include SKU, price, compare-at price, barcode, weight, active state, stock, reserved stock, threshold, and optional media.
 - Inventory changes require an `InventoryMovement` with an idempotency key. Never update stock without the ledger.
-- Product/category records with history are archived, not hard-deleted.
+- Admin **Delete** actions perform safe operational deletion (`deletedAt` plus inactive/unavailable state), preserving order snapshots, inventory movements, and audit history. Categories remain blocked while active children or products exist.
+- Product descriptions are sanitized HTML edited through the focused TipTap toolbar. Description images are limited to store-owned upload URLs or already-imported mapped media.
+- Admin money inputs accept decimal CHF (for example `49.65`) through the shared parser; persistence and calculations remain integer rappen.
 
 ## Order, payment, and stock rules
 
@@ -112,17 +116,18 @@ Import is dry-run by default, applies only to `zambiel_dev`/`zambiel_test`, stor
 
 ## Current verified local state (2026-09-03)
 
-- Seven migrations define the independent Zambiel schema, including durable public-inquiry rate limits. Local `zambiel_dev` is currently missing `20260902000000_add_public_request_rate_limit`; apply it through the normal reviewed migration workflow before exercising the contact endpoint.
+- Eight migrations define the independent Zambiel schema. `20260902000000_add_public_request_rate_limit` and the forward-only `20260903190000_add_newsletter_subscriber` migration are applied to local `zambiel_dev`; migration status is current.
 - Catalog statistics: 50 imported products, 223 imported variants, 950 Shopify-source media records, 62 active categories, 52 active products, 225 active variants, 5,568 stock units, 1 reserved unit, and 223 opening-stock movements.
 - Demo business tables: 5 customers and addresses, 2 delivery zones, 10 orders, `WELCOME10`, 1 refund, 10 notification deliveries, 10 audit entries, and 12 order inventory movements.
 - Identical second import: 50 skipped, zero imported, zero rejected.
 - Media: all 950 stored Shopify URLs passed bounded availability checks; product media prefers `sourceUrl` and retains S3 keys as fallback metadata.
-- Web: the storefront includes the Zambiel logo and rounded system, Inter headings and Archivo body text, manual two-banner hero, image-led category cards, compact catalogue filters, contact/product-request forms, product gallery and category breadcrumbs, related/recent products, sharing, Instagram/Why Zambiel sections, and the expanded footer.
+- Web: cart, checkout, account-order, and tracking panels use sharper edges over a lightweight CSS paper grain while controls retain modest rounding. Admin product/category forms include English-name slug generation; products use bilingual TipTap rich-description editors.
 - Maintainability: ordering, checkout, retail actions, product editing, and admin order history are split into focused modules while their existing route/action/service entry points remain stable.
-- Prisma format/validation/generation, 34 tests, typecheck, clean lint, and production build pass. Four isolated-database tests are skipped without `TEST_DATABASE_URL`.
-- Browser smoke checks passed German/English home, categories, contact, product detail/gallery, and a working search filter at 375/768/1024/1440 with no horizontal overflow. Remote S3/Shopify image responses still produce intermittent 403/500/504 console errors and remain a catalogue/provider cleanup item. Cart migration discards legacy `zambiel-cart-v1` state.
+- Prisma format/validation/generation, 41 tests (36 passing and 5 isolated-database skips), typecheck, clean lint, production build, and `git diff --check` pass.
+- Authenticated browser checks passed low/empty inventory defaults, decimal price rendering, rich-editor controls, safe delete controls, and product/category slug generation. Public cart/checkout styling passed at 375/768/1024/1440 without horizontal overflow. An authorized tracking fixture and live rich-image upload were not exercised. Remote S3 image responses still produce 403 console errors and remain a catalogue/provider cleanup item.
+- One clearly labelled live Resend delivery check reached the provider but failed with HTTP 401 (`API key is invalid`). Email templates/services have automated mocked-delivery coverage; live delivery remains blocked until the configured key is replaced.
 - Product decision (2026-08-31): Zambiel will not have a React Native application. Historical native verification is no longer a release gate.
-- Not verified: live Stripe/webhook/refund flows, authenticated admin journeys, concurrent oversell against an isolated integration database, or production credentials/providers.
+- Not verified: live Stripe/webhook/refund flows, concurrent oversell against an isolated integration database, rich-editor S3 upload/public delivery, or production credentials/providers.
 
 ## Branding and content
 
