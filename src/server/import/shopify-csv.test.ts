@@ -21,4 +21,5 @@ test("description sanitization strips styles and only keeps imported images", ()
   const html = '<p style="color:red">Text<script>alert(1)</script><img src="https://old/image.jpg"></p>';
   assert.deepEqual(extractImageUrls(html), ["https://old/image.jpg"]);
   assert.equal(sanitizeProductDescription(html, new Map([["https://old/image.jpg", "https://media/image.jpg"]])), '<p>Text<img src="https://media/image.jpg" alt="" loading="lazy" /></p>');
+  assert.equal(sanitizeProductDescription('<p><img src="https://cdn.example/uploads/Zambiel/products/photo.jpg"><img src="https://remote.example/tracker.gif"></p>', new Map(), ["https://cdn.example/uploads/Zambiel/products/"]), '<p><img src="https://cdn.example/uploads/Zambiel/products/photo.jpg" alt="" loading="lazy" /></p>');
 });

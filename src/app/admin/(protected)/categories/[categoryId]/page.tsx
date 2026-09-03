@@ -7,15 +7,16 @@ export default async function CategoryPage({
   searchParams,
 }: {
   params: Promise<{ categoryId: string }>;
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; deleted?: string }>;
 }) {
   const [{ categoryId }, feedback] = await Promise.all([params, searchParams]);
   const [categories, category] = await Promise.all([
     prisma.category.findMany({
+      where: { deletedAt: null },
       select: { id: true, nameEn: true },
       orderBy: { nameEn: "asc" },
     }),
-    prisma.category.findUnique({ where: { id: categoryId } }),
+    prisma.category.findFirst({ where: { id: categoryId, deletedAt: null } }),
   ]);
   if (!category) notFound();
   return (

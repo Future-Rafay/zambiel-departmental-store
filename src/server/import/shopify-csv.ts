@@ -72,7 +72,7 @@ export function extractImageUrls(html: string) {
   return [...html.matchAll(/<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)].map((match) => match[1]);
 }
 
-export function sanitizeProductDescription(html: string, importedUrls: ReadonlyMap<string, string> = new Map()) {
+export function sanitizeProductDescription(html: string, importedUrls: ReadonlyMap<string, string> = new Map(), allowedImagePrefixes: readonly string[] = []) {
   return sanitizeHtml(html, {
     allowedTags: ["p", "br", "h2", "h3", "h4", "ul", "ol", "li", "strong", "em", "blockquote", "table", "thead", "tbody", "tr", "th", "td", "a", "img"],
     allowedAttributes: { a: ["href", "target", "rel"], img: ["src", "alt", "width", "height", "loading"] },
@@ -81,9 +81,9 @@ export function sanitizeProductDescription(html: string, importedUrls: ReadonlyM
       a: (_tagName, attributes) => ({ tagName: "a", attribs: { ...attributes, rel: "noreferrer", target: "_blank" } }),
       img: (_tagName, attributes) => {
         const source = attributes.src;
-        const imported = source ? importedUrls.get(source) : null;
-        return imported
-          ? { tagName: "img", attribs: { src: imported, alt: attributes.alt ?? "", loading: "lazy" } }
+        const trusted = source && (importedUrls.get(source) ?? (allowedImagePrefixes.some((prefix) => source.startsWith(prefix)) ? source : null));
+        return trusted
+          ? { tagName: "img", attribs: { src: trusted, alt: attributes.alt ?? "", loading: "lazy" } }
           : { tagName: "span", attribs: {} as Record<string, string> };
       },
     },

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { siteConfig } from "@/config/site";
+import { parseOrderNumber } from "@/lib/orders";
 import { zurichDateToUtc } from "@/lib/zurich-time";
 import { postalCodeValueSchema } from "@/server/validators/postal-code";
 
@@ -9,11 +10,12 @@ const integer = (minimum = 0) => z.coerce.number().int().min(minimum);
 const optionalInteger = (minimum = 0) => z.union([z.literal(""), z.coerce.number().int().min(minimum)]).transform((value) => value === "" ? null : value);
 const checkbox = z.preprocess((value) => value === "on" || value === "true", z.boolean());
 const databaseId = z.string().trim().min(1).max(191);
-const minorUnits = z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/, `Enter a valid ${siteConfig.currency} amount.`).transform((value) => {
+export const minorUnits = z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/, `Enter a valid ${siteConfig.currency} amount.`).transform((value) => {
   const [units, decimals = ""] = value.split(".");
   return Number(units) * 100 + Number(decimals.padEnd(2, "0"));
 });
 const optionalMinorUnits = z.union([z.literal(""), minorUnits]).transform((value) => value === "" ? null : value);
+const orderNumber = z.string().trim().refine((value) => parseOrderNumber(value) !== null, "Enter a valid order number.");
 const percentBasisPoints = z.string().trim().regex(/^\d+(?:\.\d{1,2})?$/, "Enter a valid percentage.").transform((value) => Math.round(Number(value) * 100));
 const optionalZurichDateTime = z.union([
   z.literal(""),
@@ -86,7 +88,7 @@ export const promoSchema = z.object({
   .refine((value) => !value.startsAt || !value.endsAt || value.startsAt < value.endsAt, { message: "End must be after start." });
 
 export const refundSchema = z.object({
-  orderNumber: z.string().regex(/^SNP-\d{6,}$/i),
+  orderNumber,
   amountRappen: minorUnits.pipe(z.number().min(1)),
   reason: z.string().trim().min(3).max(500),
   refundKey: z.string().uuid(),
@@ -94,12 +96,12 @@ export const refundSchema = z.object({
 });
 
 export const refundAndCancelSchema = z.object({
-  orderNumber: z.string().regex(/^SNP-\d{6,}$/i),
+  orderNumber,
   reason: z.string().trim().min(3).max(500),
   refundKey: z.string().trim().min(8).max(255),
 });
 
 export const cancelOrderSchema = z.object({
-  orderNumber: z.string().regex(/^SNP-\d{6,}$/i),
+  orderNumber,
   reason: z.string().trim().min(3).max(500),
 });

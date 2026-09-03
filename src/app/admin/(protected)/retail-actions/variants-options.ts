@@ -7,14 +7,15 @@ import { z } from "zod";
 import { optionalText } from "@/app/admin/(protected)/retail-actions/shared";
 import { requireRole } from "@/server/auth/current-user";
 import { prisma } from "@/server/db";
+import { minorUnits } from "@/server/validators/admin";
 
 export async function saveRetailVariant(formData: FormData) {
   const actor = await requireRole("OWNER");
   const id = z.string().min(1).parse(formData.get("id"));
   const productId = z.string().min(1).parse(formData.get("productId"));
-  const priceRappen = z.coerce.number().int().min(0).parse(formData.get("priceRappen"));
+  const priceRappen = minorUnits.parse(formData.get("priceRappen"));
   const compareAt = optionalText(formData.get("compareAtPriceRappen"));
-  const compareAtPriceRappen = compareAt ? z.coerce.number().int().gt(priceRappen).parse(compareAt) : null;
+  const compareAtPriceRappen = compareAt ? minorUnits.pipe(z.number().gt(priceRappen)).parse(compareAt) : null;
   await prisma.$transaction([
     prisma.productVariant.update({ where: { id }, data: {
       nameEn: z.string().trim().min(1).max(160).parse(formData.get("nameEn")),
@@ -31,22 +32,22 @@ export async function saveRetailVariant(formData: FormData) {
   redirect(`/admin/products/${productId}?saved=1`);
 }
 
-export async function archiveRetailVariant(formData: FormData) {
+export async function deleteRetailVariant(formData: FormData) {
   const actor = await requireRole("OWNER");
   const id = z.string().min(1).parse(formData.get("id"));
   const productId = z.string().min(1).parse(formData.get("productId"));
   await prisma.$transaction([
     prisma.productVariant.update({ where: { id, productId }, data: { active: false, deletedAt: new Date() } }),
-    prisma.auditLog.create({ data: { actorUserId: actor.id, action: "VARIANT_ARCHIVED", entityType: "ProductVariant", entityId: id } }),
+    prisma.auditLog.create({ data: { actorUserId: actor.id, action: "VARIANT_DELETED", entityType: "ProductVariant", entityId: id } }),
   ]);
   revalidatePath(`/admin/products/${productId}`);
-  redirect(`/admin/products/${productId}?saved=1`);
+  redirect(`/admin/products/${productId}?deleted=variant`);
 }
 
 export async function generateVariantMatrix(formData: FormData) {
   const actor = await requireRole("OWNER");
   const productId = z.string().min(1).parse(formData.get("productId"));
-  const priceRappen = z.coerce.number().int().min(0).parse(formData.get("priceRappen"));
+  const priceRappen = minorUnits.parse(formData.get("priceRappen"));
   const definitions = z.string().trim().min(1).max(4_000).parse(formData.get("options")).split(/\r?\n/).filter(Boolean).map((line) => {
     const [name, rawValues] = line.split(":", 2);
     return { name: name.trim(), values: [...new Set((rawValues ?? "").split(",").map((value) => value.trim()).filter(Boolean))] };
@@ -90,7 +91,7 @@ export async function addRetailVariant(formData: FormData) {
   if (!attributes.length || attributes.some(({ name, value }) => !name || !value)) throw new Error("Use one Name: Value attribute per line.");
   if (new Set(attributes.map(({ name }) => name.toLocaleLowerCase())).size !== attributes.length) throw new Error("Each option may appear only once per variant.");
   const sku = optionalText(formData.get("sku"));
-  const priceRappen = z.coerce.number().int().min(0).parse(formData.get("priceRappen"));
+  const priceRappen = minorUnits.parse(formData.get("priceRappen"));
   const nameEn = optionalText(formData.get("nameEn")) ?? attributes.map(({ value }) => value).join(" / ");
   await prisma.$transaction(async (tx) => {
     const current = await tx.productVariant.findMany({ where: { productId, deletedAt: null }, select: { sortOrder: true, optionValues: { select: { optionValue: { select: { value: true, option: { select: { name: true } } } } } } } });

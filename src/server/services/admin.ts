@@ -2,7 +2,9 @@ import type { Prisma } from "@/generated/prisma/client";
 import type Stripe from "stripe";
 import { formatOrderNumber, parseOrderNumber } from "@/lib/orders";
 import { prisma } from "@/server/db";
+import { orderStatusEmail } from "@/server/email/templates";
 import { getStripe } from "@/server/payments/stripe";
+import { sendOrderNotification } from "@/server/services/order-notifications";
 
 type Db = Prisma.TransactionClient | typeof prisma;
 
@@ -186,7 +188,7 @@ async function restoreOrderInventory(
 export async function cancelOrder(actorId: string, orderNumber: string, reason: string) {
   const id = parseOrderNumber(orderNumber);
   if (!id) throw new AdminError("ORDER_NOT_FOUND");
-  return prisma.$transaction(async (tx) => {
+  const cancelled = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id }, include: { payment: true } });
     if (!order) throw new AdminError("ORDER_NOT_FOUND");
     if (["DELIVERED", "PICKED_UP", "CANCELLED"].includes(order.status)) throw new AdminError("CANCELLATION_NOT_ALLOWED");
@@ -195,7 +197,9 @@ export async function cancelOrder(actorId: string, orderNumber: string, reason: 
     await tx.orderStatusEvent.create({ data: { orderId: id, actorUserId: actorId, fromStatus: order.status, toStatus: "CANCELLED", reason } });
     await restoreOrderInventory(tx, id, order.payment, actorId, reason);
     await audit(tx, actorId, "ORDER_CANCELLED", "Order", id.toString(), { reason });
+    return { id: order.id, email: order.customerEmail, locale: order.locale };
   });
+  await notifyCancellation(cancelled);
 }
 
 export async function refundOrder(actorId: string, input: { orderNumber: string; amountRappen: number; reason: string; refundKey: string; cancelOrder: boolean }) {
@@ -223,7 +227,7 @@ export async function refundOrder(actorId: string, input: { orderNumber: string;
     return created;
   });
   if (stripeRefund.status === "succeeded") {
-    await settleSucceededRefund(stripeRefund.id, input.cancelOrder);
+    await notifyCancellation(await settleSucceededRefund(stripeRefund.id, input.cancelOrder));
     return prisma.refund.findUniqueOrThrow({ where: { stripeRefundId: stripeRefund.id } });
   }
   return refund;
@@ -245,8 +249,19 @@ async function settleSucceededRefund(stripeRefundId: string, cancelOrder: boolea
       await tx.orderStatusEvent.create({ data: { orderId: order.id, actorUserId: refund.requestedByUserId, fromStatus: order.status, toStatus: "CANCELLED", reason: refund.reason } });
       await restoreOrderInventory(tx, order.id, { provider: payment.provider, status: "REFUNDED" }, refund.requestedByUserId, refund.reason);
       await tx.auditLog.create({ data: { actorUserId: refund.requestedByUserId, action: "ORDER_CANCELLED_AFTER_REFUND", entityType: "Order", entityId: order.id.toString(), metadata: { stripeRefundId } } });
+      return { id: order.id, email: order.customerEmail, locale: order.locale };
     }
   });
+}
+
+async function notifyCancellation(order: { id: bigint; email: string; locale: "DE" | "EN" } | undefined) {
+  if (!order) return;
+  await sendOrderNotification(
+    order.id,
+    "status-cancelled",
+    order.email,
+    orderStatusEmail({ orderNumber: formatOrderNumber(order.id), status: "CANCELLED", locale: order.locale }),
+  );
 }
 
 export async function syncStripeRefund(stripeRefund: Stripe.Refund) {
@@ -254,7 +269,7 @@ export async function syncStripeRefund(stripeRefund: Stripe.Refund) {
   if (!existing) return;
   if (existing.status === "SUCCEEDED") return;
   if (stripeRefund.status === "succeeded") {
-    await settleSucceededRefund(stripeRefund.id, stripeRefund.metadata?.cancelOrder === "true");
+    await notifyCancellation(await settleSucceededRefund(stripeRefund.id, stripeRefund.metadata?.cancelOrder === "true"));
     return;
   }
   const failed = stripeRefund.status === "failed" || stripeRefund.status === "canceled";

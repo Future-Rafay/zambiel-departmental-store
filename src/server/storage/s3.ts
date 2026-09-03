@@ -99,6 +99,10 @@ export function resolvePublicImageUrl(key: string | null | undefined) {
   return `${getS3Env().S3_PUBLIC_BASE_URL.replace(/\/$/, "")}/${key.replace(/^\//, "")}`;
 }
 
+export function getProductUploadPublicPrefix() {
+  return `${getS3Env().S3_PUBLIC_BASE_URL.replace(/\/$/, "")}/uploads/${storeConfig.identity.storagePrefix}/products/`;
+}
+
 export function resolveProductMediaUrl(media: {
   sourceUrl?: string | null;
   objectKey?: string | null;

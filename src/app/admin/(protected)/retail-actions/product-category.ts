@@ -8,12 +8,13 @@ import { optionalText } from "@/app/admin/(protected)/retail-actions/shared";
 import { requireRole } from "@/server/auth/current-user";
 import { prisma } from "@/server/db";
 import { sanitizeProductDescription, slugify } from "@/server/import/shopify-csv";
+import { getProductUploadPublicPrefix } from "@/server/storage/s3";
 
 const productInput = z.object({
   id: z.string().optional(), categoryId: z.string().min(1), slug: z.string().min(1).max(191),
   nameEn: z.string().min(1).max(200), nameDe: z.string().max(200),
   descriptionEn: z.string().max(200_000), descriptionDe: z.string().max(200_000),
-  imageKey: z.string().max(512).nullable(), status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]),
+  imageKey: z.string().max(512).nullable(), status: z.enum(["DRAFT", "ACTIVE"]),
   seoTitleEn: z.string().max(200), seoTitleDe: z.string().max(200),
   seoDescriptionEn: z.string().max(500), seoDescriptionDe: z.string().max(500), featured: z.boolean(),
 });
@@ -43,8 +44,8 @@ export async function saveRetailProduct(formData: FormData) {
     slug: input.slug,
     nameEn: input.nameEn,
     nameDe: input.nameDe,
-    descriptionEn: optionalText(sanitizeProductDescription(input.descriptionEn)),
-    descriptionDe: optionalText(sanitizeProductDescription(input.descriptionDe)),
+    descriptionEn: optionalText(sanitizeProductDescription(input.descriptionEn, new Map(), [getProductUploadPublicPrefix()])),
+    descriptionDe: optionalText(sanitizeProductDescription(input.descriptionDe, new Map(), [getProductUploadPublicPrefix()])),
     imageKey: input.imageKey,
     status: input.status,
     active: input.status === "ACTIVE",
@@ -75,15 +76,15 @@ export async function saveRetailProduct(formData: FormData) {
   redirect(`/admin/products/${product.id}?saved=1`);
 }
 
-export async function archiveRetailProduct(formData: FormData) {
+export async function deleteRetailProduct(formData: FormData) {
   const actor = await requireRole("OWNER");
   const id = z.string().min(1).parse(formData.get("id"));
   await prisma.$transaction([
-    prisma.product.update({ where: { id }, data: { status: "ARCHIVED", active: false, available: false } }),
-    prisma.auditLog.create({ data: { actorUserId: actor.id, action: "PRODUCT_ARCHIVED", entityType: "Product", entityId: id } }),
+    prisma.product.update({ where: { id }, data: { status: "ARCHIVED", active: false, available: false, deletedAt: new Date() } }),
+    prisma.auditLog.create({ data: { actorUserId: actor.id, action: "PRODUCT_DELETED", entityType: "Product", entityId: id } }),
   ]);
   revalidatePath("/admin/products");
-  redirect("/admin/products?saved=1");
+  redirect("/admin/products?deleted=product");
 }
 
 const categoryInput = z.object({
@@ -94,20 +95,20 @@ const categoryInput = z.object({
   seoDescriptionEn: z.string().max(500), seoDescriptionDe: z.string().max(500), active: z.boolean(),
 });
 
-export async function archiveRetailCategory(formData: FormData) {
+export async function deleteRetailCategory(formData: FormData) {
   const actor = await requireRole("OWNER");
   const id = z.string().min(1).parse(formData.get("id"));
   const [products, children] = await Promise.all([
     prisma.product.count({ where: { categoryId: id, status: "ACTIVE", deletedAt: null } }),
     prisma.category.count({ where: { parentId: id, active: true, deletedAt: null } }),
   ]);
-  if (products || children) throw new Error("CATEGORY_STILL_IN_USE");
+  if (products || children) redirect(`/admin/categories/${id}?error=CATEGORY_STILL_IN_USE`);
   await prisma.$transaction([
     prisma.category.update({ where: { id }, data: { active: false, deletedAt: new Date() } }),
-    prisma.auditLog.create({ data: { actorUserId: actor.id, action: "CATEGORY_ARCHIVED", entityType: "Category", entityId: id } }),
+    prisma.auditLog.create({ data: { actorUserId: actor.id, action: "CATEGORY_DELETED", entityType: "Category", entityId: id } }),
   ]);
   revalidatePath("/admin/categories");
-  redirect("/admin/categories?saved=1");
+  redirect("/admin/categories?deleted=category");
 }
 
 export async function saveRetailCategory(formData: FormData) {

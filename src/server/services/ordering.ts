@@ -74,7 +74,6 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
             lineSubtotalRappen: item.lineSubtotalRappen,
             options: {
               create: item.choices.map((choice) => ({
-                optionChoiceId: choice.id,
                 nameDeSnapshot: choice.nameDe,
                 nameEnSnapshot: choice.nameEn,
                 priceDeltaRappen: choice.priceDeltaRappen,

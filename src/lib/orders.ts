@@ -31,7 +31,7 @@ export function formatOrderNumber(id: bigint | number | string) {
 }
 
 export function parseOrderNumber(value: string) {
-  const match = /^(?:ZAM|SNP)-(\d+)$/.exec(value.toUpperCase());
+  const match = /^(?:ZAM|SNP)-(\d{6,})$/.exec(value.toUpperCase());
   return match ? BigInt(match[1]) : null;
 }
 

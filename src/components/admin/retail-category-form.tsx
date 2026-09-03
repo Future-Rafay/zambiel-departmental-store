@@ -9,8 +9,9 @@ import {
   TextareaField,
 } from "@/components/admin/admin-ui";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
+import { SlugField } from "@/components/admin/slug-field";
 import { Card } from "@/components/ui/card";
-import { ArchiveCategoryDialog } from "@/components/admin/danger-actions";
+import { DeleteCategoryDialog } from "@/components/admin/danger-actions";
 
 type Category = {
   id: string;
@@ -36,7 +37,7 @@ export function RetailCategoryForm({
 }: {
   categories: Array<{ id: string; nameEn: string }>;
   category?: Category;
-  feedback?: { saved?: string; error?: string };
+  feedback?: { saved?: string; error?: string; deleted?: string };
 }) {
   return (
     <AdminPage
@@ -58,12 +59,7 @@ export function RetailCategoryForm({
             name="nameDe"
             defaultValue={category?.nameDe}
           />
-          <Field
-            label="SEO slug"
-            name="slug"
-            defaultValue={category?.slug}
-            required
-          />
+          <SlugField defaultValue={category?.slug} />
           <SelectField
             label="Parent category"
             name="parentId"
@@ -134,7 +130,7 @@ export function RetailCategoryForm({
           label={category ? "Save category" : "Create category"}
         />
       </form>
-      {category ? <section className="mt-10 border-t border-destructive/20 pt-6"><h2 className="font-display text-lg font-bold text-destructive">Archive category</h2><p className="mb-4 text-sm text-muted">Active products and child categories must be moved or archived first.</p><div className="flex justify-end"><ArchiveCategoryDialog id={category.id} /></div></section> : null}
+      {category ? <section className="mt-10 border-t border-destructive/20 pt-6"><h2 className="font-display text-lg font-bold text-destructive">Delete category</h2><p className="mb-4 text-sm text-muted">Active products and child categories must be moved or deleted first.</p><div className="flex justify-end"><DeleteCategoryDialog id={category.id} /></div></section> : null}
     </AdminPage>
   );
 }

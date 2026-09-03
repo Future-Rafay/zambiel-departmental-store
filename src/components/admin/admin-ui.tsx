@@ -43,12 +43,18 @@ export function Notice({
   saved,
   error,
   warning,
+  deleted,
 }: {
   saved?: string;
   error?: string;
   warning?: string;
+  deleted?: string;
 }) {
-  if (!saved && !error && !warning) return null;
+  if (!saved && !error && !warning && !deleted) return null;
+  const deletedLabel =
+    deleted === "product" || deleted === "variant" || deleted === "category"
+      ? deleted
+      : "Item";
   return (
     <div
       role={error || warning ? "alert" : "status"}
@@ -71,7 +77,9 @@ export function Notice({
           ? error.replaceAll("_", " ")
           : warning
             ? "Invitation saved, but the email could not be sent. Check the Resend configuration and invite again."
-            : "Changes successfully saved."}
+            : deleted
+              ? `${deletedLabel[0].toUpperCase()}${deletedLabel.slice(1)} deleted from the catalog.`
+              : "Changes successfully saved."}
       </span>
     </div>
   );

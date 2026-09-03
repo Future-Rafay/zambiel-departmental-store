@@ -5,13 +5,15 @@ import { prisma } from "@/server/db";
 export default async function InventoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; q?: string; low?: string }>;
+  searchParams: Promise<{ saved?: string; q?: string; all?: string }>;
 }) {
   const filters = await searchParams;
   const variants = await prisma.productVariant.findMany({
     where: {
       trackInventory: true,
-      product: { status: { not: "ARCHIVED" } },
+      active: true,
+      deletedAt: null,
+      product: { status: { not: "ARCHIVED" }, deletedAt: null },
       ...(filters.q
         ? {
             OR: [
@@ -28,13 +30,13 @@ export default async function InventoryPage({
     orderBy: [{ product: { nameEn: "asc" } }, { sortOrder: "asc" }],
     take: 500,
   });
-  const visible = filters.low
-    ? variants.filter(
+  const visible = filters.all
+    ? variants
+    : variants.filter(
         (variant) =>
           variant.stockOnHand - variant.stockReserved <=
           (variant.lowStockThreshold ?? 5),
-      )
-    : variants;
+      );
   return (
     <AdminPage
       title="Inventory"
@@ -51,11 +53,11 @@ export default async function InventoryPage({
         <label className="flex min-h-11 items-center gap-2 rounded-lg border bg-white px-3">
           <input
             type="checkbox"
-            name="low"
+            name="all"
             value="1"
-            defaultChecked={!!filters.low}
+            defaultChecked={!!filters.all}
           />{" "}
-          Low stock
+          Show all inventory
         </label>
         <button className="rounded-lg border bg-white px-5 font-bold">
           Filter
