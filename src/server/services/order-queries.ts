@@ -2,10 +2,6 @@ import { Prisma } from "@/generated/prisma/client";
 import type { OrderStatus } from "@/generated/prisma/enums";
 import { formatOrderNumber, hashToken, nextOrderStatus, parseOrderNumber, publicOrderAddress } from "@/lib/orders";
 import { prisma } from "@/server/db";
-import { orderConfirmationEmail } from "@/server/email/templates";
-import { getStripe } from "@/server/payments/stripe";
-import { sendOrderNotification } from "@/server/services/order-notifications";
-import { finalizePaidStripeSession } from "@/server/services/order-stripe";
 import { resolvePublicImageUrl } from "@/server/storage/s3";
 
 const orderInclude = {
@@ -45,26 +41,40 @@ function orderDto(order: Prisma.OrderGetPayload<{ include: typeof orderInclude }
 export async function getTrackedOrder(orderNumber: string, userId?: string, token?: string) {
   const id = parseOrderNumber(orderNumber);
   if (!id) return null;
-  let order = await prisma.order.findUnique({ where: { id }, include: orderInclude });
+  const order = await prisma.order.findUnique({ where: { id }, include: orderInclude });
   if (!order || (order.userId !== userId && (!token || order.guestTrackingTokenHash !== hashToken(token)))) return null;
-  if (order.status === "PAYMENT_PENDING" && order.payment?.provider === "STRIPE" && order.payment.stripeCheckoutSessionId) {
-    try {
-      const session = await getStripe().checkout.sessions.retrieve(order.payment.stripeCheckoutSessionId);
-      if (session.payment_status === "paid") {
-        const confirmedOrder = await finalizePaidStripeSession(session);
-        order = await prisma.order.findUniqueOrThrow({ where: { id }, include: orderInclude });
-        if (confirmedOrder) await sendOrderNotification(confirmedOrder.id, "confirmed", confirmedOrder.customerEmail, orderConfirmationEmail({ orderNumber }));
-      }
-    } catch (error) {
-      console.error("Stripe checkout reconciliation failed", { orderNumber, error });
-    }
-  }
   return orderDto(order);
 }
 
 export async function getCustomerOrders(userId: string) {
   const orders = await prisma.order.findMany({ where: { userId }, include: orderInclude, orderBy: [{ updatedAt: "desc" }, { id: "desc" }], take: 50 });
   return orders.map(orderDto);
+}
+
+export async function getCustomerOrdersPage(userId: string, page = 1) {
+  const take = 20;
+  const safePage = Math.max(1, page);
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({ where: { userId }, include: orderInclude, orderBy: [{ updatedAt: "desc" }, { id: "desc" }], skip: (safePage - 1) * take, take }),
+    prisma.order.count({ where: { userId } }),
+  ]);
+  return { orders: orders.map(orderDto), page: safePage, pageCount: Math.max(1, Math.ceil(total / take)), total };
+}
+
+export async function getReorderCart(orderNumber: string, userId: string) {
+  const id = parseOrderNumber(orderNumber);
+  if (!id) return null;
+  const order = await prisma.order.findFirst({ where: { id, userId }, select: { items: { select: { variantId: true, quantity: true, unitPriceRappen: true } } } });
+  if (!order) return null;
+  const variantIds = order.items.flatMap(({ variantId }) => variantId ? [variantId] : []);
+  const variants = await prisma.productVariant.findMany({ where: { id: { in: variantIds } }, select: { id: true, productId: true, nameDe: true, nameEn: true, priceRappen: true, active: true, deletedAt: true, trackInventory: true, stockOnHand: true, stockReserved: true, product: { select: { slug: true, nameDe: true, nameEn: true, imageKey: true, active: true, available: true, deletedAt: true, status: true } } } });
+  const byId = new Map(variants.map((variant) => [variant.id, variant]));
+  return order.items.map((item) => {
+    const variant = item.variantId ? byId.get(item.variantId) : null;
+    const stock = variant?.trackInventory ? Math.max(0, variant.stockOnHand - variant.stockReserved) : null;
+    const available = Boolean(variant?.active && !variant.deletedAt && variant.product.active && variant.product.available && !variant.product.deletedAt && variant.product.status === "ACTIVE" && (stock === null || stock > 0));
+    return { variantId: item.variantId, productId: variant?.productId ?? null, slug: variant?.product.slug ?? null, nameDe: variant?.product.nameDe ?? null, nameEn: variant?.product.nameEn ?? null, variantDe: variant?.nameDe ?? null, variantEn: variant?.nameEn ?? null, imageUrl: resolvePublicImageUrl(variant?.product.imageKey), requestedQuantity: item.quantity, quantity: available ? Math.min(item.quantity, stock ?? item.quantity) : 0, previousPriceRappen: item.unitPriceRappen, currentPriceRappen: variant?.priceRappen ?? null, priceChanged: variant ? variant.priceRappen !== item.unitPriceRappen : null, available };
+  });
 }
 
 export async function getAdminOrders() {

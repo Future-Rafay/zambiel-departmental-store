@@ -1,5 +1,12 @@
 # dependencies
 /node_modules
+**/node_modules/
+apps/zambiel-mobile/.expo/
+apps/zambiel-mobile/dist/
+apps/zambiel-mobile/android/
+apps/zambiel-mobile/ios/
+*.apk
+*.aab
 
 # Next.js
 /.next

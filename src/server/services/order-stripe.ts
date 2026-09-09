@@ -8,6 +8,7 @@ import { orderConfirmationEmail } from "@/server/email/templates";
 import { syncStripeRefund } from "@/server/services/admin";
 import { OrderError } from "@/server/services/order-errors";
 import { sendOrderNotification } from "@/server/services/order-notifications";
+import { enqueueOrderPush } from "@/server/services/mobile-push";
 
 type StripeOrder = Prisma.OrderGetPayload<{ include: { payment: true } }>;
 
@@ -31,6 +32,7 @@ export async function failPendingOrder(orderId: bigint, reason = "PAYMENT_SESSIO
     if (cancellation.count !== 1) return;
     await tx.payment.update({ where: { orderId }, data: { status: "FAILED", failedAt: now } });
     await tx.orderStatusEvent.create({ data: { orderId, fromStatus: "PAYMENT_PENDING", toStatus: "CANCELLED", reason } });
+    await enqueueOrderPush(tx, orderId, "CANCELLED");
     for (const item of order.items) {
       if (!item.variantId) continue;
       const released = await tx.$executeRaw`UPDATE productvariant SET stockReserved = stockReserved - ${item.quantity}, updatedAt = NOW(3) WHERE id = ${item.variantId} AND stockReserved >= ${item.quantity}`;
@@ -82,6 +84,7 @@ export async function finalizePaidStripeSession(session: Stripe.Checkout.Session
       await tx.inventoryMovement.create({ data: { variantId: item.variantId, orderId, type: "ORDER_SOLD", quantityChange: -item.quantity, reason: "Stripe payment confirmed", idempotencyKey: `order:${orderId}:${item.variantId}:sell` } });
     }
     await tx.orderStatusEvent.create({ data: { orderId, fromStatus: "PAYMENT_PENDING", toStatus: "CONFIRMED", reason: "STRIPE_PAID" } });
+    await enqueueOrderPush(tx, orderId, "CONFIRMED");
     return tx.order.update({ where: { id: orderId }, data: { status: "CONFIRMED", version: { increment: 1 } } });
   });
 }

@@ -38,6 +38,7 @@ const addressSchema = z.object({
   street: z.string().trim().min(3).max(200),
   streetExtra: z.string().trim().max(200).optional(),
   city: z.string().trim().min(2).max(120),
+  countryCode: countryCodeSchema,
 });
 
 export const createOrderSchema = quoteSchemaBase.extend({

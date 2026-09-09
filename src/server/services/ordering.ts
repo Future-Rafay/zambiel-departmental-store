@@ -9,6 +9,7 @@ import { orderConfirmationEmail, orderStatusEmail } from "@/server/email/templat
 import { getStripe } from "@/server/payments/stripe";
 import { OrderError } from "@/server/services/order-errors";
 import { sendOrderNotification } from "@/server/services/order-notifications";
+import { enqueueOrderPush } from "@/server/services/mobile-push";
 import { calculateQuote } from "@/server/services/order-quotes";
 import { failPendingOrder } from "@/server/services/order-stripe";
 import { resolvePublicImageUrl } from "@/server/storage/s3";
@@ -16,7 +17,7 @@ import type { CreateOrderInput } from "@/server/validators/order";
 
 export { OrderError } from "@/server/services/order-errors";
 export { calculateQuote, getDeliveryQuote, getShippingCountries } from "@/server/services/order-quotes";
-export { getAdminOrders, getCustomerOrders, getTrackedOrder } from "@/server/services/order-queries";
+export { getAdminOrders, getCustomerOrders, getCustomerOrdersPage, getReorderCart, getTrackedOrder } from "@/server/services/order-queries";
 export { processStripeEvent } from "@/server/services/order-stripe";
 
 function createdOrderDto(order: { id: bigint; status: OrderStatus; totalRappen: number }, trackingToken: string) {
@@ -29,7 +30,12 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
   }
   const checkoutKeyHash = hashToken(input.checkoutKey);
   const existing = await prisma.order.findUnique({ where: { checkoutKeyHash }, include: { payment: true } });
-  if (existing) return createdOrderDto(existing, input.checkoutKey);
+  if (existing) {
+    if (existing.userId && existing.userId !== userId) throw new OrderError("ORDER_NOT_FOUND");
+    const session = existing.status === "PAYMENT_PENDING" && existing.payment?.stripeCheckoutSessionId
+      ? await getStripe().checkout.sessions.retrieve(existing.payment.stripeCheckoutSessionId) : null;
+    return { ...createdOrderDto(existing, input.checkoutKey), checkoutUrl: session?.status === "open" ? session.url : null };
+  }
   if (
     (input.fulfillmentType === "DELIVERY" && input.paymentMethod === "PAY_AT_PICKUP") ||
     (input.fulfillmentType === "PICKUP" && input.paymentMethod === "CASH_ON_DELIVERY") ||
@@ -118,6 +124,7 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
         },
       });
     }
+    await enqueueOrderPush(tx, created.id, status);
     return created;
   }, { isolationLevel: "Serializable" });
 
@@ -142,8 +149,8 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
         customer_email: order.customerEmail,
         line_items: lineItems,
         metadata: { orderId: order.id.toString(), orderNumber },
-        success_url: `${stripeEnv!.APP_URL}/${input.locale}/orders/${orderNumber}?token=${input.checkoutKey}`,
-        cancel_url: `${stripeEnv!.APP_URL}/${input.locale}/checkout?cancelled=1`,
+        success_url: input.channel === "mobile" ? `${stripeEnv!.APP_URL}/api/v1/customer/payment-return?orderNumber=${orderNumber}` : `${stripeEnv!.APP_URL}/${input.locale}/orders/${orderNumber}?token=${input.checkoutKey}`,
+        cancel_url: input.channel === "mobile" ? `${stripeEnv!.APP_URL}/api/v1/customer/payment-return?orderNumber=${orderNumber}` : `${stripeEnv!.APP_URL}/${input.locale}/checkout?cancelled=1`,
         expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
       }, { idempotencyKey: input.checkoutKey });
       await prisma.payment.update({ where: { orderId: order.id }, data: { stripeCheckoutSessionId: session.id } });
@@ -178,6 +185,7 @@ export async function advanceOrder(orderNumber: string, expectedVersion: number,
     await tx.orderStatusEvent.create({
       data: { orderId: id, actorUserId, fromStatus: order.status, toStatus: next },
     });
+    await enqueueOrderPush(tx, id, next);
     return tx.order.findUniqueOrThrow({ where: { id } });
   });
   await sendOrderNotification(

@@ -210,36 +210,37 @@ model Category {
 }
 
 model Product {
-  id               String           @id @default(cuid())
+  id               String             @id @default(cuid())
   categoryId       String
-  slug             String           @unique(map: "Product_slug_key") @db.VarChar(180)
-  nameDe           String           @db.VarChar(180)
-  nameEn           String           @db.VarChar(180)
-  descriptionDe    String?          @db.Text
-  descriptionEn    String?          @db.Text
-  imageKey         String?          @db.VarChar(512)
-  status           ProductStatus    @default(DRAFT)
-  featured         Boolean          @default(false)
-  seoTitleDe       String?          @db.VarChar(180)
-  seoTitleEn       String?          @db.VarChar(180)
-  seoDescriptionDe String?          @db.Text
-  seoDescriptionEn String?          @db.Text
-  sourceHandle     String?          @unique(map: "Product_sourceHandle_key") @db.VarChar(180)
-  sourceImportHash String?          @db.Char(64)
+  slug             String             @unique(map: "Product_slug_key") @db.VarChar(180)
+  nameDe           String             @db.VarChar(180)
+  nameEn           String             @db.VarChar(180)
+  descriptionDe    String?            @db.Text
+  descriptionEn    String?            @db.Text
+  imageKey         String?            @db.VarChar(512)
+  status           ProductStatus      @default(DRAFT)
+  featured         Boolean            @default(false)
+  seoTitleDe       String?            @db.VarChar(180)
+  seoTitleEn       String?            @db.VarChar(180)
+  seoDescriptionDe String?            @db.Text
+  seoDescriptionEn String?            @db.Text
+  sourceHandle     String?            @unique(map: "Product_sourceHandle_key") @db.VarChar(180)
+  sourceImportHash String?            @db.Char(64)
   sourceMetadata   Json?
   publishedAt      DateTime?
-  active           Boolean          @default(true)
-  available        Boolean          @default(true)
-  sortOrder        Int              @default(0)
+  active           Boolean            @default(true)
+  available        Boolean            @default(true)
+  sortOrder        Int                @default(0)
   deletedAt        DateTime?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  category         Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict, map: "Product_categoryId_fkey")
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  category         Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict, map: "Product_categoryId_fkey")
   variants         ProductVariant[]
   orderItems       OrderItem[]
   productOptions   ProductOption[]
   media            ProductMedia[]
   tags             ProductTag[]
+  wishlist         CustomerWishlist[]
 
   @@index([categoryId, deletedAt, active, sortOrder], map: "Product_categoryId_deletedAt_active_sortOrder_idx")
   @@index([deletedAt, available], map: "Product_deletedAt_available_idx")
@@ -343,23 +344,27 @@ model ProductMedia {
 }
 
 model User {
-  id                  String               @id @default(cuid())
-  email               String               @unique(map: "User_email_key") @db.VarChar(320)
-  passwordHash        String?              @db.VarChar(255)
-  name                String?              @db.VarChar(160)
-  phone               String?              @db.VarChar(40)
-  image               String?              @db.VarChar(512)
+  id                  String                     @id @default(cuid())
+  email               String                     @unique(map: "User_email_key") @db.VarChar(320)
+  passwordHash        String?                    @db.VarChar(255)
+  name                String?                    @db.VarChar(160)
+  phone               String?                    @db.VarChar(40)
+  image               String?                    @db.VarChar(512)
   emailVerified       DateTime?
-  role                UserRole             @default(CUSTOMER)
-  active              Boolean              @default(true)
+  role                UserRole                   @default(CUSTOMER)
+  active              Boolean                    @default(true)
   lastLoginAt         DateTime?
-  createdAt           DateTime             @default(now())
-  updatedAt           DateTime             @updatedAt
+  createdAt           DateTime                   @default(now())
+  updatedAt           DateTime                   @updatedAt
   accounts            Account[]
   sessions            Session[]
   passwordResetTokens PasswordResetToken[]
-  invitationsSent     StaffInvitation[]    @relation("InvitedBy")
-  address             CustomerAddress?
+  invitationsSent     StaffInvitation[]          @relation("InvitedBy")
+  addresses           CustomerAddress[]
+  mobileSessions      CustomerMobileSession[]
+  wishlist            CustomerWishlist[]
+  deletionRequest     CustomerDeletionRequest?
+  pushSubscriptions   CustomerPushSubscription[]
   inventoryMovements  InventoryMovement[]
   deviceSessions      StaffDeviceSession[]
   orders              Order[]
@@ -436,7 +441,7 @@ model StaffInvitation {
 
 model CustomerAddress {
   id            String   @id @default(cuid())
-  userId        String   @unique(map: "CustomerAddress_userId_key")
+  userId        String
   label         String   @db.VarChar(80)
   recipientName String   @db.VarChar(160)
   phone         String   @db.VarChar(40)
@@ -450,7 +455,64 @@ model CustomerAddress {
   updatedAt     DateTime @updatedAt
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "CustomerAddress_userId_fkey")
 
+  @@index([userId, isDefault], map: "CustomerAddress_userId_isDefault_idx")
   @@map("customeraddress")
+}
+
+model CustomerMobileSession {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique @db.Char(64)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("customermobilesession")
+}
+
+model CustomerWishlist {
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([userId, productId])
+  @@index([productId])
+  @@map("customerwishlist")
+}
+
+model CustomerDeletionRequest {
+  id         String    @id @default(cuid())
+  userId     String    @unique
+  reason     String?   @db.VarChar(1000)
+  status     String    @default("REQUESTED") @db.VarChar(32)
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+  user       User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([status, createdAt])
+  @@map("customerdeletionrequest")
+}
+
+model CustomerPushSubscription {
+  id        String   @id @default(cuid())
+  token     String   @db.VarChar(255)
+  scopeKey  String   @unique @db.VarChar(255)
+  userId    String?
+  orderId   BigInt?
+  locale    Locale   @default(DE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order     Order?   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([orderId])
+  @@map("customerpushsubscription")
 }
 
 model StaffDeviceSession {
@@ -511,43 +573,44 @@ model PromoRedemption {
 }
 
 model Order {
-  id                         BigInt                 @id @default(autoincrement())
-  checkoutKeyHash            String                 @unique(map: "Order_checkoutKeyHash_key") @db.Char(64)
+  id                         BigInt                     @id @default(autoincrement())
+  checkoutKeyHash            String                     @unique(map: "Order_checkoutKeyHash_key") @db.Char(64)
   userId                     String?
-  guestTrackingTokenHash     String?                @unique(map: "Order_guestTrackingTokenHash_key") @db.Char(64)
-  locale                     Locale                 @default(DE)
-  customerName               String                 @db.VarChar(160)
-  customerEmail              String                 @db.VarChar(320)
-  customerPhone              String                 @db.VarChar(40)
+  guestTrackingTokenHash     String?                    @unique(map: "Order_guestTrackingTokenHash_key") @db.Char(64)
+  locale                     Locale                     @default(DE)
+  customerName               String                     @db.VarChar(160)
+  customerEmail              String                     @db.VarChar(320)
+  customerPhone              String                     @db.VarChar(40)
   fulfillmentType            FulfillmentType
-  status                     OrderStatus            @default(PAYMENT_PENDING)
+  status                     OrderStatus                @default(PAYMENT_PENDING)
   paymentMethod              PaymentMethod
-  note                       String?                @db.Text
+  note                       String?                    @db.Text
   subtotalRappen             Int
-  discountRappen             Int                    @default(0)
-  deliveryFeeRappen          Int                    @default(0)
+  discountRappen             Int                        @default(0)
+  deliveryFeeRappen          Int                        @default(0)
   taxRateBps                 Int?
-  taxAmountRappen            Int                    @default(0)
+  taxAmountRappen            Int                        @default(0)
   totalRappen                Int
   promoCodeId                String?
   deliveryZoneId             String?
-  deliveryZoneNameDeSnapshot String?                @db.VarChar(120)
-  deliveryZoneNameEnSnapshot String?                @db.VarChar(120)
-  version                    Int                    @default(0)
+  deliveryZoneNameDeSnapshot String?                    @db.VarChar(120)
+  deliveryZoneNameEnSnapshot String?                    @db.VarChar(120)
+  version                    Int                        @default(0)
   completedAt                DateTime?
   cancelledAt                DateTime?
-  cancellationReason         String?                @db.VarChar(500)
-  createdAt                  DateTime               @default(now())
-  updatedAt                  DateTime               @updatedAt
-  user                       User?                  @relation(fields: [userId], references: [id], onDelete: SetNull, map: "Order_userId_fkey")
-  promoCode                  PromoCode?             @relation(fields: [promoCodeId], references: [id], onDelete: SetNull, map: "Order_promoCodeId_fkey")
-  deliveryZone               DeliveryZone?          @relation(fields: [deliveryZoneId], references: [id], onDelete: SetNull, map: "Order_deliveryZoneId_fkey")
+  cancellationReason         String?                    @db.VarChar(500)
+  createdAt                  DateTime                   @default(now())
+  updatedAt                  DateTime                   @updatedAt
+  user                       User?                      @relation(fields: [userId], references: [id], onDelete: SetNull, map: "Order_userId_fkey")
+  promoCode                  PromoCode?                 @relation(fields: [promoCodeId], references: [id], onDelete: SetNull, map: "Order_promoCodeId_fkey")
+  deliveryZone               DeliveryZone?              @relation(fields: [deliveryZoneId], references: [id], onDelete: SetNull, map: "Order_deliveryZoneId_fkey")
   address                    OrderAddress?
   items                      OrderItem[]
   statusEvents               OrderStatusEvent[]
   payment                    Payment?
   promoRedemption            PromoRedemption?
   notifications              NotificationDelivery[]
+  pushSubscriptions          CustomerPushSubscription[]
   inventoryMovements         InventoryMovement[]
 
   @@index([userId, createdAt], map: "Order_userId_createdAt_idx")
@@ -706,6 +769,8 @@ model StripeWebhookEvent {
 }
 
 model NotificationDelivery {
+  nextAttemptAt    DateTime?
+  receiptCheckedAt DateTime?
   id               String              @id @default(cuid())
   orderId          BigInt?
   channel          NotificationChannel

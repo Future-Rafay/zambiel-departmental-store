@@ -40,9 +40,9 @@ const productPhrases: Array<[RegExp, string]> = [
 ];
 const demoGermanName = (name: string) => productPhrases.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), name).replace(/\s+/g, " ").trim();
 const customers = [
-  ["anna.keller@demo.zambiel.test", "Anna Keller", "+41 79 555 01 01", "8001", "Zürich"], ["luca.meier@demo.zambiel.test", "Luca Meier", "+41 79 555 01 02", "8002", "Zürich"],
-  ["sara.mueller@demo.zambiel.test", "Sara Müller", "+41 79 555 01 03", "8050", "Zürich"], ["noah.frei@demo.zambiel.test", "Noah Frei", "+41 79 555 01 04", "8302", "Kloten"],
-  ["mia.schmid@demo.zambiel.test", "Mia Schmid", "+41 79 555 01 05", "8152", "Opfikon"],
+  ["anna.keller@demo.zambiel.test", "Anna Keller", "+41 79 555 01 01", "Zürich"], ["luca.meier@demo.zambiel.test", "Luca Meier", "+41 79 555 01 02", "Zürich"],
+  ["sara.mueller@demo.zambiel.test", "Sara Müller", "+41 79 555 01 03", "Zürich"], ["noah.frei@demo.zambiel.test", "Noah Frei", "+41 79 555 01 04", "Kloten"],
+  ["mia.schmid@demo.zambiel.test", "Mia Schmid", "+41 79 555 01 05", "Opfikon"],
 ] as const;
 const orderFixtures = [
   ["PAYMENT_PENDING", "PICKUP", "STRIPE"], ["CONFIRMED", "DELIVERY", "CASH_ON_DELIVERY"], ["PROCESSING", "PICKUP", "PAY_AT_PICKUP"],
@@ -75,11 +75,7 @@ async function main() {
     create: { id: 1, slug: "zambiel", displayName: "Zambiel", primaryColor: "#153B35", secondaryColor: "#D6A84B", heroTitleDe: "Gutes für Alltag, Zuhause und unterwegs.", heroTitleEn: "Useful goods for everyday life, home and the road.", heroSubtitleDe: "Entdecken Sie praktische Technik, Haushalt und Fahrzeugzubehör in einem klar kuratierten Sortiment.", heroSubtitleEn: "Discover practical technology, home essentials and vehicle accessories in one clearly curated range.", announcementDe: "10 % Willkommensrabatt mit WELCOME10 ab CHF 50.", announcementEn: "10% welcome discount with WELCOME10 from CHF 50.", announcementActive: true },
   });
   await prisma.fulfillmentSettings.upsert({ where: { id: 1 }, update: { pickupEnabled: true, deliveryEnabled: true, lowStockDefault: 5, pickupInstructionsDe: "Demo: Die Abholadresse wird vor dem Produktionsstart ergänzt.", pickupInstructionsEn: "Demo: The pickup address will be added before production launch." }, create: { id: 1, pickupEnabled: true, deliveryEnabled: true, lowStockDefault: 5, pickupInstructionsDe: "Demo: Die Abholadresse wird vor dem Produktionsstart ergänzt.", pickupInstructionsEn: "Demo: The pickup address will be added before production launch." } });
-  const zones = await Promise.all([
-    prisma.deliveryZone.upsert({ where: { id: "demo-zone-zurich" }, update: { active: true }, create: { id: "demo-zone-zurich", nameDe: "Demo Zürich Stadt", nameEn: "Demo Zurich City", feeRappen: 790, minimumSubtotalRappen: 3500, freeDeliveryThresholdRappen: 12000, estimatedMinutes: 60, sortOrder: 0 } }),
-    prisma.deliveryZone.upsert({ where: { id: "demo-zone-glattal" }, update: { active: true }, create: { id: "demo-zone-glattal", nameDe: "Demo Glattal", nameEn: "Demo Glatt Valley", feeRappen: 990, minimumSubtotalRappen: 5000, freeDeliveryThresholdRappen: 15000, estimatedMinutes: 90, sortOrder: 1 } }),
-  ]);
-  for (const [postalCode, zone] of [["8001", zones[0]], ["8002", zones[0]], ["8050", zones[0]], ["8302", zones[1]], ["8152", zones[1]]] as const) await prisma.deliveryZonePostalCode.upsert({ where: { postalCode }, update: { deliveryZoneId: zone.id }, create: { postalCode, deliveryZoneId: zone.id } });
+  const shippingCountry = await prisma.deliveryZone.upsert({ where: { id: "demo-zone-zurich" }, update: { countryCode: "CH", nameDe: "Schweiz", nameEn: "Switzerland", active: true, feeRappen: 790, minimumSubtotalRappen: 0, freeDeliveryThresholdRappen: 12000 }, create: { id: "demo-zone-zurich", countryCode: "CH", nameDe: "Schweiz", nameEn: "Switzerland", feeRappen: 790, minimumSubtotalRappen: 0, freeDeliveryThresholdRappen: 12000, estimatedMinutes: 1440, sortOrder: 0 } });
   const promo = await prisma.promoCode.upsert({ where: { code: "WELCOME10" }, update: { type: "PERCENT", value: 1000, minimumSubtotalRappen: 5000, perCustomerLimit: 1, totalUsageLimit: 500, startsAt: null, endsAt: null, active: true }, create: { code: "WELCOME10", type: "PERCENT", value: 1000, minimumSubtotalRappen: 5000, perCustomerLimit: 1, totalUsageLimit: 500, active: true } });
 
   for (const category of await prisma.category.findMany()) {
@@ -94,23 +90,26 @@ async function main() {
   }
 
   const customerUsers = [];
-  for (const [email, name, phone, postalCode, city] of customers) {
+  for (const [email, name, phone, city] of customers) {
     const user = await prisma.user.upsert({ where: { email }, update: { name, phone, role: "CUSTOMER", active: true }, create: { email, name, phone, role: "CUSTOMER", active: true, emailVerified: new Date("2026-08-01T09:00:00.000Z") } });
-    await prisma.customerAddress.upsert({ where: { userId: user.id }, update: { recipientName: name, phone, street: "Demostrasse 1", postalCode, city, countryCode: "CH", isDefault: true }, create: { userId: user.id, label: "Zuhause", recipientName: name, phone, street: "Demostrasse 1", postalCode, city, countryCode: "CH", isDefault: true } });
-    customerUsers.push({ user, postalCode, city, phone });
+    const savedAddress = await prisma.customerAddress.findFirst({ where: { userId: user.id, isDefault: true }, select: { id: true } });
+    const addressData = { recipientName: name, phone, street: "Demostrasse 1", postalCode: null, city, countryCode: "CH", isDefault: true };
+    if (savedAddress) await prisma.customerAddress.update({ where: { id: savedAddress.id }, data: addressData });
+    else await prisma.customerAddress.create({ data: { ...addressData, userId: user.id, label: "Zuhause" } });
+    customerUsers.push({ user, city, phone });
   }
   const variants = await prisma.productVariant.findMany({ where: { active: true, deletedAt: null, product: { status: "ACTIVE" } }, include: { product: true, optionValues: { include: { optionValue: { include: { option: true } } } } }, orderBy: { sku: "asc" }, take: 12 });
   if (!variants.length) return;
   for (const [index, [status, fulfillmentType, paymentMethod]] of orderFixtures.entries()) {
     const customer = customerUsers[index % customerUsers.length];
     const variant = index === 9 ? (await prisma.productVariant.findFirst({ where: { active: true, priceRappen: { gte: 5000 }, product: { status: "ACTIVE" } }, include: { product: true, optionValues: { include: { optionValue: { include: { option: true } } } } } })) ?? variants[index % variants.length] : variants[index % variants.length];
-    const quantity = 1, subtotalRappen = variant.priceRappen, discountRappen = index === 9 ? Math.round(subtotalRappen * 0.1) : 0, deliveryFeeRappen = fulfillmentType === "DELIVERY" ? (index % 2 ? 990 : 790) : 0, totalRappen = subtotalRappen - discountRappen + deliveryFeeRappen;
+    const quantity = 1, subtotalRappen = variant.priceRappen, discountRappen = index === 9 ? Math.round(subtotalRappen * 0.1) : 0, deliveryFeeRappen = fulfillmentType === "DELIVERY" ? 790 : 0, totalRappen = subtotalRappen - discountRappen + deliveryFeeRappen;
     const createdAt = new Date(Date.UTC(2026, 7, 10 + index, 9 + index)), path = paths[status];
     const paymentStatus = status === "PAYMENT_PENDING" ? "PENDING" : index === 7 ? "FAILED" : index === 8 ? "REFUNDED" : ["DELIVERED", "PICKED_UP"].includes(status) ? "PAID" : "PENDING";
     const order = await prisma.order.upsert({
       where: { checkoutKeyHash: digest(`zambiel-demo-order-${index + 1}`) }, update: {},
-      create: { checkoutKeyHash: digest(`zambiel-demo-order-${index + 1}`), userId: customer.user.id, locale: index % 3 === 0 ? "EN" : "DE", customerName: customer.user.name || "Demo Customer", customerEmail: customer.user.email, customerPhone: customer.phone, fulfillmentType, status, paymentMethod, note: "Deterministic local demo order", subtotalRappen, discountRappen, deliveryFeeRappen, totalRappen, promoCodeId: index === 9 ? promo.id : null, deliveryZoneId: fulfillmentType === "DELIVERY" ? (index % 2 ? zones[1].id : zones[0].id) : null, deliveryZoneNameDeSnapshot: fulfillmentType === "DELIVERY" ? (index % 2 ? zones[1].nameDe : zones[0].nameDe) : null, deliveryZoneNameEnSnapshot: fulfillmentType === "DELIVERY" ? (index % 2 ? zones[1].nameEn : zones[0].nameEn) : null, version: Math.max(0, path.length - 1), completedAt: ["DELIVERED", "PICKED_UP"].includes(status) ? new Date(createdAt.getTime() + 3_600_000) : null, cancelledAt: status === "CANCELLED" ? new Date(createdAt.getTime() + 1_800_000) : null, cancellationReason: status === "CANCELLED" ? (index === 8 ? "Demo refund and cancellation" : "Demo payment expired") : null, createdAt,
-        address: fulfillmentType === "DELIVERY" ? { create: { recipientName: customer.user.name || "Demo Customer", phone: customer.phone, street: "Demostrasse 1", postalCode: customer.postalCode, city: customer.city, countryCode: "CH" } } : undefined,
+      create: { checkoutKeyHash: digest(`zambiel-demo-order-${index + 1}`), userId: customer.user.id, locale: index % 3 === 0 ? "EN" : "DE", customerName: customer.user.name || "Demo Customer", customerEmail: customer.user.email, customerPhone: customer.phone, fulfillmentType, status, paymentMethod, note: "Deterministic local demo order", subtotalRappen, discountRappen, deliveryFeeRappen, totalRappen, promoCodeId: index === 9 ? promo.id : null, deliveryZoneId: fulfillmentType === "DELIVERY" ? shippingCountry.id : null, deliveryZoneNameDeSnapshot: fulfillmentType === "DELIVERY" ? shippingCountry.nameDe : null, deliveryZoneNameEnSnapshot: fulfillmentType === "DELIVERY" ? shippingCountry.nameEn : null, version: Math.max(0, path.length - 1), completedAt: ["DELIVERED", "PICKED_UP"].includes(status) ? new Date(createdAt.getTime() + 3_600_000) : null, cancelledAt: status === "CANCELLED" ? new Date(createdAt.getTime() + 1_800_000) : null, cancellationReason: status === "CANCELLED" ? (index === 8 ? "Demo refund and cancellation" : "Demo payment expired") : null, createdAt,
+        address: fulfillmentType === "DELIVERY" ? { create: { recipientName: customer.user.name || "Demo Customer", phone: customer.phone, street: "Demostrasse 1", city: customer.city, countryCode: "CH" } } : undefined,
         items: { create: { productId: variant.productId, variantId: variant.id, productNameDeSnapshot: variant.product.nameDe, productNameEnSnapshot: variant.product.nameEn, variantNameDeSnapshot: variant.nameDe, variantNameEnSnapshot: variant.nameEn, unitPriceRappen: variant.priceRappen, quantity, lineSubtotalRappen: subtotalRappen, options: { create: variant.optionValues.map(({ optionValue }) => ({ nameDeSnapshot: `${optionValue.option.name}: ${optionValue.value}`, nameEnSnapshot: `${optionValue.option.name}: ${optionValue.value}`, priceDeltaRappen: 0 })) } } },
         statusEvents: { create: path.map((toStatus, step) => ({ actorUserId: owner.id, fromStatus: step ? path[step - 1] : null, toStatus, reason: step ? "DEMO_STATUS_ADVANCED" : "ORDER_CREATED", createdAt: new Date(createdAt.getTime() + step * 900_000) })) },
         payment: { create: { provider: paymentMethod === "STRIPE" ? "STRIPE" : "CASH", status: paymentStatus, stripeCheckoutSessionId: paymentMethod === "STRIPE" ? `cs_demo_zambiel_${index + 1}` : null, stripePaymentIntentId: paymentMethod === "STRIPE" && paymentStatus !== "PENDING" && paymentStatus !== "FAILED" ? `pi_demo_zambiel_${index + 1}` : null, amountRappen: totalRappen, refundedRappen: index === 8 ? totalRappen : 0, paidAt: ["PAID", "REFUNDED"].includes(paymentStatus) ? new Date(createdAt.getTime() + 600_000) : null, failedAt: paymentStatus === "FAILED" ? new Date(createdAt.getTime() + 600_000) : null } },

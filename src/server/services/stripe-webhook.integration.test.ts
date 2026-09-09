@@ -11,22 +11,22 @@ const cart = [{ variantId: "variant", quantity: 1 }];
 test("checkout schemas require delivery details and compatible payment", () => {
   const quote = quoteSchema.safeParse({ items: cart, fulfillmentType: "DELIVERY" });
   assert.equal(quote.success, false);
-  assert.deepEqual(quote.error?.issues[0]?.path, ["postcode"]);
+  assert.deepEqual(quote.error?.issues[0]?.path, ["countryCode"]);
 
   const order = createOrderSchema.safeParse({
     items: cart,
     fulfillmentType: "DELIVERY",
-    postcode: "8154",
+    countryCode: "PK",
     checkoutKey: crypto.randomUUID(),
     locale: siteConfig.locale,
     customerName: "Test Customer",
     customerEmail: "test@example.com",
     customerPhone: "123456",
     paymentMethod: "PAY_AT_PICKUP",
-    address: { recipientName: "Test Customer", phone: "123456", street: "Teststrasse 1", postalCode: "8000", city: "Oberglatt" },
+    address: { recipientName: "Test Customer", phone: "123456", street: "Teststrasse 1", city: "Oberglatt", countryCode: "CH" },
   });
   assert.equal(order.success, false);
-  assert.deepEqual(order.error?.issues.map((issue) => issue.path), [["address", "postalCode"], ["paymentMethod"]]);
+  assert.deepEqual(order.error?.issues.map((issue) => issue.path), [["address", "countryCode"], ["paymentMethod"]]);
 });
 
 test("Stripe events are replayable, delayed payments settle, failures cancel, and cash creates activity", async (context) => {
@@ -99,6 +99,8 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
     assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: wrongCurrencyOrder.id } })).status, "PAYMENT_PENDING");
 
     const paidOrder = await createStripeOrder(`cs_paid_${suffix}`);
+    const paidPushToken = `ExpoPushToken[paid_${suffix.replaceAll("-", "_")}]`;
+    await prisma.customerPushSubscription.create({ data: { token: paidPushToken, scopeKey: `paid:${suffix}`, orderId: paidOrder.id, locale: "EN" } });
     const pendingId = `evt_pending_${suffix}`;
     const paidId = `evt_paid_${suffix}`;
     eventIds.push(pendingId, paidId);
@@ -111,14 +113,17 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
     assert.equal(settled.payment?.status, "PAID");
     assert.equal(settled.payment?.stripePaymentIntentId, `pi_${suffix}`);
     assert.equal(settled.statusEvents.filter((event) => event.reason === "STRIPE_PAID").length, 1);
+    assert.equal(await prisma.notificationDelivery.count({ where: { orderId: paidOrder.id, channel: "PUSH", kind: "CONFIRMED" } }), 1);
 
     const failedOrder = await createStripeOrder(`cs_failed_${suffix}`);
+    await prisma.customerPushSubscription.create({ data: { token: `ExpoPushToken[failed_${suffix.replaceAll("-", "_")}]`, scopeKey: `failed:${suffix}`, orderId: failedOrder.id, locale: "EN" } });
     const failedId = `evt_failed_${suffix}`;
     eventIds.push(failedId);
     await processStripeEvent(checkoutEvent(failedId, "checkout.session.async_payment_failed", `cs_failed_${suffix}`, failedOrder.id, "unpaid"));
     const failed = await prisma.order.findUniqueOrThrow({ where: { id: failedOrder.id }, include: { statusEvents: true } });
     assert.equal(failed.status, "CANCELLED");
     assert.equal(failed.statusEvents.at(-1)?.reason, "STRIPE_PAYMENT_FAILED");
+    assert.equal(await prisma.notificationDelivery.count({ where: { orderId: failedOrder.id, channel: "PUSH", kind: "CANCELLED" } }), 1);
 
     const actor = await prisma.user.create({ data: { email: `cash-${suffix}@example.com`, role: "OWNER" } });
     actorId = actor.id;

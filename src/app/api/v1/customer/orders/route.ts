@@ -1,12 +1,12 @@
-import { getCurrentUser } from "@/server/auth/current-user";
+import { getCustomerApiUser, requireCustomerApiUser } from "@/server/auth/customer-mobile";
 import { apiError, assertSameOrigin } from "@/server/http";
-import { createOrder, getCustomerOrders } from "@/server/services/ordering";
+import { createOrder, getCustomerOrdersPage } from "@/server/services/ordering";
 import { createOrderSchema } from "@/server/validators/order";
 
 export async function POST(request: Request) {
   try {
     assertSameOrigin(request);
-    const user = await getCurrentUser();
+    const user = await getCustomerApiUser(request);
     const order = await createOrder(createOrderSchema.parse(await request.json()), user?.id);
     return Response.json(order, { status: 201 });
   } catch (error) {
@@ -14,8 +14,10 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
-  const user = await getCurrentUser();
-  if (!user || !["CUSTOMER", "OWNER"].includes(user.role)) return Response.json({ error: "FORBIDDEN" }, { status: 403 });
-  return Response.json({ orders: await getCustomerOrders(user.id) });
+export async function GET(request: Request) {
+  try {
+    const user = await requireCustomerApiUser(request);
+    const page = Number.parseInt(new URL(request.url).searchParams.get("page") ?? "1", 10);
+    return Response.json(await getCustomerOrdersPage(user.id, Number.isSafeInteger(page) ? page : 1));
+  } catch (error) { return apiError(error); }
 }

@@ -1,6 +1,8 @@
 import "dotenv/config";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
+import { formatOrderNumber } from "@/lib/orders";
 
 test("notification claims are exclusive and availability auditing is transactional", async (context) => {
   const testDatabaseUrl = process.env.TEST_DATABASE_URL;
@@ -35,6 +37,8 @@ test("notification claims are exclusive and availability auditing is transaction
     subtotalRappen: 1_000,
     totalRappen: 1_000,
   } });
+  const pushToken = `ExpoPushToken[${suffix.replaceAll("-", "_")}]`;
+  await prisma.customerPushSubscription.create({ data: { token: pushToken, scopeKey: `test:${suffix}`, orderId: order.id, locale: "EN" } });
   const message = { subject: "Test", text: "Test", html: "<p>Test</p>" };
 
   try {
@@ -63,9 +67,11 @@ test("notification claims are exclusive and availability auditing is transaction
     } });
     assert.equal(await sendOrderNotification(order.id, `stale-${suffix}`, order.customerEmail, message, async () => ({ id: "reclaimed" })), true);
 
-    const transition = await advanceOrder(`ZAM-${order.id}`, 0, actor.id);
+    const transition = await advanceOrder(formatOrderNumber(order.id), 0, actor.id);
     assert.equal(transition.status, "PROCESSING");
     assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: order.id } })).status, "PROCESSING");
+    const push = await prisma.notificationDelivery.findUniqueOrThrow({ where: { deduplicationKey: `push:${order.id}:PROCESSING:${createHash("sha256").update(pushToken).digest("hex")}` } });
+    assert.equal(push.status, "PENDING");
 
     await assert.rejects(() => setProductAvailability(product.id, false, "missing-actor"));
     assert.equal((await prisma.product.findUniqueOrThrow({ where: { id: product.id } })).available, true);

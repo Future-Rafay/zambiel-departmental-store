@@ -26,4 +26,4 @@ Adding currencies/locales, changing tax/legal models, payment providers, fulfill
 6. Dry-run the catalog, review reports, then apply only with confirmed CHF and independent storage.
 7. Run test, typecheck, lint, build, responsive/keyboard journeys, and staging payment/refund/webhook checks.
 
-Zambiel has no planned React Native application. The existing native directory is frozen legacy code and must not be transformed or extended during storefront rebranding.
+The customer-only React Native/Expo application is in `apps/zambiel-mobile`; preserve the same identity, fonts, and colors there. The former staff application was already deleted. Customer mobile work must not repurpose the retained staff API or expose admin features. See `MOBILE-APP.md` for the customer-app contract.

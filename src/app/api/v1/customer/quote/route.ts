@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/server/auth/current-user";
+import { getCustomerApiUser } from "@/server/auth/customer-mobile";
 import { apiError, assertSameOrigin } from "@/server/http";
 import { calculateQuote } from "@/server/services/ordering";
 import { quoteSchema } from "@/server/validators/order";
@@ -6,7 +6,7 @@ import { quoteSchema } from "@/server/validators/order";
 export async function POST(request: Request) {
   try {
     assertSameOrigin(request);
-    const user = await getCurrentUser();
+    const user = await getCustomerApiUser(request);
     const quote = await calculateQuote(quoteSchema.parse(await request.json()), undefined, user?.id);
     return Response.json({
       items: quote.items,

@@ -1,0 +1,7 @@
+import { requireCustomerApiUser } from "@/server/auth/customer-mobile";
+import { prisma } from "@/server/db";
+import { apiError } from "@/server/http";
+import { mobileAddressSchema } from "@/server/validators/customer-mobile";
+
+export async function GET(request: Request) { try { const user = await requireCustomerApiUser(request); return Response.json({ addresses: await prisma.customerAddress.findMany({ where: { userId: user.id }, orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] }) }); } catch (error) { return apiError(error); } }
+export async function POST(request: Request) { try { const user = await requireCustomerApiUser(request); const value = mobileAddressSchema.parse(await request.json()); const country = await prisma.deliveryZone.findUnique({ where: { countryCode: value.countryCode }, select: { active: true } }); if (!country?.active) return Response.json({ error: "COUNTRY_NOT_DELIVERABLE" }, { status: 400 }); const address = await prisma.$transaction(async (tx) => { const count = await tx.customerAddress.count({ where: { userId: user.id } }); const isDefault = value.isDefault || count === 0; if (isDefault) await tx.customerAddress.updateMany({ where: { userId: user.id, isDefault: true }, data: { isDefault: false } }); return tx.customerAddress.create({ data: { ...value, isDefault, userId: user.id } }); }); return Response.json({ address }, { status: 201 }); } catch (error) { return apiError(error); } }
