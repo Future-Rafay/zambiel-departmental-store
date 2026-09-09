@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { postalCodeValueSchema } from "@/server/validators/postal-code";
+import { countryCodeSchema } from "@/server/validators/country-code";
 
 const cartItemSchema = z.object({
   variantId: z.string().min(1).max(191),
@@ -9,11 +9,11 @@ const cartItemSchema = z.object({
 
 const fulfillmentFields = {
   fulfillmentType: z.enum(["DELIVERY", "PICKUP"]),
-  postcode: postalCodeValueSchema.optional(),
+  countryCode: countryCodeSchema.optional(),
 };
 
 export const deliveryQuoteSchema = z.object({
-  postcode: postalCodeValueSchema,
+  countryCode: countryCodeSchema,
   subtotalRappen: z.number().int().min(0).max(1_000_000),
 });
 
@@ -24,25 +24,25 @@ const quoteSchemaBase = z.object({
   customerEmail: z.string().trim().email().transform((value) => value.toLowerCase()).optional(),
 });
 
-function requireDeliveryPostcode(input: { fulfillmentType: "DELIVERY" | "PICKUP"; postcode?: string }, context: z.RefinementCtx) {
-  if (input.fulfillmentType === "DELIVERY" && !input.postcode) {
-    context.addIssue({ code: "custom", path: ["postcode"], message: "Postcode is required for delivery" });
+function requireDeliveryCountry(input: { fulfillmentType: "DELIVERY" | "PICKUP"; countryCode?: string }, context: z.RefinementCtx) {
+  if (input.fulfillmentType === "DELIVERY" && !input.countryCode) {
+    context.addIssue({ code: "custom", path: ["countryCode"], message: "Country is required for delivery" });
   }
 }
 
-export const quoteSchema = quoteSchemaBase.superRefine(requireDeliveryPostcode);
+export const quoteSchema = quoteSchemaBase.superRefine(requireDeliveryCountry);
 
 const addressSchema = z.object({
   recipientName: z.string().trim().min(2).max(160),
   phone: z.string().trim().min(6).max(40),
   street: z.string().trim().min(3).max(200),
   streetExtra: z.string().trim().max(200).optional(),
-  postalCode: postalCodeValueSchema,
   city: z.string().trim().min(2).max(120),
 });
 
 export const createOrderSchema = quoteSchemaBase.extend({
   checkoutKey: z.uuid(),
+  channel: z.enum(["web", "mobile"]).optional(),
   locale: z.enum(["de", "en"]),
   customerName: z.string().trim().min(2).max(160),
   customerEmail: z.string().trim().email().transform((value) => value.toLowerCase()),
@@ -51,12 +51,12 @@ export const createOrderSchema = quoteSchemaBase.extend({
   note: z.string().trim().max(1000).optional(),
   address: addressSchema.optional(),
 }).superRefine((input, context) => {
-  requireDeliveryPostcode(input, context);
+  requireDeliveryCountry(input, context);
   if (input.fulfillmentType === "DELIVERY" && !input.address) {
     context.addIssue({ code: "custom", path: ["address"], message: "Address is required for delivery" });
   }
-  if (input.fulfillmentType === "DELIVERY" && input.address && input.postcode !== input.address.postalCode) {
-    context.addIssue({ code: "custom", path: ["address", "postalCode"], message: "Address postcode must match delivery postcode" });
+  if (input.fulfillmentType === "DELIVERY" && input.address && input.countryCode !== input.address.countryCode) {
+    context.addIssue({ code: "custom", path: ["address", "countryCode"], message: "Address country must match shipping country" });
   }
   if (
     (input.fulfillmentType === "DELIVERY" && input.paymentMethod === "PAY_AT_PICKUP")

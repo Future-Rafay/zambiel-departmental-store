@@ -14,10 +14,11 @@ export type CheckoutUser = {
   address?: {
     street: string;
     streetExtra?: string | null;
-    postalCode: string;
     city: string;
+    countryCode: string;
   } | null;
 };
+export type ShippingCountry = { countryCode: string; nameDe: string; nameEn: string };
 export type Quote = {
   subtotalRappen: number;
   discountRappen: number;
@@ -143,11 +144,13 @@ export function CustomerFields({
 export function AddressFields({
   de,
   user,
+  countries,
   errors,
   refreshQuote,
 }: {
   de: boolean;
   user?: CheckoutUser;
+  countries: ShippingCountry[];
   errors: FieldErrors;
   refreshQuote: () => void;
 }) {
@@ -188,23 +191,6 @@ export function AddressFields({
           }
         />
       </Field>
-      <Field
-        id="postalCode"
-        label={de ? "Postleitzahl" : "Postal code"}
-        error={errors.postalCode}
-      >
-        <Input
-          id="postalCode"
-          name="postalCode"
-          inputMode="numeric"
-          autoComplete="postal-code"
-          defaultValue={user?.address?.postalCode}
-          onBlur={refreshQuote}
-          required
-          aria-invalid={!!errors.postalCode}
-          aria-describedby={errors.postalCode ? "postalCode-error" : undefined}
-        />
-      </Field>
       <Field id="city" label={de ? "Ort" : "City"} error={errors.city}>
         <Input
           id="city"
@@ -215,6 +201,22 @@ export function AddressFields({
           aria-invalid={!!errors.city}
           aria-describedby={errors.city ? "city-error" : undefined}
         />
+      </Field>
+      <Field id="countryCode" label={de ? "Land" : "Country"} error={errors.countryCode}>
+        <select
+          id="countryCode"
+          name="countryCode"
+          autoComplete="country"
+          defaultValue={user?.address?.countryCode ?? countries[0]?.countryCode ?? ""}
+          onChange={refreshQuote}
+          required
+          aria-invalid={!!errors.countryCode}
+          aria-describedby={errors.countryCode ? "countryCode-error" : undefined}
+          className="min-h-11 w-full rounded-control border border-border bg-surface px-4 py-2 text-base focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 aria-invalid:border-destructive"
+        >
+          {countries.length === 0 ? <option value="">{de ? "Keine Lieferländer verfügbar" : "No shipping countries available"}</option> : null}
+          {countries.map((country) => <option key={country.countryCode} value={country.countryCode}>{de ? country.nameDe : country.nameEn}</option>)}
+        </select>
       </Field>
     </Card>
   );

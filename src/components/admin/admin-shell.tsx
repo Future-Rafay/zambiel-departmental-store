@@ -111,7 +111,7 @@ export function AdminShell({ user, children }: { user: AdminUser; children: Reac
             items: [
               { label: "Products", href: "/admin/products", icon: <Archive className="h-4 w-4" /> },
               { label: "Categories", href: "/admin/categories", icon: <FolderTree className="h-4 w-4" /> },
-              { label: "Delivery Zones", href: "/admin/settings/delivery-zones", icon: <Truck className="h-4 w-4" /> },
+              { label: "Shipping Countries", href: "/admin/settings/delivery-zones", icon: <Truck className="h-4 w-4" /> },
               { label: "Discounts", href: "/admin/discounts", icon: <Tag className="h-4 w-4" /> },
               { label: "Payments", href: "/admin/payments", icon: <CreditCard className="h-4 w-4" /> },
             ],

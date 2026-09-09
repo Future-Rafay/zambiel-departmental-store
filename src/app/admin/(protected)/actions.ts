@@ -9,9 +9,7 @@ import { requireRole } from "@/server/auth/current-user";
 import {
   AdminError,
   cancelOrder,
-  deletePostalCode,
   refundOrder,
-  savePostalCode,
   savePromo,
   saveSiteSettings,
   saveZone,
@@ -20,7 +18,6 @@ import {
 import { inviteStaff } from "@/server/services/staff-invitations";
 import {
   cancelOrderSchema,
-  postalCodeSchema,
   promoSchema,
   refundSchema,
   siteSettingsSchema,
@@ -77,12 +74,6 @@ export async function adminAction(formData: FormData) {
     switch (intent) {
       case "zone":
         await saveZone(actor.id, zoneSchema.parse(input));
-        break;
-      case "postal_code":
-        await savePostalCode(actor.id, postalCodeSchema.parse(input));
-        break;
-      case "delete_postal_code":
-        await deletePostalCode(actor.id, idSchema.parse(input.id));
         break;
       case "site_settings":
         await saveSiteSettings(actor.id, siteSettingsSchema.parse(input));

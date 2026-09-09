@@ -5,6 +5,7 @@ import { prisma } from "@/server/db";
 import { orderStatusEmail } from "@/server/email/templates";
 import { getStripe } from "@/server/payments/stripe";
 import { sendOrderNotification } from "@/server/services/order-notifications";
+import { enqueueOrderPush } from "@/server/services/mobile-push";
 
 type Db = Prisma.TransactionClient | typeof prisma;
 
@@ -22,7 +23,7 @@ export async function getSettingsAdminData() {
   const [site, fulfillment, zones] = await Promise.all([
     prisma.siteSettings.findUniqueOrThrow({ where: { id: 1 } }),
     prisma.fulfillmentSettings.findUniqueOrThrow({ where: { id: 1 } }),
-    prisma.deliveryZone.findMany({ include: { postalCodes: { orderBy: { postalCode: "asc" } } }, orderBy: [{ sortOrder: "asc" }, { nameEn: "asc" }] }),
+    prisma.deliveryZone.findMany({ orderBy: [{ sortOrder: "asc" }, { nameEn: "asc" }] }),
   ]);
   return { site, fulfillment, zones };
 }
@@ -119,17 +120,6 @@ export async function saveZone(actorId: string, data: Prisma.DeliveryZoneUncheck
   return row;
 }
 
-export async function savePostalCode(actorId: string, data: Prisma.DeliveryZonePostalCodeUncheckedCreateInput & { id?: string }) {
-  const { id, ...values } = data;
-  const row = id ? await prisma.deliveryZonePostalCode.update({ where: { id }, data: values }) : await prisma.deliveryZonePostalCode.create({ data: values });
-  await audit(prisma, actorId, id ? "POSTCODE_UPDATED" : "POSTCODE_CREATED", "DeliveryZonePostalCode", row.id);
-  return row;
-}
-
-export async function deletePostalCode(actorId: string, id: string) {
-  await prisma.$transaction(async (tx) => { await tx.deliveryZonePostalCode.delete({ where: { id } }); await audit(tx, actorId, "POSTCODE_DELETED", "DeliveryZonePostalCode", id); });
-}
-
 export async function saveSiteSettings(actorId: string, data: Prisma.SiteSettingsUpdateInput) {
   const row = await prisma.siteSettings.update({ where: { id: 1 }, data });
   await audit(prisma, actorId, "SITE_SETTINGS_UPDATED", "SiteSettings", "1");
@@ -195,6 +185,7 @@ export async function cancelOrder(actorId: string, orderNumber: string, reason: 
     if (order.payment?.provider === "STRIPE" && ["PAID", "PARTIALLY_REFUNDED"].includes(order.payment.status)) throw new AdminError("OWNER_REFUND_REQUIRED");
     await tx.order.update({ where: { id }, data: { status: "CANCELLED", cancelledAt: new Date(), cancellationReason: reason, version: { increment: 1 } } });
     await tx.orderStatusEvent.create({ data: { orderId: id, actorUserId: actorId, fromStatus: order.status, toStatus: "CANCELLED", reason } });
+    await enqueueOrderPush(tx, id, "CANCELLED");
     await restoreOrderInventory(tx, id, order.payment, actorId, reason);
     await audit(tx, actorId, "ORDER_CANCELLED", "Order", id.toString(), { reason });
     return { id: order.id, email: order.customerEmail, locale: order.locale };
@@ -247,6 +238,7 @@ async function settleSucceededRefund(stripeRefundId: string, cancelOrder: boolea
     if (cancelOrder && refundedRappen === payment.amountRappen && !["DELIVERED", "PICKED_UP", "CANCELLED"].includes(order.status)) {
       await tx.order.update({ where: { id: order.id }, data: { status: "CANCELLED", cancelledAt: new Date(), cancellationReason: refund.reason, version: { increment: 1 } } });
       await tx.orderStatusEvent.create({ data: { orderId: order.id, actorUserId: refund.requestedByUserId, fromStatus: order.status, toStatus: "CANCELLED", reason: refund.reason } });
+      await enqueueOrderPush(tx, order.id, "CANCELLED");
       await restoreOrderInventory(tx, order.id, { provider: payment.provider, status: "REFUNDED" }, refund.requestedByUserId, refund.reason);
       await tx.auditLog.create({ data: { actorUserId: refund.requestedByUserId, action: "ORDER_CANCELLED_AFTER_REFUND", entityType: "Order", entityId: order.id.toString(), metadata: { stripeRefundId } } });
       return { id: order.id, email: order.customerEmail, locale: order.locale };

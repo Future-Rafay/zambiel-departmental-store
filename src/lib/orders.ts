@@ -53,13 +53,17 @@ export function formatMoneyInput(minorUnits: number) {
   return (minorUnits / 100).toFixed(2);
 }
 
+export function shippingFeeRappen(subtotalRappen: number, feeRappen: number, freeShippingThresholdRappen: number | null) {
+  return freeShippingThresholdRappen !== null && subtotalRappen >= freeShippingThresholdRappen ? 0 : feeRappen;
+}
+
 export function publicOrderAddress(
   address: {
     recipientName: string;
     phone: string;
     street: string;
     streetExtra: string | null;
-    postalCode: string;
+    postalCode: string | null;
     city: string;
     countryCode: string;
   } | null,

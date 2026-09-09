@@ -152,6 +152,7 @@ model FulfillmentSettings {
 
 model DeliveryZone {
   id                          String                   @id @default(cuid())
+  countryCode                 String?                  @unique(map: "DeliveryZone_countryCode_key") @db.Char(2)
   nameDe                      String                   @db.VarChar(120)
   nameEn                      String                   @db.VarChar(120)
   active                      Boolean                  @default(true)
@@ -441,7 +442,7 @@ model CustomerAddress {
   phone         String   @db.VarChar(40)
   street        String   @db.VarChar(200)
   streetExtra   String?  @db.VarChar(200)
-  postalCode    String   @db.VarChar(16)
+  postalCode    String?  @db.VarChar(16)
   city          String   @db.VarChar(120)
   countryCode   String   @default("CH") @db.Char(2)
   isDefault     Boolean  @default(false)
@@ -584,7 +585,7 @@ model OrderAddress {
   phone         String   @db.VarChar(40)
   street        String   @db.VarChar(200)
   streetExtra   String?  @db.VarChar(200)
-  postalCode    String   @db.VarChar(16)
+  postalCode    String?  @db.VarChar(16)
   city          String   @db.VarChar(120)
   countryCode   String   @default("CH") @db.Char(2)
   createdAt     DateTime @default(now())

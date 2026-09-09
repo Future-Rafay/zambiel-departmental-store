@@ -1,5 +1,5 @@
 import { Prisma } from "@/generated/prisma/client";
-import { promoDiscount } from "@/lib/orders";
+import { promoDiscount, shippingFeeRappen } from "@/lib/orders";
 import { prisma } from "@/server/db";
 import { resolveProductMediaUrl } from "@/server/storage/s3";
 import { OrderError } from "@/server/services/order-errors";
@@ -20,14 +20,21 @@ async function findPromo(db: Db, code?: string, email?: string, userId?: string)
   return promo;
 }
 
-export async function getDeliveryQuote(postcode: string, subtotalRappen: number, db: Db = prisma) {
-  const match = await db.deliveryZonePostalCode.findUnique({ where: { postalCode: postcode }, include: { deliveryZone: true } });
-  if (!match?.deliveryZone.active) throw new OrderError("POSTCODE_NOT_DELIVERABLE");
-  const zone = match.deliveryZone;
+export async function getShippingCountries(db: Db = prisma) {
+  return db.deliveryZone.findMany({
+    where: { active: true, countryCode: { not: null } },
+    select: { countryCode: true, nameDe: true, nameEn: true },
+    orderBy: [{ sortOrder: "asc" }, { nameEn: "asc" }],
+  });
+}
+
+export async function getDeliveryQuote(countryCode: string, subtotalRappen: number, db: Db = prisma) {
+  const zone = await db.deliveryZone.findUnique({ where: { countryCode } });
+  if (!zone?.active) throw new OrderError("COUNTRY_NOT_DELIVERABLE");
   const remainingToMinimumRappen = Math.max(0, zone.minimumSubtotalRappen - subtotalRappen);
   return {
-    zoneId: zone.id, nameDe: zone.nameDe, nameEn: zone.nameEn,
-    deliveryFeeRappen: zone.freeDeliveryThresholdRappen !== null && subtotalRappen >= zone.freeDeliveryThresholdRappen ? 0 : zone.feeRappen,
+    zoneId: zone.id, countryCode: zone.countryCode!, nameDe: zone.nameDe, nameEn: zone.nameEn,
+    deliveryFeeRappen: shippingFeeRappen(subtotalRappen, zone.feeRappen, zone.freeDeliveryThresholdRappen),
     minimumSubtotalRappen: zone.minimumSubtotalRappen, remainingToMinimumRappen,
     freeDeliveryThresholdRappen: zone.freeDeliveryThresholdRappen, estimatedMinutes: zone.estimatedMinutes,
     eligible: remainingToMinimumRappen === 0,
@@ -58,7 +65,7 @@ export async function calculateQuote(input: QuoteInput, db: Db = prisma, userId?
     };
   });
   const subtotalRappen = items.reduce((sum, item) => sum + item.lineSubtotalRappen, 0);
-  const delivery = input.fulfillmentType === "DELIVERY" ? await getDeliveryQuote(input.postcode ?? "", subtotalRappen, db) : null;
+  const delivery = input.fulfillmentType === "DELIVERY" ? await getDeliveryQuote(input.countryCode ?? "", subtotalRappen, db) : null;
   if (delivery && !delivery.eligible) throw new OrderError("DELIVERY_MINIMUM_NOT_MET");
   const promo = await findPromo(db, input.promoCode, input.customerEmail, userId);
   const discountRappen = promoDiscount(subtotalRappen, promo);

@@ -3,7 +3,7 @@
 import Image from "@tiptap/extension-image";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { Bold, Code2, Heading2, ImagePlus, Italic, Link as LinkIcon, List, ListOrdered, Quote, Redo2, Undo2 } from "lucide-react";
+import { Bold, Code2, Heading2, ImagePlus, Italic, Link as LinkIcon, List, ListOrdered, LoaderCircle, Quote, Redo2, Undo2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { Label } from "@/components/ui/label";
@@ -73,6 +73,9 @@ export function RichTextEditor({ label, name, defaultValue = "" }: { label: stri
           {command("Redo", false, () => editor?.chain().focus().redo().run(), <Redo2 className="size-4" />)}
           <input ref={fileInput} type="file" accept={productImageAccept} className="sr-only" onChange={(event) => void insertImage(event.target.files?.[0])} />
           <button type="button" disabled={uploading || sourceMode} aria-label="Upload image" onClick={() => fileInput.current?.click()} className="grid size-10 place-items-center border-r border-border text-primary hover:bg-background disabled:opacity-50"><ImagePlus className="size-4" /></button>
+          <span role="status" aria-live="polite" className="inline-flex min-h-10 items-center gap-2 px-3 text-xs font-semibold text-muted">
+            {uploading ? <><LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />Uploading image…</> : null}
+          </span>
           <button type="button" aria-pressed={sourceMode} onClick={toggleSource} className="ml-auto inline-flex min-h-10 items-center gap-2 px-3 text-xs font-bold text-primary hover:bg-background"><Code2 className="size-4" />HTML</button>
         </div>
         {sourceMode ? <textarea aria-label={`${label} HTML`} value={html} onChange={(event) => setHtml(event.target.value)} className="min-h-64 w-full resize-y p-4 font-mono text-sm focus:outline-none" /> : <EditorContent editor={editor} />}

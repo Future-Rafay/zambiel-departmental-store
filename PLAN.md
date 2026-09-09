@@ -2,7 +2,7 @@
 
 ## Product contract
 
-Zambiel is one Swiss store and one seller. German is primary, English secondary, money is integer CHF rappen, time displays in `Europe/Zurich`, delivery is postal-zone based, and each customer has at most one saved address. Do not add vendors, tenants, organizations, payouts, warehouses, backorders, multiple addresses, or partial-refund restocking.
+Zambiel is one Swiss store and one seller. German is primary, English secondary, money is integer CHF rappen, time displays in `Europe/Zurich`, delivery is destination-country based, and the customer app supports multiple saved addresses with a default used by the website. Do not add vendors, tenants, organizations, payouts, warehouses, backorders, or partial-refund restocking.
 
 ## Implemented foundation
 
@@ -14,6 +14,8 @@ Zambiel is one Swiss store and one seller. German is primary, English secondary,
 - Immediate newsletter subscription/unsubscribe and localized password recovery reuse the existing Resend, rate-limit, session, and password-token seams without adding campaign tooling.
 - Safe catalog deletion hides products, variants, and categories operationally while preserving historical relations. Inventory defaults to low/empty stock and admin money fields accept decimal CHF while retaining integer-rappen storage.
 - Product/category forms generate slugs from English names. Product descriptions use a minimal bilingual TipTap editor with sanitized HTML and store-owned uploaded images.
+- Product-description image uploads expose an accessible in-toolbar progress state while the existing upload request runs.
+- Checkout and saved delivery addresses use a configured destination country without postal-code input. Each country owns its CHF minimum, fee, and optional free-shipping threshold; Stripe Adaptive Pricing handles supported local-currency presentation without changing stored CHF totals.
 - Inter headings, Archivo body text, the supplied Zambiel marks, subtle paper grain, sharper commerce panels, and accessible manual hero/gallery/navigation controls.
 - Checkout, ordering, retail actions, product editing, and admin order history have focused modules while their established entry points remain compatible.
 - Guarded Shopify importer and report workflow documented in `CATALOG-IMPORT.md`. Imports remain draft and start at 25 units; the guarded demo seed publishes the reviewed local fixture set.
@@ -21,11 +23,20 @@ Zambiel is one Swiss store and one seller. German is primary, English secondary,
 
 ## Production blockers
 
-See `content-todo.md`. The independent local `zambiel_dev` database is established. Approved legal/German content, dedicated S3 policy, real delivery zones, Stripe staging tests, and deployment credentials are still required before production enablement.
+See `content-todo.md`. The independent local `zambiel_dev` database is established. Approved legal/German content, dedicated S3 policy, real shipping-country rules, Stripe Adaptive Pricing staging tests, and deployment credentials are still required before production enablement.
 
 ## Verification gate
 
 Run Prisma format/validate/generate and fresh-database migration/seed; importer dry-run and repeatability checks; unit/integration tests; typecheck, lint, build; responsive and keyboard browser journeys; and Stripe webhook/refund staging.
+
+### Follow-up: country shipping and editor uploads (2026-09-09)
+
+- Product-description image uploads expose an accessible uploading status and disable duplicate upload actions while the request is running.
+- Checkout, saved addresses, server quotes, order validation, and admin settings now use destination-country shipping rules in CHF without a postal-code requirement. Stripe Checkout keeps CHF as the order currency and enables Adaptive Pricing for eligible local-currency presentation.
+- Prisma migration/status, 44 tests (39 passed, 5 isolated-database skips), typecheck, build, diff checks, and responsive checkout verification passed. Lint has no errors and one unrelated category-card warning. The guarded seed applied the shipping configuration before encountering an existing zero-stock demo movement; authenticated admin and live Stripe presentment still require staging verification.
+- The shared header now rotates automatically through every active shipping country's localized delivery information, while respecting reduced-motion preferences.
+- Local Stripe test payments require a running `stripe listen --forward-to localhost:3000/api/webhooks/stripe` process with its signing secret configured as `STRIPE_WEBHOOK_SECRET`; Test mode must be enabled in Stripe Dashboard.
+- Two completed test payments that were pending locally were recovered through the signature-verified webhook route after applying the pending customer-mobile migration; both orders are now confirmed and paid. Continuous Stripe webhook delivery still requires the listener or a public HTTPS endpoint.
 
 ## Current verification (2026-09-03)
 
@@ -47,5 +58,5 @@ Run Prisma format/validate/generate and fresh-database migration/seed; importer 
 - Prisma format/validation/generation, 41 tests (36 passing and 5 isolated-database skips), typecheck, clean lint, production build, and `git diff --check` pass.
 - Authenticated browser checks pass inventory defaults, decimal CHF fields, rich-editor controls, safe delete controls, and slug generation; cart/checkout layouts pass at 375/768/1024/1440 without horizontal overflow. Remote S3 image 403 responses remain an operational provider issue; tracking with an authorized fixture and live rich-image upload were not exercised.
 - The requested labelled live Resend check failed at the provider with HTTP 401 because the configured API key is invalid. Mocked-delivery tests pass, but live email is a release blocker until the key is replaced.
-- Product decision (2026-08-31): Zambiel has no planned React Native application. Existing native artifacts are frozen and excluded from implementation and release verification.
+- Superseded product decision (2026-08-31): no React Native app. The 2026-09-09 customer-app scope is documented in `MOBILE-APP.md`; the former staff app was already deleted.
 - Destructive admin mutations, live Stripe/webhook/refund, concurrent oversell, live S3 editor upload, and production-provider checks remain unverified.

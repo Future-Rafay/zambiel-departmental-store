@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { cancelOrderSchema, minorUnits, postalCodeSchema, promoSchema, refundSchema } from "@/server/validators/admin";
+import { cancelOrderSchema, minorUnits, promoSchema, refundSchema, zoneSchema } from "@/server/validators/admin";
 
 test("admin trust boundaries reject unsafe promo and refund input", () => {
   assert.equal(promoSchema.safeParse({ code: "TOO-MUCH", type: "PERCENT", value: "100.01", minimumSubtotalRappen: "0", startsAt: "", endsAt: "", totalUsageLimit: "", perCustomerLimit: "", active: "on" }).success, false);
@@ -10,9 +10,9 @@ test("admin trust boundaries reject unsafe promo and refund input", () => {
 
 test("admin form decoding accepts omitted checkboxes and fixture IDs", () => {
   assert.equal(promoSchema.parse({ code: "SAVE10", type: "PERCENT", value: "10", minimumSubtotalRappen: "25.00", startsAt: "", endsAt: "", totalUsageLimit: "", perCustomerLimit: "" }).value, 1000);
-  const postalCode = postalCodeSchema.parse({ deliveryZoneId: "mock-zone-1", postalCode: " sw1a   1aa " });
-  assert.equal(postalCode.deliveryZoneId, "mock-zone-1");
-  assert.equal(postalCode.postalCode, "SW1A 1AA");
+  const country = zoneSchema.parse({ countryCode: " pk ", nameDe: "Pakistan", nameEn: "Pakistan", feeRappen: "15", minimumSubtotalRappen: "0", freeDeliveryThresholdRappen: "120", sortOrder: "0" });
+  assert.equal(country.countryCode, "PK");
+  assert.equal(country.minimumSubtotalRappen, 0);
 });
 
 test("admin money and order identifiers use CHF decimals and current or legacy prefixes", () => {

@@ -9,20 +9,10 @@ export const getPublicConfig = cache(async function getPublicConfig() {
     prisma.siteSettings.findUniqueOrThrow({ where: { id: 1 } }),
     prisma.fulfillmentSettings.findUniqueOrThrow({ where: { id: 1 } }),
     prisma.deliveryZone.findMany({
-      where: { active: true },
+      where: { active: true, countryCode: { not: null } },
       orderBy: { sortOrder: "asc" },
-      include: { postalCodes: { orderBy: { postalCode: "asc" } } },
     }),
   ]);
-
-  const announcementZone = deliveryZones[0];
-  const announcementInput = announcementZone
-    ? {
-        postalCodes: announcementZone.postalCodes.map(({ postalCode }) => postalCode),
-        minimumSubtotalRappen: announcementZone.minimumSubtotalRappen,
-        freeDeliveryThresholdRappen: announcementZone.freeDeliveryThresholdRappen,
-      }
-    : null;
 
   return {
     locales: ["de", "en"],
@@ -52,12 +42,16 @@ export const getPublicConfig = cache(async function getPublicConfig() {
       deliveryEnabled: fulfillment.deliveryEnabled,
       pickupEnabled: fulfillment.pickupEnabled,
     },
-    announcement:
-      site.announcementActive && announcementInput
-        ? {
-            de: buildDeliveryAnnouncement(announcementInput, "de"),
-            en: buildDeliveryAnnouncement(announcementInput, "en"),
-          }
-        : null,
+    announcements: site.announcementActive
+      ? deliveryZones.map((zone) => {
+          const input = {
+            countryNameDe: zone.nameDe,
+            countryNameEn: zone.nameEn,
+            minimumSubtotalRappen: zone.minimumSubtotalRappen,
+            freeDeliveryThresholdRappen: zone.freeDeliveryThresholdRappen,
+          };
+          return { de: buildDeliveryAnnouncement(input, "de"), en: buildDeliveryAnnouncement(input, "en") };
+        })
+      : [],
   };
 });

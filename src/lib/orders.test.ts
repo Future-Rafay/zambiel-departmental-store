@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { siteConfig } from "@/config/site";
-import { allocateDiscount, formatMoney, formatOrderNumber, nextOrderStatus, orderStatusLabel, promoDiscount, publicOrderAddress } from "@/lib/orders";
+import { allocateDiscount, formatMoney, formatOrderNumber, nextOrderStatus, orderStatusLabel, promoDiscount, publicOrderAddress, shippingFeeRappen } from "@/lib/orders";
 import { zurichDateToUtc } from "@/lib/zurich-time";
 
 test("order money and lifecycle rules stay server-shaped", () => {
@@ -22,6 +22,12 @@ test("public order addresses never expose the BigInt order id", () => {
   const address = publicOrderAddress({ recipientName: "Guest", phone: "+41", street: "Main 1", streetExtra: null, postalCode: "8304", city: "Wallisellen", countryCode: "CH", orderId: 42n } as Parameters<typeof publicOrderAddress>[0] & { orderId: bigint });
   assert.equal(JSON.stringify(address).includes("orderId"), false);
   assert.doesNotThrow(() => JSON.stringify(address));
+});
+
+test("applies a country shipping fee below its free-shipping threshold", () => {
+  assert.equal(shippingFeeRappen(11_999, 1_500, 12_000), 1_500);
+  assert.equal(shippingFeeRappen(12_000, 1_500, 12_000), 0);
+  assert.equal(shippingFeeRappen(50_000, 1_500, null), 1_500);
 });
 
 test("Zurich local timestamps convert correctly across daylight saving time", () => {

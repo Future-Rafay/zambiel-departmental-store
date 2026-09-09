@@ -14,13 +14,14 @@ import {
   type FulfillmentType,
   type PaymentMethod,
   type Quote,
+  type ShippingCountry,
 } from "@/components/site/checkout-sections";
 import { Card } from "@/components/ui/card";
 import { createLatestRequest, isAbortError } from "@/lib/latest-request";
 
 type ApiError = { error?: string; details?: Array<{ path: PropertyKey[] }> };
 const fieldByPath: Record<string, string> = {
-  postcode: "postalCode",
+  countryCode: "countryCode",
   customerName: "customerName",
   customerEmail: "customerEmail",
   customerPhone: "customerPhone",
@@ -29,16 +30,18 @@ const fieldByPath: Record<string, string> = {
   "address.phone": "customerPhone",
   "address.street": "street",
   "address.streetExtra": "streetExtra",
-  "address.postalCode": "postalCode",
+  "address.countryCode": "countryCode",
   "address.city": "city",
 };
 
 export function CheckoutForm({
   locale,
   user,
+  countries,
 }: {
   locale: "de" | "en";
   user?: CheckoutUser;
+  countries: ShippingCountry[];
 }) {
   const { items, clear } = useCart();
   const de = locale === "de";
@@ -65,9 +68,9 @@ export function CheckoutForm({
   }));
   function message(code = "") {
     const messages: Record<string, [string, string]> = {
-      POSTCODE_NOT_DELIVERABLE: [
-        "An diese Postleitzahl liefern wir derzeit nicht.",
-        "We do not currently deliver to this postcode.",
+      COUNTRY_NOT_DELIVERABLE: [
+        "In dieses Land liefern wir derzeit nicht.",
+        "We do not currently ship to this country.",
       ],
       DELIVERY_MINIMUM_NOT_MET: [
         "Der Mindestbestellwert ist noch nicht erreicht.",
@@ -111,8 +114,8 @@ export function CheckoutForm({
       const field = fieldByPath[issue.path.join(".")];
       if (field) next[field] = message("INVALID_INPUT");
     }
-    if (api.error === "POSTCODE_NOT_DELIVERABLE")
-      next.postalCode = message(api.error);
+    if (api.error === "COUNTRY_NOT_DELIVERABLE")
+      next.countryCode = message(api.error);
     setFieldErrors(next);
     setError(Object.keys(next).length ? "" : message(api.error));
     const first = Object.keys(next)[0];
@@ -130,7 +133,7 @@ export function CheckoutForm({
     quoteRequests.cancel();
     if (!formRef.current || items.length === 0) return;
     const data = new FormData(formRef.current);
-    if (fulfillmentType === "DELIVERY" && !data.get("postalCode")) return;
+    if (fulfillmentType === "DELIVERY" && !data.get("countryCode")) return;
     const request = quoteRequests.begin();
     setError("");
     try {
@@ -141,8 +144,8 @@ export function CheckoutForm({
         body: JSON.stringify({
           items: payloadItems,
           fulfillmentType,
-          postcode:
-            fulfillmentType === "DELIVERY" ? data.get("postalCode") : undefined,
+          countryCode:
+            fulfillmentType === "DELIVERY" ? data.get("countryCode") : undefined,
           promoCode: data.get("promoCode") || undefined,
           customerEmail: data.get("customerEmail") || undefined,
         }),
@@ -181,7 +184,7 @@ export function CheckoutForm({
     setError("");
     setFieldErrors({});
     try {
-      const postalCode = String(data.get("postalCode") ?? "");
+      const countryCode = String(data.get("countryCode") ?? "");
       const order = await fetch("/api/v1/customer/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -190,7 +193,7 @@ export function CheckoutForm({
           locale,
           items: payloadItems,
           fulfillmentType,
-          postcode: fulfillmentType === "DELIVERY" ? postalCode : undefined,
+          countryCode: fulfillmentType === "DELIVERY" ? countryCode : undefined,
           promoCode: data.get("promoCode") || undefined,
           customerName: data.get("customerName"),
           customerEmail: data.get("customerEmail"),
@@ -204,8 +207,8 @@ export function CheckoutForm({
                   phone: data.get("customerPhone"),
                   street: data.get("street"),
                   streetExtra: data.get("streetExtra") || undefined,
-                  postalCode,
                   city: data.get("city"),
+                  countryCode,
                 }
               : undefined,
         }),
@@ -246,6 +249,7 @@ export function CheckoutForm({
           <AddressFields
             de={de}
             user={user}
+            countries={countries}
             errors={fieldErrors}
             refreshQuote={() => void refreshQuote()}
           />

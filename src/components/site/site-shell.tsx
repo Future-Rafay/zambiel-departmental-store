@@ -28,7 +28,7 @@ type SiteUser = {
   role?: string;
 } | null;
 type PublicShellConfig = {
-  announcement: { de: string | null; en: string | null } | null;
+  announcements: Array<{ de: string; en: string }>;
   email?: string | null;
   facebookUrl?: string | null;
   instagramUrl?: string | null;
@@ -54,7 +54,8 @@ export function SiteShell({
   const otherLocale = de ? "en" : "de";
   const otherPath =
     pathname?.replace(`/${locale}`, `/${otherLocale}`) || `/${otherLocale}`;
-  const announcement = publicConfig.announcement?.[locale];
+  const announcements = publicConfig.announcements.map((announcement) => announcement[locale]);
+  const [announcementIndex, setAnnouncementIndex] = useState(0);
   const labels = de
     ? {
         products: "Produkte",
@@ -114,6 +115,12 @@ export function SiteShell({
     };
   }, []);
 
+  useEffect(() => {
+    if (announcements.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const interval = window.setInterval(() => setAnnouncementIndex((index) => (index + 1) % announcements.length), 5000);
+    return () => window.clearInterval(interval);
+  }, [announcements.length]);
+
   return (
     <div className="flex min-h-dvh flex-col" lang={locale}>
       <a
@@ -123,9 +130,10 @@ export function SiteShell({
         {de ? "Zum Inhalt springen" : "Skip to content"}
       </a>
       <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-xl">
-        {announcement ? (
+        {announcements.length ? (
           <div className="bg-primary px-4 py-2 text-center text-xs font-bold text-white sm:text-sm">
-            {announcement}
+            <span aria-hidden="true">{announcements[announcementIndex % announcements.length]}</span>
+            <span className="sr-only">{announcements.join(". ")}</span>
           </div>
         ) : null}
         <div className="mx-auto flex min-h-20 max-w-7xl items-center gap-3 px-4 sm:px-6">
@@ -426,6 +434,14 @@ export function SiteShell({
                   className="hover:text-secondary-light"
                 >
                   {de ? "Kontaktinformationen" : "Contact information"}
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href={`/${locale}/account-deletion`}
+                  className="hover:text-secondary-light"
+                >
+                  {de ? "Konto löschen" : "Account deletion"}
                 </Link>
               </li>
             </ul>

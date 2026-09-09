@@ -88,9 +88,8 @@ export default async function OrderDetailPage({
             <div className="mt-5 border-t pt-4">
               <h3 className="font-semibold">Delivery address</h3>
               <p className="mt-1 text-sm">
-                {order.address.recipientName}, {order.address.street}{" "}
-                {order.address.streetExtra}, {order.address.postalCode}{" "}
-                {order.address.city}
+                {order.address.recipientName}, {order.address.street}
+                {order.address.streetExtra ? `, ${order.address.streetExtra}` : ""}, {order.address.city}, {order.address.countryCode}
               </p>
             </div>
           )}

@@ -41,7 +41,7 @@ export default async function LocaleLayout({
         locale={locale}
         user={user}
         publicConfig={{
-          announcement: publicConfig.announcement,
+          announcements: publicConfig.announcements,
           email: publicConfig.brand.email,
           facebookUrl: publicConfig.brand.facebookUrl,
           instagramUrl: publicConfig.brand.instagramUrl,

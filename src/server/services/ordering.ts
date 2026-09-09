@@ -15,7 +15,7 @@ import { resolvePublicImageUrl } from "@/server/storage/s3";
 import type { CreateOrderInput } from "@/server/validators/order";
 
 export { OrderError } from "@/server/services/order-errors";
-export { calculateQuote, getDeliveryQuote } from "@/server/services/order-quotes";
+export { calculateQuote, getDeliveryQuote, getShippingCountries } from "@/server/services/order-quotes";
 export { getAdminOrders, getCustomerOrders, getTrackedOrder } from "@/server/services/order-queries";
 export { processStripeEvent } from "@/server/services/order-stripe";
 
@@ -138,6 +138,7 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
       if (order.deliveryFeeRappen > 0) lineItems.push({ quantity: 1, price_data: { currency: siteConfig.currency.toLowerCase(), unit_amount: order.deliveryFeeRappen, product_data: { name: input.locale === "de" ? "Liefergebühr" : "Delivery fee" } } });
       const session = await getStripe().checkout.sessions.create({
         mode: "payment",
+        adaptive_pricing: { enabled: true },
         customer_email: order.customerEmail,
         line_items: lineItems,
         metadata: { orderId: order.id.toString(), orderNumber },

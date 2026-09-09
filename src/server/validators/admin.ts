@@ -3,6 +3,7 @@ import { z } from "zod";
 import { siteConfig } from "@/config/site";
 import { parseOrderNumber } from "@/lib/orders";
 import { zurichDateToUtc } from "@/lib/zurich-time";
+import { countryCodeSchema } from "@/server/validators/country-code";
 import { postalCodeValueSchema } from "@/server/validators/postal-code";
 
 const optionalText = (max: number) => z.string().trim().max(max).optional().transform((value) => value || null);
@@ -27,20 +28,15 @@ const optionalZurichDateTime = z.union([
 ]).transform((value) => value === "" ? null : value);
 export const zoneSchema = z.object({
   id: databaseId.optional(),
+  countryCode: countryCodeSchema,
   nameDe: z.string().trim().min(1).max(120),
   nameEn: z.string().trim().min(1).max(120),
   active: checkbox,
   feeRappen: minorUnits,
   minimumSubtotalRappen: minorUnits,
   freeDeliveryThresholdRappen: optionalMinorUnits,
-  estimatedMinutes: integer(1).max(1440),
+  estimatedMinutes: integer(1).max(100_800).default(1440),
   sortOrder: integer(),
-});
-
-export const postalCodeSchema = z.object({
-  id: databaseId.optional(),
-  deliveryZoneId: databaseId,
-  postalCode: postalCodeValueSchema,
 });
 
 export const siteSettingsSchema = z.object({

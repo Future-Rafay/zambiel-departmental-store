@@ -14,14 +14,15 @@ Read `PROJECT-CONTEXT.md` and `PLAN.md` before making changes. Then read `BRANDI
 ## Scope
 
 - This is a single-seller Swiss departmental store. Never add vendor, tenant, organization, commission, payout, or order-splitting architecture.
-- Public routes are German/English under `/de` and `/en`; admin is `/admin`. Zambiel has no planned React Native application. Existing native artifacts and staff-mobile endpoints are frozen legacy code: do not transform, extend, advertise, or verify them as Zambiel functionality without a separately approved removal or migration task.
+- Public routes are German/English under `/de` and `/en`; admin is `/admin`. The customer-only Android application lives in `apps/zambiel-mobile` (React Native/Expo). The former staff application was already deleted before customer-app development. Retained staff-mobile endpoints are not customer APIs and must not be reused for customer authentication or app functionality.
+- Read `MOBILE-APP.md` for the mobile contract and verification. Devices access the existing backend through customer APIs, never directly through Prisma/database credentials. Preserve website cookie authentication alongside customer mobile sessions. New customer features are app-first; keep website default-address behavior compatible.
 - Preserve the shared seams: `src/server/db.ts`; the stable `src/server/services/ordering.ts` facade and its focused `order-*.ts` modules; the stable admin `retail-actions.ts` facade and its domain modules; explicit DTOs; and `resolvePublicImageUrl`.
 - Legacy restaurant schema fields and enum members remain temporarily for forward expand/contract compatibility. Do not use them in new behavior, UI, routes, seeds, or APIs; remove them only through a reviewed forward migration after all historical-data requirements are confirmed.
 
 ## Configuration and content
 
 - Store defaults live in `src/config/store.ts`; runtime settings merge through `src/server/services/store-config.ts`. Do not scatter brand, currency, timezone, contact, delivery, or storage constants.
-- Use CHF integer rappen, UTC storage, `Europe/Zurich` display, and normalized string postal codes.
+- Use CHF integer rappen, UTC storage, and `Europe/Zurich` display. Shipping eligibility and CHF fees are country-based; postal codes are not checkout inputs.
 - Missing contact, address, social, hours, legal, media, and commercial claims remain hidden or production-blocking. Do not invent them.
 - Product/category content is generic and bilingual. Active products require reviewed German public copy. Variants support arbitrary option values; never reduce them to size/color assumptions.
 
@@ -29,7 +30,7 @@ Read `PROJECT-CONTEXT.md` and `PLAN.md` before making changes. Then read `BRANDI
 
 - Local seed/import targets only lowercase `zambiel_dev` or `zambiel_test`. Never use `saltnpepper_dev`, another client database, or production. Preserve deployed migrations and add forward migrations.
 - Stock belongs to variants. Changes require ledger entries and idempotency keys. Stripe reserves stock until signature-verified finalization; cancellation/terminal failure restores it exactly once. Paid orders use the refund-and-cancel flow.
-- Delivery: Stripe or COD. Pickup: Stripe or cash at pickup. Server code validates stock, price, promotion, postal zone, fulfillment, and payment.
+- Delivery: Stripe or COD. Pickup: Stripe or cash at pickup. Server code validates stock, price, promotion, destination country, fulfillment, and payment. Stripe Checkout may present the CHF order in a supported local currency through Adaptive Pricing.
 - Retail transitions are `CONFIRMED → PROCESSING → OUT_FOR_DELIVERY → DELIVERED` or `CONFIRMED → PROCESSING → READY_FOR_PICKUP → PICKED_UP`, plus cancellation. Legacy enum values remain only during expand/contract migration.
 - Keep network calls outside long database transactions. Secrets and provider identifiers remain server-only.
 
