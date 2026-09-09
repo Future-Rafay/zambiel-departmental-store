@@ -3,6 +3,7 @@ export type User = { id: string; name: string | null; email: string; phone: stri
 export type Session = { token: string; expiresAt: string; user: User };
 export type Variant = { id: string; name: string; sku: string; priceRappen: number; stockAvailable: number | null; imageUrl: string | null; optionValues: { optionId: string; valueId: string; value: string; optionName: string }[] };
 export type Product = { id: string; slug: string; name: string; description: string; imageUrl: string | null; minimumPriceRappen: number; available: boolean; category: { id: string; name: string; slug: string }; media: { id: string; url: string | null; alt: string }[]; options: { id: string; name: string; values: { id: string; value: string }[] }[]; variants: Variant[] };
+export type ProductPreview = Pick<Product, "id" | "slug" | "name" | "imageUrl" | "minimumPriceRappen">;
 export type Category = { id: string; name: string; slug: string; parentId: string | null; imageUrl: string | null; productCount: number };
 export type CartLine = { variantId: string; productId: string; slug: string; name: string; variant: string; imageUrl: string | null; priceRappen: number; quantity: number };
 export type Address = { id: string; label: string; recipientName: string; phone: string; street: string; streetExtra: string | null; city: string; countryCode: string; isDefault: boolean };

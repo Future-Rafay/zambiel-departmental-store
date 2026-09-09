@@ -49,6 +49,7 @@ export async function resetPassword(input: z.infer<typeof resetPasswordSchema>) 
     await tx.user.update({ where: { id: token.userId }, data: { passwordHash } });
     await tx.session.deleteMany({ where: { userId: token.userId } });
     await tx.customerMobileSession.deleteMany({ where: { userId: token.userId } });
+    await tx.customerPushSubscription.deleteMany({ where: { userId: token.userId } });
     return { admin: token.user.role !== "CUSTOMER" };
   });
 }

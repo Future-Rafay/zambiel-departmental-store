@@ -32,6 +32,7 @@ export default function AuthScreen() {
     <Field label="E-Mail" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email"/>
     <Field label={locale === "de" ? "Passwort (mindestens 10 Zeichen)" : "Password (at least 10 characters)"} value={password} onChangeText={setPassword} secureTextEntry autoComplete={register ? "new-password" : "current-password"}/>
     <Button disabled={busy} onPress={submit}>{register ? copy.register : copy.login}</Button>
+    {!register ? <Button kind="secondary" onPress={() => email.includes("@") ? api.forgotPassword(email).then(() => Alert.alert(locale === "de" ? "Prüfe deine E-Mails" : "Check your email")) : Alert.alert(locale === "de" ? "E-Mail eingeben" : "Enter your email")}>{locale === "de" ? "Passwort vergessen?" : "Forgot password?"}</Button> : null}
     <Button kind="secondary" onPress={google}>{locale === "de" ? "Mit Google fortfahren" : "Continue with Google"}</Button>
     <Button kind="secondary" onPress={() => setRegister(!register)}>{register ? copy.login : copy.register}</Button>
   </ScrollView>;

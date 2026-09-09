@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { addCartLines, orderNumberFromLink, priceFilter, readCart, selectedVariant } from "./commerce";
+import { addCartLines, addRecentlyViewed, orderNumberFromLink, paymentForFulfillment, priceFilter, readCart, readRecentlyViewed, selectedVariant } from "./commerce";
 import type { CartLine, Product } from "./types";
 
 test("cart merges variants and respects authoritative quantity and line limits", () => {
@@ -23,4 +23,16 @@ test("variant selection uses arbitrary option IDs, never size/color assumptions"
   const product = { options: [{ id: "power" }, { id: "plug" }], variants: [{ id: "v1", optionValues: [{ optionId: "power", valueId: "220" }, { optionId: "plug", valueId: "ch" }] }] } as unknown as Product;
   assert.equal(selectedVariant(product, { power: "220", plug: "ch" })?.id, "v1");
   assert.equal(selectedVariant(product, { power: "220" }), undefined);
+});
+test("recently viewed products are deduplicated, newest first, and bounded", () => {
+  const products = Array.from({ length: 9 }, (_, id) => ({ id: String(id), slug: `p-${id}`, name: `Product ${id}`, imageUrl: null, minimumPriceRappen: id * 100 }));
+  const recent = products.reduce(addRecentlyViewed, []);
+  assert.deepEqual(recent.map((product) => product.id), ["8", "7", "6", "5", "4", "3", "2", "1"]);
+  assert.equal(addRecentlyViewed(recent, products[5])[0].id, "5");
+  assert.deepEqual(readRecentlyViewed({ broken: true }), []);
+});
+test("cash payment follows the selected fulfillment type", () => {
+  assert.equal(paymentForFulfillment("CASH_ON_DELIVERY", "PICKUP"), "PAY_AT_PICKUP");
+  assert.equal(paymentForFulfillment("PAY_AT_PICKUP", "DELIVERY"), "CASH_ON_DELIVERY");
+  assert.equal(paymentForFulfillment("STRIPE", "PICKUP"), "STRIPE");
 });

@@ -16,7 +16,7 @@ export function pushScopeKey(token: string, scope: string) {
   return `${scope}:${createHash("sha256").update(token).digest("hex")}`;
 }
 
-export function isPushDispatcherAuthorized(authorization: string | null, secret = process.env.MOBILE_PUSH_CRON_SECRET) {
+export function isPushDispatcherAuthorized(authorization: string | null, secret = process.env.CRON_SECRET ?? process.env.MOBILE_PUSH_CRON_SECRET) {
   if (!secret || secret.length < 32 || !authorization) return false;
   const expected = Buffer.from(`Bearer ${secret}`);
   const received = Buffer.from(authorization);

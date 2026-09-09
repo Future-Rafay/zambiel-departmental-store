@@ -1,4 +1,4 @@
-import type { CartLine, Locale, Product, Variant } from "./types";
+import type { CartLine, CheckoutInput, Locale, Product, ProductPreview, Variant } from "./types";
 
 export function money(rappen: number, locale: Locale) {
   return new Intl.NumberFormat(locale === "de" ? "de-CH" : "en-CH", { style: "currency", currency: "CHF" }).format(rappen / 100);
@@ -38,6 +38,16 @@ export function priceFilter(value: string): number | undefined {
   const amount = Number(whole) * 100 + Number(decimal.padEnd(2, "0"));
   if (!Number.isSafeInteger(amount)) throw new Error("INVALID_PRICE");
   return amount;
+}
+export function addRecentlyViewed(current: ProductPreview[], product: ProductPreview) {
+  const snapshot = { id: product.id, slug: product.slug, name: product.name, imageUrl: product.imageUrl, minimumPriceRappen: product.minimumPriceRappen };
+  return [snapshot, ...current.filter((item) => item.id !== product.id)].slice(0, 8);
+}
+export function readRecentlyViewed(value: unknown): ProductPreview[] {
+  return Array.isArray(value) ? value.filter((item): item is ProductPreview => !!item && typeof item.id === "string" && typeof item.slug === "string" && typeof item.name === "string" && (item.imageUrl === null || typeof item.imageUrl === "string") && Number.isSafeInteger(item.minimumPriceRappen) && item.minimumPriceRappen >= 0).slice(0, 8) : [];
+}
+export function paymentForFulfillment(current: CheckoutInput["paymentMethod"], fulfillment: CheckoutInput["fulfillmentType"]): CheckoutInput["paymentMethod"] {
+  return current === "STRIPE" ? current : fulfillment === "DELIVERY" ? "CASH_ON_DELIVERY" : "PAY_AT_PICKUP";
 }
 const statuses: Record<string, [string, string]> = { PAYMENT_PENDING: ["Zahlung ausstehend", "Awaiting payment"], CONFIRMED: ["Bestätigt", "Confirmed"], PROCESSING: ["In Bearbeitung", "Processing"], OUT_FOR_DELIVERY: ["Unterwegs", "Out for delivery"], DELIVERED: ["Geliefert", "Delivered"], READY_FOR_PICKUP: ["Abholbereit", "Ready for pickup"], PICKED_UP: ["Abgeholt", "Picked up"], CANCELLED: ["Storniert", "Cancelled"] };
 export function statusLabel(status: string, locale: Locale) { return statuses[status]?.[locale === "de" ? 0 : 1] ?? status; }

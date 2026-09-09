@@ -16,13 +16,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 const customer = "/api/v1/customer";
+type CatalogPage = { items: Product[]; page: number; pageCount: number; total: number };
 export const api = {
   config: () => request<MobileConfig>("/api/v1/public/config").then((value) => ({ ...value, countries: value.countries ?? [{ countryCode: "CH", nameDe: "Schweiz", nameEn: "Switzerland", deliveryFeeRappen: 0, minimumSubtotalRappen: 0 }] })),
   categories: (locale: Locale) => request<{ categories: Category[] }>(`${customer}/catalog/categories?locale=${locale}`).then((x) => x.categories),
-  products: (query = "") => request<{ items: Product[] }>(`${customer}/catalog${query ? `?${query}` : ""}`).then((x) => x.items),
+  productsPage: (query = "") => request<CatalogPage>(`${customer}/catalog${query ? `?${query}` : ""}`),
+  products: (query = "") => request<CatalogPage>(`${customer}/catalog${query ? `?${query}` : ""}`).then((x) => x.items),
   product: (slug: string, locale: Locale) => request<{ product: Product }>(`${customer}/catalog/products/${encodeURIComponent(slug)}?locale=${locale}`).then((x) => x.product),
   login: (email: string, password: string) => request<Session>(`${customer}/auth/login`, { method: "POST", body: JSON.stringify({ email, password }) }),
   register: (name: string, email: string, password: string) => request<Session>(`${customer}/auth/register`, { method: "POST", body: JSON.stringify({ name, email, password }) }),
+  forgotPassword: (email: string) => request<{ accepted: true }>(`${customer}/auth/forgot-password`, { method: "POST", body: JSON.stringify({ email, website: "" }) }),
   google: (idToken: string) => request<Session>(`${customer}/auth/google`, { method: "POST", body: JSON.stringify({ idToken }) }),
   logout: () => request<void>(`${customer}/auth/logout`, { method: "POST" }),
   profile: () => request<{ user: User }>(`${customer}/auth/me`).then((x) => x.user),

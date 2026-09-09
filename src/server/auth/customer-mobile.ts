@@ -55,10 +55,21 @@ export async function loginMobileCustomerWithGoogle(input: unknown) {
   try { ({ payload } = await jwtVerify(idToken, googleKeys, { issuer: ["https://accounts.google.com", "accounts.google.com"], audience: getAuthEnv().GOOGLE_CLIENT_ID })); }
   catch { throw new CustomerMobileAuthError("INVALID_CREDENTIALS"); }
   const providerAccountId = typeof payload.sub === "string" ? payload.sub : null;
-  if (!providerAccountId || payload.email_verified !== true) throw new CustomerMobileAuthError("INVALID_CREDENTIALS");
+  const googleEmail = typeof payload.email === "string" ? email.safeParse(payload.email).data : null;
+  if (!providerAccountId || !googleEmail || payload.email_verified !== true) throw new CustomerMobileAuthError("INVALID_CREDENTIALS");
   const account = await prisma.account.findUnique({ where: { provider_providerAccountId: { provider: "google", providerAccountId } }, include: { user: { select: { id: true, email: true, name: true, phone: true, role: true, active: true } } } });
-  if (!account?.user.active || !["CUSTOMER", "OWNER"].includes(account.user.role)) throw new CustomerMobileAuthError("GOOGLE_ACCOUNT_NOT_LINKED");
-  return issueSession(account.user);
+  if (account) {
+    if (!account.user.active || !["CUSTOMER", "OWNER"].includes(account.user.role)) throw new CustomerMobileAuthError("GOOGLE_ACCOUNT_NOT_LINKED");
+    return issueSession(account.user);
+  }
+  if (await prisma.user.findUnique({ where: { email: googleEmail }, select: { id: true } })) throw new CustomerMobileAuthError("GOOGLE_ACCOUNT_NOT_LINKED");
+  const user = await prisma.user.create({ data: {
+    email: googleEmail,
+    name: typeof payload.name === "string" ? payload.name.slice(0, 160) : null,
+    role: "CUSTOMER",
+    accounts: { create: { type: "oidc", provider: "google", providerAccountId } },
+  }, select: { id: true, email: true, name: true, phone: true } });
+  return issueSession(user);
 }
 
 function bearer(request: Request) {

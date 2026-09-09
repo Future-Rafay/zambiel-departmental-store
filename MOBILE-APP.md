@@ -43,7 +43,11 @@ Google Play preparation needs a production HTTPS origin, Google OAuth configurat
 - Prisma schema validation and client generation pass.
 - Root typecheck, lint, production build, and 44 unit tests pass (39 exercised without a database; 5 database tests skip by design).
 - All 44 tests pass against the migrated local `zambiel_test` database with serial isolation and provider calls disabled.
-- Mobile typecheck, four focused tests, Expo dependency validation, and Android JavaScript export pass.
+- Mobile typecheck, six focused tests, Expo Doctor, dependency validation, and Android JavaScript export pass.
 - Expo prebuild succeeds. Native Gradle APK assembly is blocked on this Windows host before compilation because Java cannot establish its required loopback connection. No APK is claimed from this run.
 
 Provider-dependent Google sign-in, live Stripe/webhooks, FCM/Expo push receipts, release signing, and Google Play publication remain release-environment checks.
+
+The production push dispatcher is registered in `vercel.json` and requires `CRON_SECRET`. The internal route also supports an explicitly configured external scheduler.
+
+Remaining release inputs are branded square/adaptive/store artwork, an installable signed APK/AAB, production HTTPS origins, Google/Firebase/Expo credentials, physical-device Google/payment/push checks, approved legal and retention content, and the Google Play account/listing. These are not represented as locally verified.

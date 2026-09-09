@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/internal/mobile-push",
+      "schedule": "* * * * *"
+    }
+  ]
+}
