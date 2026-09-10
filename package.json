@@ -17,6 +17,7 @@
     "mobile:typecheck": "npm --prefix apps/zambiel-mobile run typecheck",
     "mobile:test": "npm --prefix apps/zambiel-mobile test",
     "mobile:export": "npm --prefix apps/zambiel-mobile run export",
+    "stripe:listen": "stripe listen --events checkout.session.completed,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,checkout.session.expired,refund.created,refund.updated,refund.failed --forward-to localhost:3000/api/webhooks/stripe",
     "phase5:preflight": "tsx scripts/phase-5-preflight.ts",
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",

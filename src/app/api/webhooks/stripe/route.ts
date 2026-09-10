@@ -20,7 +20,11 @@ export async function POST(request: Request) {
   try {
     await processStripeEvent(event);
     return Response.json({ received: true });
-  } catch {
+  } catch (error) {
+    console.error("[stripe-webhook] processing failed", {
+      eventType: event.type,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
     return Response.json({ error: "WEBHOOK_PROCESSING_FAILED" }, { status: 500 });
   }
 }

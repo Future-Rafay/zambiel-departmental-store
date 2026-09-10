@@ -34,6 +34,22 @@ No admin dashboard, staff operations, live driver map, reviews, customer cancell
 
 Run root tests/typecheck/lint/build, Prisma validation/generation and guarded migration checks, mobile tests/typecheck/lint, Expo dependency checks, and Android export/build. Exercise account isolation, password-reset revocation, cart recovery, changed stock/prices, guest tracking, interrupted Stripe checkout, delayed/replayed webhooks, and notification retries.
 
+### Stripe webhook setup
+
+Stripe's browser return only reopens the order screen. A signed webhook must reach the backend before a paid Stripe order becomes `PAID` and `CONFIRMED`.
+
+For local website or emulator testing, run the backend and Stripe listener in separate terminals:
+
+```powershell
+npm.cmd run dev
+stripe login
+npm.cmd run stripe:listen
+```
+
+Copy the listener's `whsec_...` signing secret to the ignored local `.env` as `STRIPE_WEBHOOK_SECRET`, then restart the backend. Keep the listener running while testing. Use Stripe Dashboard Test mode with test keys; payments made with test keys are not displayed in live mode.
+
+For staging or production, register `https://<origin>/api/webhooks/stripe` in the matching Stripe mode, enable the same event types used by `stripe:listen`, store that endpoint's signing secret as `STRIPE_WEBHOOK_SECRET` in the matching deployment environment, and redeploy. Do not reuse a local listener secret or a secret from the other Stripe mode.
+
 Physical-device Google sign-in, Stripe/webhook payment, Expo/FCM push receipts, and store release require real environment configuration. Do not equate a compiled APK or passing mocked tests with those flows being verified. The test app needs a backend reachable from the device; `localhost` on a phone refers to the phone itself.
 
 Google Play preparation needs a production HTTPS origin, Google OAuth configuration, Expo/FCM credentials, release signing, approved store assets/privacy/legal content, and an operational account-deletion request process with reviewed retention rules. Do not invent business/legal details or silently publish.

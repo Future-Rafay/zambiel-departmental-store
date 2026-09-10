@@ -35,8 +35,8 @@ Run Prisma format/validate/generate and fresh-database migration/seed; importer 
 - Checkout, saved addresses, server quotes, order validation, and admin settings now use destination-country shipping rules in CHF without a postal-code requirement. Stripe Checkout keeps CHF as the order currency and enables Adaptive Pricing for eligible local-currency presentation.
 - Prisma migration/status, 44 tests (39 passed, 5 isolated-database skips), typecheck, build, diff checks, and responsive checkout verification passed. Lint has no errors and one unrelated category-card warning. The guarded seed applied the shipping configuration before encountering an existing zero-stock demo movement; authenticated admin and live Stripe presentment still require staging verification.
 - The shared header now rotates automatically through every active shipping country's localized delivery information, while respecting reduced-motion preferences.
-- Local Stripe test payments require a running `stripe listen --forward-to localhost:3000/api/webhooks/stripe` process with its signing secret configured as `STRIPE_WEBHOOK_SECRET`; Test mode must be enabled in Stripe Dashboard.
-- Two completed test payments that were pending locally were recovered through the signature-verified webhook route after applying the pending customer-mobile migration; both orders are now confirmed and paid. Continuous Stripe webhook delivery still requires the listener or a public HTTPS endpoint.
+- Local Stripe test payments require `npm run stripe:listen` beside the backend with its signing secret configured as `STRIPE_WEBHOOK_SECRET`; Test mode must be enabled in Stripe Dashboard.
+- Three completed test payments that were pending locally have been recovered through the signature-verified webhook route. The latest recovery was verified paid/confirmed and idempotent. Continuous delivery still requires the listener or a public HTTPS endpoint.
 
 ## Current verification (2026-09-03)
 
