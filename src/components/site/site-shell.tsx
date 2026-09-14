@@ -436,14 +436,6 @@ export function SiteShell({
                   {de ? "Kontaktinformationen" : "Contact information"}
                 </Link>
               </li>
-              <li>
-                <Link
-                  href={`/${locale}/account-deletion`}
-                  className="hover:text-secondary-light"
-                >
-                  {de ? "Konto löschen" : "Account deletion"}
-                </Link>
-              </li>
             </ul>
           </div>
           <div>
