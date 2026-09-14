@@ -239,7 +239,7 @@ model Product {
   orderItems       OrderItem[]
   productOptions   ProductOption[]
   media            ProductMedia[]
-  tags             ProductTag[]
+  tags             ProductTag[]       @relation("producttoproducttag")
   wishlist         CustomerWishlist[]
 
   @@index([categoryId, deletedAt, active, sortOrder], map: "Product_categoryId_deletedAt_active_sortOrder_idx")
@@ -282,7 +282,7 @@ model ProductTag {
   id       String    @id @default(cuid())
   name     String    @db.VarChar(120)
   slug     String    @unique(map: "ProductTag_slug_key") @db.VarChar(140)
-  products Product[]
+  products Product[] @relation("producttoproducttag")
 
   @@map("producttag")
 }
