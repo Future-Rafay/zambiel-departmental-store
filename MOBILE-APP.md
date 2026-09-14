@@ -12,6 +12,32 @@ Shipping is country-based, with no postal-code checkout input. Order accounting 
 
 No admin dashboard, staff operations, live driver map, reviews, customer cancellation/refund controls, or iOS release is included in the Android milestone.
 
+## Customer experience design
+
+The Android app uses the Zambiel green (`#153B35`), gold (`#D6A84B`), warm neutral surfaces, Archivo headings, and Inter body text. Shared mobile primitives control headers, buttons, cards, price display, skeletons, screen states, spacing, and safe-area padding. The app is light-themed for this release.
+
+The five primary destinations are Home, Discover, Cart, Orders, and Account. The safe-area-aware tab bar appears only on those destinations. Product and order details, authentication, addresses, wishlist, support, and checkout use focused stack navigation; product details use a separate safe purchase dock instead of keeping the main tab bar visible.
+
+Home uses `/api/v1/customer/catalog/home` for the native hero, categories, featured products, best sellers, and new arrivals. Recently viewed products stay device-local and are hidden when empty. Discover provides debounced search, an endless two-column product grid, category/availability/price/sort filters, stale-response protection, and distinct initial, next-page, empty, error, and end-of-results states.
+
+Product details combine the primary image, catalog media, and selected variant image into one deduplicated gallery. The page supports paging, thumbnails, full-screen viewing, pinch zoom, arbitrary option groups, unavailable-choice feedback, related products from the existing product response, and recently viewed products excluding the current item. Cart, checkout, orders, wishlist, and account share the same state and interaction patterns. Destructive actions remain separated and confirmed.
+
+TanStack Query caches and deduplicates homepage, order, and wishlist server state. Catalog paging explicitly aborts or ignores stale requests, and the secure session token is hydrated once and retained in memory. The current installed development client uses React Native's built-in image component so JavaScript-only redesign work runs without forcing another native Gradle build; image dimensions and list virtualization remain stable to limit layout work.
+
+### Local Android workflow
+
+Start the Next.js backend from the repository root, then start the already-installed development client from the mobile directory:
+
+```powershell
+# Terminal 1: repository root
+npm.cmd run dev
+
+# Terminal 2: apps/zambiel-mobile
+npm.cmd start
+```
+
+Open the Android emulator before starting Metro, then open the installed Zambiel app. Use `npm.cmd run android` only when native dependencies or Android project settings have changed; it invokes a full Gradle build and can take much longer than normal Metro startup. The emulator's `SaltNPepper_App` label is only the local AVD name and is not application branding. The Android emulator reaches a host backend through the configured emulator-safe URL (normally `10.0.2.2`), while a physical phone needs the computer's reachable LAN or HTTPS address.
+
 ## Delivery sequence
 
 1. Customer API/authentication contracts, forward migrations, and isolated mobile shell.

@@ -117,6 +117,16 @@ Import is dry-run by default, applies only to `zambiel_dev`/`zambiel_test`, stor
 
 ## Current verified local state (2026-09-03)
 
+### Customer Android redesign (2026-09-11)
+
+- `apps/zambiel-mobile` is the only active mobile application. It is customer-only and contains no admin, staff, vendor, refund, or dashboard functionality; the deleted legacy app was not restored.
+- The mobile design system uses Zambiel green/gold, warm neutral surfaces, Archivo/Inter typography, 48 dp touch targets, responsive gutters, safe-area headers, and a safe-area five-tab bar: Home, Discover, Cart, Orders, and Account.
+- Home consumes the existing customer homepage endpoint. Discover uses debounced search, catalog filters/sorts, endless two-column paging, request de-duplication, stale-response protection, and dedicated loading/empty/error/footer states.
+- Product details provide a deduplicated gallery, full-screen paging and pinch zoom, arbitrary availability-aware variants, a safe purchase dock, related products from the product endpoint, and device-local recently viewed products. Focused detail and checkout routes do not show the main tab bar.
+- Checkout invalidates its reviewed server quote whenever cart, address, fulfillment, country, or payment input changes and blocks order submission until the current quote succeeds. Stripe webhook authority and all existing backend/database contracts remain unchanged.
+- Mobile typecheck, six commerce tests, Expo Doctor (21/21), root typecheck, Android JavaScript export, and emulator rendering were run for this redesign. Emulator rendering confirmed safe separation from Android three-button navigation and useful loading, error, and empty states. Live catalog content was unavailable during the final capture because the local MariaDB connection pool timed out; that provider state is not presented as a mobile failure.
+- A native Gradle rebuild on this Windows host remains blocked by Java's loopback-connection error. Normal development after the development client is installed uses `npm.cmd start`; see `MOBILE-APP.md`.
+
 ### Email and footer correction (2026-09-04)
 
 - Follow-up: Facebook, Instagram, and WhatsApp footer icons are restored with user-requested platform-homepage defaults in store configuration. Configured Facebook/Instagram profiles take precedence; generic links are not verified store profiles.
