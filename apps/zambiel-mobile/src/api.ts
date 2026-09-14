@@ -1,11 +1,19 @@
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
-import type { Address, Category, CheckoutInput, Locale, MobileConfig, Order, OrderReceipt, Product, Quote, Session, User } from "./types";
+import type { Address, CatalogPage, Category, CheckoutInput, HomeCatalog, Locale, MobileConfig, Order, OrderReceipt, Product, ProductResponse, Quote, Session, User } from "./types";
 
 const baseUrl = String(Constants.expoConfig?.extra?.apiUrl ?? process.env.EXPO_PUBLIC_API_URL ?? "").replace(/\/$/, "");
 const tokenKey = "zambiel.session";
-export async function sessionToken() { return SecureStore.getItemAsync(tokenKey); }
-export async function saveSession(session: Session | null) { session ? await SecureStore.setItemAsync(tokenKey, session.token) : await SecureStore.deleteItemAsync(tokenKey); }
+let tokenCache: string | null | undefined;
+export async function sessionToken() {
+  if (tokenCache !== undefined) return tokenCache;
+  tokenCache = await SecureStore.getItemAsync(tokenKey);
+  return tokenCache;
+}
+export async function saveSession(session: Session | null) {
+  tokenCache = session?.token ?? null;
+  session ? await SecureStore.setItemAsync(tokenKey, session.token) : await SecureStore.deleteItemAsync(tokenKey);
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!baseUrl) throw new Error("API_URL_MISSING");
@@ -16,13 +24,13 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 const customer = "/api/v1/customer";
-type CatalogPage = { items: Product[]; page: number; pageCount: number; total: number };
 export const api = {
   config: () => request<MobileConfig>("/api/v1/public/config").then((value) => ({ ...value, countries: value.countries ?? [{ countryCode: "CH", nameDe: "Schweiz", nameEn: "Switzerland", deliveryFeeRappen: 0, minimumSubtotalRappen: 0 }] })),
-  categories: (locale: Locale) => request<{ categories: Category[] }>(`${customer}/catalog/categories?locale=${locale}`).then((x) => x.categories),
-  productsPage: (query = "") => request<CatalogPage>(`${customer}/catalog${query ? `?${query}` : ""}`),
+  home: (locale: Locale, signal?: AbortSignal) => request<HomeCatalog>(`${customer}/catalog/home?locale=${locale}`, { signal }),
+  categories: (locale: Locale, signal?: AbortSignal) => request<{ categories: Category[] }>(`${customer}/catalog/categories?locale=${locale}`, { signal }).then((x) => x.categories),
+  productsPage: (query = "", signal?: AbortSignal) => request<CatalogPage>(`${customer}/catalog${query ? `?${query}` : ""}`, { signal }),
   products: (query = "") => request<CatalogPage>(`${customer}/catalog${query ? `?${query}` : ""}`).then((x) => x.items),
-  product: (slug: string, locale: Locale) => request<{ product: Product }>(`${customer}/catalog/products/${encodeURIComponent(slug)}?locale=${locale}`).then((x) => x.product),
+  product: (slug: string, locale: Locale, signal?: AbortSignal) => request<ProductResponse>(`${customer}/catalog/products/${encodeURIComponent(slug)}?locale=${locale}`, { signal }),
   login: (email: string, password: string) => request<Session>(`${customer}/auth/login`, { method: "POST", body: JSON.stringify({ email, password }) }),
   register: (name: string, email: string, password: string) => request<Session>(`${customer}/auth/register`, { method: "POST", body: JSON.stringify({ name, email, password }) }),
   forgotPassword: (email: string) => request<{ accepted: true }>(`${customer}/auth/forgot-password`, { method: "POST", body: JSON.stringify({ email, website: "" }) }),
