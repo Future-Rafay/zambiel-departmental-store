@@ -1,41 +1,32 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQuery } from "@tanstack/react-query";
 import * as WebBrowser from "expo-web-browser";
-import { useCallback, useEffect, useState } from "react";
-import { Alert, AppState, Image, ScrollView, Text, View } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Check, Package, RotateCcw } from "lucide-react-native";
+import { useCallback, useEffect } from "react";
+import { Alert, ActivityIndicator, AppState, Image, ScrollView, Text, View } from "react-native";
 import { api } from "../../src/api";
 import { useApp } from "../../src/app-state";
 import { money, statusLabel } from "../../src/commerce";
-import type { Order } from "../../src/types";
-import { Button, Empty } from "../../src/ui";
 import { colors, space } from "../../src/theme";
+import { Button } from "../../src/ui";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+const terminal = new Set(["DELIVERED", "PICKED_UP", "CANCELLED"]);
 export default function OrderScreen() {
-  const { orderNumber } = useLocalSearchParams<{ orderNumber: string }>();
-  const { add, locale, user } = useApp();
-  const [order, setOrder] = useState<Order | null>(null); const [error, setError] = useState("");
-  const load = useCallback(async () => { const token = await AsyncStorage.getItem("order:" + orderNumber); api.order(orderNumber, token || undefined).then(setOrder).catch((cause) => setError(String(cause.message))); }, [orderNumber]);
-  useFocusEffect(useCallback(() => { load(); const timer = setInterval(load, 10_000); return () => clearInterval(timer); }, [load]));
-  useEffect(() => { const subscription = AppState.addEventListener("change", (state) => state === "active" && load()); return () => subscription.remove(); }, [load]);
-  if (!order) return <Empty>{error || "Loading…"}</Empty>;
-  const reorder = async () => {
-    if (!user) return router.push("/auth");
-    try {
-      const result = await api.reorder(orderNumber);
-      const lines = result.items.flatMap((item) => item.available && item.variantId && item.productId && item.slug && item.currentPriceRappen !== null ? [{ variantId: item.variantId, productId: item.productId, slug: item.slug, name: (locale === "de" ? item.nameDe : item.nameEn) || "", variant: (locale === "de" ? item.variantDe : item.variantEn) || "", imageUrl: item.imageUrl, priceRappen: item.currentPriceRappen, quantity: item.quantity }] : []);
-      if (!lines.length) return Alert.alert(locale === "de" ? "Keine Artikel mehr verfügbar." : "No items are still available.");
-      add(lines); router.push("/(tabs)/cart");
-    } catch (cause) { Alert.alert(locale === "de" ? "Erneut bestellen fehlgeschlagen" : "Could not reorder", String((cause as Error).message)); }
-  };
-  const resumePayment = async () => {
-    try { const token = await AsyncStorage.getItem("order:" + orderNumber); const result = await api.resumePayment(orderNumber, token || undefined); if (result.checkoutUrl) await WebBrowser.openBrowserAsync(result.checkoutUrl); await load(); }
-    catch (cause) { Alert.alert(locale === "de" ? "Zahlung konnte nicht geöffnet werden" : "Could not open payment", String((cause as Error).message)); }
-  };
-  return <ScrollView contentContainerStyle={{ padding: space.md, gap: space.lg }}>
-    <View style={{ padding: 20, borderRadius: 16, backgroundColor: colors.primary, borderBottomWidth: 4, borderBottomColor: colors.accent }}><Text style={{ color: colors.surface, opacity: .8 }}>{order.orderNumber}</Text><Text accessibilityRole="header" style={{ fontFamily: "Archivo_700Bold", fontSize: 28, color: colors.surface, marginTop: 6 }}>{statusLabel(order.status, locale)}</Text><Text style={{ fontFamily: "Archivo_700Bold", fontSize: 20, color: colors.surface, marginTop: 10 }}>{money(order.totalRappen, locale)}</Text></View>
-    <View>{order.timeline.map((item, index) => <View key={item.status + "-" + item.at} style={{ flexDirection: "row", gap: 12, minHeight: 56 }}><View style={{ alignItems: "center" }}><View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: colors.success }}/>{index < order.timeline.length - 1 ? <View style={{ width: 2, flex: 1, backgroundColor: colors.border }}/> : null}</View><View><Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>{statusLabel(item.status, locale)}</Text><Text style={{ color: colors.muted, marginTop: 2 }}>{new Date(item.at).toLocaleString(locale === "de" ? "de-CH" : "en-CH")}</Text></View></View>)}</View>
-    {order.items.map((item) => <View key={item.id} style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>{item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={{ width: 56, height: 56, borderRadius: 8 }}/> : null}<View style={{ flex: 1 }}><Text style={{ fontFamily: "Inter_600SemiBold" }}>{item.quantity} × {item.name}</Text><Text style={{ color: colors.muted }}>{item.variant}</Text></View><Text>{money(item.lineSubtotalRappen, locale)}</Text></View>)}
-    {order.status === "PAYMENT_PENDING" && order.paymentMethod === "STRIPE" ? <Button onPress={resumePayment}>{locale === "de" ? "Zahlung fortsetzen" : "Resume payment"}</Button> : null}
-    <Button kind="secondary" onPress={reorder}>{locale === "de" ? "Erneut bestellen" : "Order again"}</Button>
+  const { orderNumber } = useLocalSearchParams<{ orderNumber: string }>(); const { add, locale, user } = useApp(); const { bottom } = useSafeAreaInsets();
+  const query = useQuery({ queryKey: ["order", orderNumber], queryFn: async () => { const token = await AsyncStorage.getItem("order:" + orderNumber); return api.order(orderNumber, token || undefined); }, enabled: !!orderNumber, staleTime: 10_000, refetchInterval: ({ state }) => state.data && !terminal.has(state.data.status) ? 10_000 : false });
+  useFocusEffect(useCallback(() => { void query.refetch(); }, [query.refetch]));
+  useEffect(() => { const sub = AppState.addEventListener("change", (state) => { if (state === "active" && !terminal.has(query.data?.status ?? "")) void query.refetch(); }); return () => sub.remove(); }, [query.data?.status, query.refetch]);
+  if (query.isLoading) return <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12, backgroundColor: colors.background }}><ActivityIndicator color={colors.primary}/><Text style={{ color: colors.muted }}>{locale === "de" ? "Bestellung wird geladen …" : "Loading order…"}</Text></View>;
+  if (!query.data) return <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12, backgroundColor: colors.background }}><RotateCcw size={36} color={colors.primary}/><Text accessibilityRole="header" style={{ fontFamily: "Archivo_700Bold", fontSize: 22, color: colors.text }}>{locale === "de" ? "Bestellung nicht verfügbar" : "Order unavailable"}</Text><Text accessibilityRole="alert" style={{ color: colors.muted, textAlign: "center" }}>{locale === "de" ? "Prüfe deine Verbindung oder deinen Zugriffslink." : "Check your connection or order access link."}</Text><Button onPress={() => { void query.refetch(); }}>{locale === "de" ? "Erneut versuchen" : "Try again"}</Button></View>;
+  const order = query.data;
+  const reorder = async () => { if (!user) return router.push("/auth"); try { const result = await api.reorder(orderNumber); const lines = result.items.flatMap((item) => item.available && item.variantId && item.productId && item.slug && item.currentPriceRappen !== null ? [{ variantId: item.variantId, productId: item.productId, slug: item.slug, name: (locale === "de" ? item.nameDe : item.nameEn) || "", variant: (locale === "de" ? item.variantDe : item.variantEn) || "", imageUrl: item.imageUrl, priceRappen: item.currentPriceRappen, quantity: item.quantity }] : []); if (!lines.length) return Alert.alert(locale === "de" ? "Keine Artikel mehr verfügbar." : "No items are still available."); add(lines); router.push("/(tabs)/cart"); } catch (cause) { Alert.alert(locale === "de" ? "Erneut bestellen fehlgeschlagen" : "Could not reorder", String((cause as Error).message)); } };
+  const resumePayment = async () => { try { const token = await AsyncStorage.getItem("order:" + orderNumber); const result = await api.resumePayment(orderNumber, token || undefined); if (result.checkoutUrl) await WebBrowser.openBrowserAsync(result.checkoutUrl); await query.refetch(); } catch (cause) { Alert.alert(locale === "de" ? "Zahlung konnte nicht geöffnet werden" : "Could not open payment", String((cause as Error).message)); } };
+  return <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={{ padding: space.md, gap: space.lg, paddingBottom: Math.max(48, bottom + space.lg) }}>
+    <View style={{ padding: 20, borderRadius: 18, backgroundColor: colors.primary, borderBottomWidth: 4, borderBottomColor: colors.accent }}><Text style={{ color: colors.surface, opacity: .8 }}>{order.orderNumber}</Text><Text accessibilityRole="header" style={{ fontFamily: "Archivo_700Bold", fontSize: 28, color: colors.surface, marginTop: 6 }}>{statusLabel(order.status, locale)}</Text><Text style={{ fontFamily: "Archivo_700Bold", fontSize: 22, color: colors.surface, marginTop: 10 }}>{money(order.totalRappen, locale)}</Text></View>
+    <View style={{ padding: 16, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}><Text style={{ fontFamily: "Archivo_700Bold", fontSize: 19, color: colors.text, marginBottom: 16 }}>{locale === "de" ? "Bestellstatus" : "Order progress"}</Text>{order.timeline.map((item, index) => <View key={item.status + "-" + item.at} style={{ flexDirection: "row", gap: 12, minHeight: 60 }}><View style={{ alignItems: "center" }}><View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: colors.success, alignItems: "center", justifyContent: "center" }}><Check size={14} color={colors.surface}/></View>{index < order.timeline.length - 1 ? <View style={{ width: 2, flex: 1, backgroundColor: colors.border }}/> : null}</View><View style={{ flex: 1 }}><Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>{statusLabel(item.status, locale)}</Text><Text style={{ color: colors.muted, marginTop: 3 }}>{new Date(item.at).toLocaleString(locale === "de" ? "de-CH" : "en-CH")}</Text></View></View>)}</View>
+    <View style={{ padding: 16, borderRadius: 16, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, gap: 14 }}><Text style={{ fontFamily: "Archivo_700Bold", fontSize: 19, color: colors.text }}>{locale === "de" ? "Artikel" : "Items"}</Text>{order.items.map((item) => <View key={item.id} style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>{item.imageUrl ? <Image source={{ uri: item.imageUrl }} resizeMode="contain" style={{ width: 60, height: 60, borderRadius: 10, backgroundColor: colors.imageBackground }}/>:<View style={{ width: 60, height: 60, borderRadius: 10, backgroundColor: colors.primarySoft, alignItems: "center", justifyContent: "center" }}><Package size={22} color={colors.primary}/></View>}<View style={{ flex: 1 }}><Text style={{ fontFamily: "Inter_600SemiBold", color: colors.text }}>{item.quantity} × {item.name}</Text>{item.variant ? <Text style={{ color: colors.muted, marginTop: 3 }}>{item.variant}</Text>:null}</View><Text style={{ color: colors.text, fontFamily: "Inter_600SemiBold" }}>{money(item.lineSubtotalRappen, locale)}</Text></View>)}</View>
+    {order.status === "PAYMENT_PENDING" && order.paymentMethod === "STRIPE" ? <Button onPress={resumePayment}>{locale === "de" ? "Zahlung fortsetzen" : "Resume payment"}</Button> : null}<Button kind="secondary" onPress={reorder}>{locale === "de" ? "Erneut bestellen" : "Order again"}</Button>
   </ScrollView>;
 }
