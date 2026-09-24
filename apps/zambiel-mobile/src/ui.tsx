@@ -1,43 +1,413 @@
 import type { ComponentType, PropsWithChildren, ReactNode } from "react";
 import { memo, useEffect, useState } from "react";
-import { AccessibilityInfo, Image, Pressable, StyleSheet, Text, TextInput, View, useWindowDimensions, type PressableProps, type StyleProp, type TextInputProps, type ViewStyle } from "react-native";
+import {
+  AccessibilityInfo,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  useWindowDimensions,
+  type PressableProps,
+  type StyleProp,
+  type TextInputProps,
+  type ViewStyle,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocale } from "./app-state";
 import { money } from "./commerce";
 import { colors, radius, space, typography } from "./theme";
 import type { ProductPreview } from "./types";
 
-export function useReducedMotion() { const [reduced, setReduced] = useState(false); useEffect(() => { AccessibilityInfo.isReduceMotionEnabled().then(setReduced); const sub = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduced); return () => sub.remove(); }, []); return reduced; }
-export function useResponsiveGutter() { const { width } = useWindowDimensions(); return width >= 768 ? space.lg : space.md; }
-export const useContentGutter = useResponsiveGutter;
-export function AppScreen({ children }: PropsWithChildren) { return <View style={s.screen}>{children}</View>; }
-export const Screen = AppScreen;
-export function AppHeader({ title, right, subtitle }: { title: string; right?: ReactNode; subtitle?: string }) { const { top } = useSafeAreaInsets(); return <View style={[s.header, { paddingTop: Math.max(top, space.sm) }]}><View style={{ flex: 1, minWidth: 0 }}><Text accessibilityRole="header" numberOfLines={1} style={s.headerTitle}>{title}</Text>{subtitle ? <Text numberOfLines={1} style={s.headerSubtitle}>{subtitle}</Text> : null}</View>{right}</View>; }
-export const Header = AppHeader;
-export function Button({ children, kind = "primary", style, ...props }: PropsWithChildren<PressableProps & { kind?: "primary" | "secondary" | "danger" | "ghost" }>) {
-  const content = typeof children === "string" || typeof children === "number" ? <Text style={[s.buttonText, (kind === "secondary" || kind === "ghost") && s.buttonSecondaryText]}>{children}</Text> : children;
-  return <Pressable accessibilityRole="button" android_ripple={{ color: kind === "primary" ? "#FFFFFF22" : "#153B3514" }} {...props} style={(state) => [s.button, kind === "secondary" && s.buttonSecondary, kind === "danger" && s.buttonDanger, kind === "ghost" && s.buttonGhost, state.pressed && s.pressed, props.disabled && s.disabled, typeof style === "function" ? style(state) : style]}>{content}</Pressable>;
+export function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduced);
+    const sub = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      setReduced,
+    );
+    return () => sub.remove();
+  }, []);
+  return reduced;
 }
-export function IconButton({ label, children, ...props }: PropsWithChildren<PressableProps & { label: string }>) { return <Pressable accessibilityRole="button" accessibilityLabel={label} hitSlop={4} android_ripple={{ color: "#153B3514", borderless: true }} {...props} style={({ pressed }) => [s.iconButton, pressed && s.pressed]}>{children}</Pressable>; }
-export function Field({ label, error, ...props }: TextInputProps & { label: string; error?: string }) { return <View style={s.field}><Text style={s.label}>{label}</Text><TextInput accessibilityLabel={label} accessibilityHint={error} style={[s.input, error && s.inputError]} placeholderTextColor={colors.muted} {...props}/>{error ? <Text accessibilityRole="alert" style={s.error}>{error}</Text> : null}</View>; }
-export function StateView({ icon: Icon, title, message, action, role }: { icon?: ComponentType<{ size?: number; color?: string }>; title: string; message?: string; action?: ReactNode; role?: "alert" }) { return <View style={s.state}><View style={s.stateIcon}>{Icon ? <Icon size={34} color={colors.primary}/> : null}</View><Text accessibilityRole="header" style={s.stateTitle}>{title}</Text>{message ? <Text accessibilityRole={role} style={s.stateMessage}>{message}</Text> : null}{action}</View>; }
-export function Empty({ children }: PropsWithChildren) { return <StateView title={String(children)}/>; }
-export function SectionHeader({ title, action }: { title: string; action?: ReactNode }) { return <View style={s.sectionHeader}><Text accessibilityRole="header" style={typography.section}>{title}</Text>{action}</View>; }
-export function Price({ value, locale, large = false }: { value: number; locale: "de" | "en"; large?: boolean }) { return <Text style={large ? typography.priceLarge : typography.price}>{money(value, locale)}</Text>; }
-export function Skeleton({ style }: { style?: StyleProp<ViewStyle> }) { return <View accessibilityLabel="Loading" style={[s.skeleton, style]}/>; }
-export function BottomActionBar({ children }: PropsWithChildren) { const { bottom } = useSafeAreaInsets(); return <View style={[s.bottomBar, { paddingBottom: Math.max(bottom, space.smd) }]}>{children}</View>; }
-export const ProductCard = memo(function ProductCard({ product, onPress, style }: { product: ProductPreview; onPress: () => void; style?: StyleProp<ViewStyle> }) { const { locale } = useLocale(); return <Pressable accessibilityRole="button" accessibilityLabel={`${product.name}, ${money(product.minimumPriceRappen, locale)}`} onPress={onPress} style={({ pressed }) => [s.card, style, pressed && s.cardPressed]}>{product.imageUrl ? <Image source={{ uri: product.imageUrl }} resizeMode="contain" style={s.productImage} accessibilityLabel={product.name}/>:<View style={[s.productImage, s.placeholder]}/>}<View style={s.cardBody}><Text numberOfLines={2} style={s.productName}>{product.name}</Text><Text style={s.price}>{money(product.minimumPriceRappen, locale)}</Text></View></Pressable>; });
+export function useResponsiveGutter() {
+  const { width } = useWindowDimensions();
+  return width >= 768 ? space.lg : space.md;
+}
+export const useContentGutter = useResponsiveGutter;
+export function AppScreen({ children }: PropsWithChildren) {
+  return <View style={s.screen}>{children}</View>;
+}
+export const Screen = AppScreen;
+export function AppHeader({
+  title,
+  right,
+  subtitle,
+}: {
+  title: ReactNode;
+  right?: ReactNode;
+  subtitle?: string;
+}) {
+  const { top } = useSafeAreaInsets();
+  return (
+    <View style={[s.header, { paddingTop: Math.max(top, space.sm) }]}>
+      <View style={{ flex: 1, minWidth: 0 }}>
+        {typeof title === "string" ? (
+          <Text
+            accessibilityRole="header"
+            numberOfLines={1}
+            style={s.headerTitle}
+          >
+            {title}
+          </Text>
+        ) : (
+          title
+        )}
+        {subtitle ? (
+          <Text numberOfLines={1} style={s.headerSubtitle}>
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+      {right}
+    </View>
+  );
+}
+export const Header = AppHeader;
+export function Button({
+  children,
+  kind = "primary",
+  style,
+  ...props
+}: PropsWithChildren<
+  PressableProps & { kind?: "primary" | "secondary" | "danger" | "ghost" }
+>) {
+  const content =
+    typeof children === "string" || typeof children === "number" ? (
+      <Text
+        style={[
+          s.buttonText,
+          (kind === "secondary" || kind === "ghost") && s.buttonSecondaryText,
+        ]}
+      >
+        {children}
+      </Text>
+    ) : (
+      children
+    );
+  return (
+    <Pressable
+      accessibilityRole="button"
+      android_ripple={{ color: kind === "primary" ? "#FFFFFF22" : "#153B3514" }}
+      {...props}
+      style={(state) => [
+        s.button,
+        kind === "secondary" && s.buttonSecondary,
+        kind === "danger" && s.buttonDanger,
+        kind === "ghost" && s.buttonGhost,
+        state.pressed && s.pressed,
+        props.disabled && s.disabled,
+        typeof style === "function" ? style(state) : style,
+      ]}
+    >
+      {content}
+    </Pressable>
+  );
+}
+export function IconButton({
+  label,
+  children,
+  ...props
+}: PropsWithChildren<PressableProps & { label: string }>) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      hitSlop={4}
+      android_ripple={{ color: "#153B3514", borderless: true }}
+      {...props}
+      style={({ pressed }) => [s.iconButton, pressed && s.pressed]}
+    >
+      {children}
+    </Pressable>
+  );
+}
+export function Field({
+  label,
+  error,
+  ...props
+}: TextInputProps & { label: string; error?: string }) {
+  return (
+    <View style={s.field}>
+      <Text style={s.label}>{label}</Text>
+      <TextInput
+        accessibilityLabel={label}
+        accessibilityHint={error}
+        style={[s.input, error && s.inputError]}
+        placeholderTextColor={colors.muted}
+        {...props}
+      />
+      {error ? (
+        <Text accessibilityRole="alert" style={s.error}>
+          {error}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+export function StateView({
+  icon: Icon,
+  title,
+  message,
+  action,
+  role,
+}: {
+  icon?: ComponentType<{ size?: number; color?: string }>;
+  title: string;
+  message?: string;
+  action?: ReactNode;
+  role?: "alert";
+}) {
+  return (
+    <View style={s.state}>
+      <View style={s.stateIcon}>
+        {Icon ? <Icon size={34} color={colors.primary} /> : null}
+      </View>
+      <Text accessibilityRole="header" style={s.stateTitle}>
+        {title}
+      </Text>
+      {message ? (
+        <Text accessibilityRole={role} style={s.stateMessage}>
+          {message}
+        </Text>
+      ) : null}
+      {action}
+    </View>
+  );
+}
+export function Empty({ children }: PropsWithChildren) {
+  return <StateView title={String(children)} />;
+}
+export function SectionHeader({
+  title,
+  action,
+}: {
+  title: string;
+  action?: ReactNode;
+}) {
+  return (
+    <View style={s.sectionHeader}>
+      <Text accessibilityRole="header" style={typography.section}>
+        {title}
+      </Text>
+      {action}
+    </View>
+  );
+}
+export function Price({
+  value,
+  locale,
+  large = false,
+}: {
+  value: number;
+  locale: "de" | "en";
+  large?: boolean;
+}) {
+  return (
+    <Text style={large ? typography.priceLarge : typography.price}>
+      {money(value, locale)}
+    </Text>
+  );
+}
+export function Skeleton({ style }: { style?: StyleProp<ViewStyle> }) {
+  return <View accessibilityLabel="Loading" style={[s.skeleton, style]} />;
+}
+export function BottomActionBar({ children }: PropsWithChildren) {
+  const { bottom } = useSafeAreaInsets();
+  return (
+    <View style={[s.bottomBar, { paddingBottom: Math.max(bottom, space.smd) }]}>
+      {children}
+    </View>
+  );
+}
+export const ProductCard = memo(function ProductCard({
+  product,
+  onPress,
+  style,
+}: {
+  product: ProductPreview;
+  onPress: () => void;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { locale } = useLocale();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${product.name}, ${money(product.minimumPriceRappen, locale)}`}
+      onPress={onPress}
+      style={({ pressed }) => [s.card, style, pressed && s.cardPressed]}
+    >
+      {product.imageUrl ? (
+        <Image
+          source={{ uri: product.imageUrl }}
+          resizeMode="contain"
+          style={s.productImage}
+          accessibilityLabel={product.name}
+        />
+      ) : (
+        <View style={[s.productImage, s.placeholder]} />
+      )}
+      <View style={s.cardBody}>
+        <Text numberOfLines={2} style={s.productName}>
+          {product.name}
+        </Text>
+        <Text style={s.price}>{money(product.minimumPriceRappen, locale)}</Text>
+      </View>
+    </Pressable>
+  );
+});
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  header: { minHeight: 64, paddingHorizontal: space.md, paddingBottom: space.sm, flexDirection: "row", gap: space.smd, alignItems: "center", justifyContent: "space-between", backgroundColor: colors.surface, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  headerTitle: { fontFamily: "Archivo_700Bold", fontSize: 25, color: colors.primary }, headerSubtitle: { ...typography.bodyMuted, fontSize: 12, lineHeight: 16 },
-  button: { minHeight: 48, borderRadius: radius.control, paddingHorizontal: 18, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, overflow: "hidden" }, buttonSecondary: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary }, buttonDanger: { backgroundColor: colors.danger }, buttonGhost: { backgroundColor: "transparent" }, buttonText: { fontFamily: "Inter_600SemiBold", color: colors.surface, fontSize: 15 }, buttonSecondaryText: { color: colors.primary }, pressed: { opacity: .72 }, disabled: { opacity: .42 },
-  iconButton: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", overflow: "hidden" },
-  field: { gap: 6 }, label: { ...typography.label }, input: { minHeight: 50, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: radius.control, paddingHorizontal: 14, color: colors.text, fontFamily: "Inter_400Regular", fontSize: 16 }, inputError: { borderColor: colors.danger }, error: { color: colors.danger, fontSize: 13 },
-  state: { flex: 1, padding: space.xl, alignItems: "center", justifyContent: "center", gap: space.smd }, stateIcon: { width: 76, height: 76, borderRadius: 38, alignItems: "center", justifyContent: "center", backgroundColor: colors.primarySoft }, stateTitle: { fontFamily: "Archivo_700Bold", fontSize: 22, lineHeight: 28, textAlign: "center", color: colors.text }, stateMessage: { ...typography.bodyMuted, textAlign: "center", maxWidth: 360 }, sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.smd },
-  skeleton: { backgroundColor: colors.border, borderRadius: radius.control, opacity: .55 },
-  bottomBar: { position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", alignItems: "center", gap: space.smd, paddingHorizontal: space.md, paddingTop: space.smd, backgroundColor: colors.surface, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  card: { flex: 1, minWidth: 0, borderRadius: radius.card, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, overflow: "hidden" }, cardPressed: { opacity: .78, borderColor: colors.primaryLight }, productImage: { width: "100%", aspectRatio: 1, backgroundColor: colors.imageBackground }, placeholder: { borderBottomWidth: 1, borderColor: colors.border }, cardBody: { padding: space.smd, gap: 6, minHeight: 86 }, productName: { minHeight: 42, color: colors.text, fontFamily: "Inter_600SemiBold", fontSize: 15, lineHeight: 21 }, price: { color: colors.primary, fontFamily: "Archivo_700Bold", fontSize: 17 },
+  header: {
+    minHeight: 64,
+    paddingHorizontal: space.md,
+    paddingBottom: space.sm,
+    flexDirection: "row",
+    gap: space.smd,
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
+  headerTitle: {
+    fontFamily: "Archivo_700Bold",
+    fontSize: 25,
+    color: colors.primary,
+  },
+  headerSubtitle: { ...typography.bodyMuted, fontSize: 12, lineHeight: 16 },
+  button: {
+    minHeight: 48,
+    borderRadius: radius.control,
+    paddingHorizontal: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primary,
+    overflow: "hidden",
+  },
+  buttonSecondary: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  buttonDanger: { backgroundColor: colors.danger },
+  buttonGhost: { backgroundColor: "transparent" },
+  buttonText: {
+    fontFamily: "Inter_600SemiBold",
+    color: colors.surface,
+    fontSize: 15,
+  },
+  buttonSecondaryText: { color: colors.primary },
+  pressed: { opacity: 0.72 },
+  disabled: { opacity: 0.42 },
+  iconButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  field: { gap: 6 },
+  label: { ...typography.label },
+  input: {
+    minHeight: 50,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    borderRadius: radius.control,
+    paddingHorizontal: 14,
+    color: colors.text,
+    fontFamily: "Inter_400Regular",
+    fontSize: 16,
+  },
+  inputError: { borderColor: colors.danger },
+  error: { color: colors.danger, fontSize: 13 },
+  state: {
+    flex: 1,
+    padding: space.xl,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: space.smd,
+  },
+  stateIcon: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.primarySoft,
+  },
+  stateTitle: {
+    fontFamily: "Archivo_700Bold",
+    fontSize: 22,
+    lineHeight: 28,
+    textAlign: "center",
+    color: colors.text,
+  },
+  stateMessage: { ...typography.bodyMuted, textAlign: "center", maxWidth: 360 },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: space.smd,
+  },
+  skeleton: {
+    backgroundColor: colors.border,
+    borderRadius: radius.control,
+    opacity: 0.55,
+  },
+  bottomBar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.smd,
+    paddingHorizontal: space.md,
+    paddingTop: space.smd,
+    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  card: {
+    flex: 1,
+    minWidth: 0,
+    borderRadius: radius.card,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+  },
+  cardPressed: { opacity: 0.78, borderColor: colors.primaryLight },
+  productImage: {
+    width: "100%",
+    aspectRatio: 1,
+    backgroundColor: colors.imageBackground,
+  },
+  placeholder: { borderBottomWidth: 1, borderColor: colors.border },
+  cardBody: { padding: space.smd, gap: 6, minHeight: 86 },
+  productName: {
+    minHeight: 42,
+    color: colors.text,
+    fontFamily: "Inter_600SemiBold",
+    fontSize: 15,
+    lineHeight: 21,
+  },
+  price: { color: colors.primary, fontFamily: "Archivo_700Bold", fontSize: 17 },
 });
 export const styles = s;

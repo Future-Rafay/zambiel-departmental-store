@@ -25,6 +25,9 @@ apps/zambiel-mobile/ios/
 # generated Prisma client
 /src/generated/prisma
 
+# Prisma Studio
+/prisma/output
+
 # logs and editor files
 *.log
 .DS_Store
