@@ -1,4 +1,9 @@
-export type RetailCategoryOption = { id: string; nameEn: string; is_b2b: boolean; parent?: { nameEn: string } | null };
+export type RetailCategoryOption = {
+  id: string;
+  nameEn: string;
+  is_b2b: boolean;
+  path: string[];
+};
 
 export type RetailVariant = {
   id: string; nameEn: string; nameDe: string; sku: string | null; barcode: string | null; weightGrams: number | null;

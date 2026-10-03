@@ -3,14 +3,14 @@ import Link from "next/link";
 
 import { RetailProductCard } from "@/components/site/retail-product-card";
 import type { StoreLocale } from "@/config/store";
-import { parsePriceRappen } from "@/lib/catalog-display";
+import { categoryHierarchy, parsePriceRappen } from "@/lib/catalog-display";
 import { getRetailCategories, listRetailProducts } from "@/server/services/retail-catalog";
 
 type Params = Record<string, string | string[] | undefined>;
 const one = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
 const many = (value: string | string[] | undefined) => value ? (Array.isArray(value) ? value : [value]) : [];
 
-function Filters({ locale, categories, values }: { locale: StoreLocale; categories: Awaited<ReturnType<typeof getRetailCategories>>; values: Params }) {
+function Filters({ locale, categories, values }: { locale: StoreLocale; categories: Array<Awaited<ReturnType<typeof getRetailCategories>>[number] & { path: string[] }>; values: Params }) {
   const de = locale === "de";
   return (
     <form action={`/${locale}/products`} className="grid gap-4 md:grid-cols-2 lg:grid-cols-6 lg:items-end">
@@ -21,7 +21,7 @@ function Filters({ locale, categories, values }: { locale: StoreLocale; categori
       </div>
       <div>
         <label htmlFor="catalog-category" className="mb-2 block text-sm font-bold">{de ? "Kategorie" : "Category"}</label>
-        <select id="catalog-category" name="category" defaultValue={one(values.category) ?? ""} className="min-h-11 w-full rounded-control border border-border bg-surface px-3"><option value="">{de ? "Alle Kategorien" : "All categories"}</option>{categories.map((category) => <option key={category.id} value={category.slug}>{category.name}</option>)}</select>
+        <select id="catalog-category" name="category" defaultValue={one(values.category) ?? ""} className="min-h-11 w-full rounded-control border border-border bg-surface px-3"><option value="">{de ? "Alle Kategorien" : "All categories"}</option>{categories.map((category) => <option key={category.id} value={category.slug}>{category.path.join(" → ")}</option>)}</select>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div><label htmlFor="min-price" className="mb-2 block text-sm font-bold">{de ? "Min. CHF" : "Min CHF"}</label><input id="min-price" name="min" type="number" min="0" step="0.05" defaultValue={one(values.min)} className="min-h-11 w-full rounded-control border border-border bg-surface px-3" /></div>
@@ -48,7 +48,7 @@ export default async function ProductsPage({ params, searchParams }: { params: P
   const sort = ["featured", "newest", "price-asc", "price-desc", "name"].includes(sortValue ?? "")
     ? sortValue as "featured" | "newest" | "price-asc" | "price-desc" | "name"
     : "featured";
-  const [categories, result] = await Promise.all([
+  const [categoryRows, result] = await Promise.all([
     getRetailCategories(locale),
     listRetailProducts({
       locale,
@@ -62,6 +62,7 @@ export default async function ProductsPage({ params, searchParams }: { params: P
       page: Number(one(values.page)) || 1,
     }),
   ]);
+  const categories = categoryHierarchy(categoryRows, ({ name }) => name);
   const queryForPage = (page: number) => {
     const query = new URLSearchParams();
     for (const [key, value] of Object.entries(values)) {

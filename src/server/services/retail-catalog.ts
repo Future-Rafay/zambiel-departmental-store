@@ -2,7 +2,7 @@ import { randomInt } from "node:crypto";
 import { cache } from "react";
 
 import { Prisma } from "@/generated/prisma/client";
-import { categoryProductTotals } from "@/lib/catalog-display";
+import { categoryHierarchy, categoryProductTotals } from "@/lib/catalog-display";
 import { prisma } from "@/server/db";
 import { resolveProductMediaUrl, resolvePublicImageUrl } from "@/server/storage/s3";
 import type { StoreLocale } from "@/config/store";
@@ -80,7 +80,7 @@ const getCategories = cache(async (locale: StoreLocale, b2b: boolean) => {
     parentId: category.parentId,
     productCount: category._count.products,
   })));
-  return categories.map((category) => ({
+  const items = categories.map((category) => ({
     id: category.id,
     parentId: category.parentId,
     slug: category.slug,
@@ -88,6 +88,15 @@ const getCategories = cache(async (locale: StoreLocale, b2b: boolean) => {
     description: local(locale, category.descriptionDe, category.descriptionEn),
     imageUrl: resolvePublicImageUrl(category.imageKey),
     productCount: totals.get(category.id) ?? category._count.products,
+  }));
+  return categoryHierarchy(items, ({ name }) => name).map((category) => ({
+    id: category.id,
+    parentId: category.parentId,
+    slug: category.slug,
+    name: category.name,
+    description: category.description,
+    imageUrl: category.imageUrl,
+    productCount: category.productCount,
   }));
 });
 
@@ -112,14 +121,8 @@ export async function listRetailProducts(input: {
   let categoryIds: string[] | undefined;
   if (input.categorySlug) {
     const categories = await prisma.category.findMany({ where: { is_b2b: input.b2b ?? false, deletedAt: null }, select: { id: true, slug: true, parentId: true } });
-    const root = categories.find((category) => category.slug === input.categorySlug);
-    if (root) {
-      categoryIds = [root.id];
-      const seen = new Set(categoryIds);
-      for (let index = 0; index < categoryIds.length; index += 1) {
-        for (const child of categories.filter((category) => category.parentId === categoryIds![index])) if (!seen.has(child.id)) { seen.add(child.id); categoryIds.push(child.id); }
-      }
-    } else categoryIds = [];
+    const root = categoryHierarchy(categories, ({ slug }) => slug).find((category) => category.slug === input.categorySlug);
+    categoryIds = root ? [root.id, ...root.descendantIds] : [];
   }
   if (categoryIds?.length === 0) return { items: [], page, pageCount: 1, total: 0 };
 

@@ -19,7 +19,7 @@ export function RetailProductBasics({ categories, product }: { categories: Retai
       <Card className="grid gap-4 p-5 sm:grid-cols-2">
         <SelectField key={String(isB2b)} label="Category" name="categoryId" defaultValue={compatibleCategories.some(({ id }) => id === product?.categoryId) ? product?.categoryId : ""} required>
           <option value="">Select a {isB2b ? "B2B" : "B2C"} category</option>
-          {compatibleCategories.map((category) => <option key={category.id} value={category.id}>{category.parent ? `${category.parent.nameEn} / ` : ""}{category.nameEn} ({isB2b ? "B2B" : "B2C"})</option>)}
+          {compatibleCategories.map((category) => <option key={category.id} value={category.id}>{category.path.join(" → ")} ({isB2b ? "B2B" : "B2C"})</option>)}
         </SelectField>
         <SlugField defaultValue={product?.slug} />
         <Field label="English name" name="nameEn" defaultValue={product?.nameEn} required />

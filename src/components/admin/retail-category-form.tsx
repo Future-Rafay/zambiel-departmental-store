@@ -40,7 +40,7 @@ export function RetailCategoryForm({
   category,
   feedback,
 }: {
-  categories: Array<{ id: string; nameEn: string; is_b2b: boolean }>;
+  categories: Array<{ id: string; nameEn: string; is_b2b: boolean; path: string[]; ancestorIds: string[] }>;
   category?: Category;
   feedback?: { saved?: string; error?: string; deleted?: string };
 }) {
@@ -75,10 +75,10 @@ export function RetailCategoryForm({
           >
             <option value="">Top level</option>
             {categories
-              .filter((item) => item.id !== category?.id && item.is_b2b === isB2b)
+              .filter((item) => item.id !== category?.id && item.is_b2b === isB2b && !item.ancestorIds.includes(category?.id ?? ""))
               .map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.nameEn} ({isB2b ? "B2B" : "B2C"})
+                  {item.path.join(" → ")} ({isB2b ? "B2B" : "B2C"})
                 </option>
               ))}
           </SelectField>

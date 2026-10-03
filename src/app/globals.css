@@ -81,6 +81,22 @@ body {
   outline-offset: 2px;
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .product-card-action {
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(0.5rem);
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+
+  .group:hover .product-card-action,
+  .group:focus-within .product-card-action {
+    pointer-events: auto;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;

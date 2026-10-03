@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { RetailProductForm } from "@/components/admin/retail-product-form";
+import { categoryHierarchy } from "@/lib/catalog-display";
 import { prisma } from "@/server/db";
 import { resolveProductMediaUrl, resolvePublicImageUrl } from "@/server/storage/s3";
 
@@ -11,10 +12,10 @@ export default async function ProductPage({
   searchParams: Promise<{ saved?: string; error?: string; warning?: string; deleted?: string }>;
 }) {
   const [{ productId }, feedback] = await Promise.all([params, searchParams]);
-  const [categories, product] = await Promise.all([
+  const [rows, product] = await Promise.all([
     prisma.category.findMany({
       where: { deletedAt: null },
-      select: { id: true, nameEn: true, is_b2b: true, parent: { select: { nameEn: true } } },
+      select: { id: true, parentId: true, nameEn: true, is_b2b: true },
       orderBy: [{ sortOrder: "asc" }, { nameEn: "asc" }],
     }),
     prisma.product.findFirst({
@@ -35,6 +36,7 @@ export default async function ProductPage({
     }),
   ]);
   if (!product) notFound();
+  const categories = categoryHierarchy(rows, ({ nameEn }) => nameEn);
   return (
     <RetailProductForm
       categories={categories}
