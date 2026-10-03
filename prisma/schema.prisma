@@ -58,15 +58,18 @@ enum PaymentMethod {
   STRIPE
   CASH_ON_DELIVERY
   PAY_AT_PICKUP
+  INVOICE_BANK_TRANSFER
 }
 
 enum PaymentProvider {
   STRIPE
   CASH
+  INVOICE_BANK_TRANSFER
 }
 
 enum PaymentStatus {
   PENDING
+  PENDING_VERIFICATION
   PAID
   FAILED
   PARTIALLY_REFUNDED
@@ -196,6 +199,7 @@ model Category {
   seoDescriptionDe String?    @db.Text
   seoDescriptionEn String?    @db.Text
   active           Boolean    @default(true)
+  is_b2b           Boolean    @default(false)
   sortOrder        Int        @default(0)
   deletedAt        DateTime?
   createdAt        DateTime   @default(now())
@@ -230,6 +234,7 @@ model Product {
   publishedAt      DateTime?
   active           Boolean            @default(true)
   available        Boolean            @default(true)
+  is_b2b           Boolean            @default(false)
   sortOrder        Int                @default(0)
   deletedAt        DateTime?
   createdAt        DateTime           @default(now())
@@ -353,6 +358,8 @@ model User {
   emailVerified       DateTime?
   role                UserRole                   @default(CUSTOMER)
   active              Boolean                    @default(true)
+  is_b2b_authorized   Boolean                    @default(false)
+  b2b_status          String                     @default("NONE") @db.VarChar(32)
   lastLoginAt         DateTime?
   createdAt           DateTime                   @default(now())
   updatedAt           DateTime                   @updatedAt

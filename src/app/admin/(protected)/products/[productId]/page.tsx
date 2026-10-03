@@ -8,13 +8,13 @@ export default async function ProductPage({
   searchParams,
 }: {
   params: Promise<{ productId: string }>;
-  searchParams: Promise<{ saved?: string; error?: string; deleted?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; warning?: string; deleted?: string }>;
 }) {
   const [{ productId }, feedback] = await Promise.all([params, searchParams]);
   const [categories, product] = await Promise.all([
     prisma.category.findMany({
       where: { deletedAt: null },
-      select: { id: true, nameEn: true, parent: { select: { nameEn: true } } },
+      select: { id: true, nameEn: true, is_b2b: true, parent: { select: { nameEn: true } } },
       orderBy: [{ sortOrder: "asc" }, { nameEn: "asc" }],
     }),
     prisma.product.findFirst({

@@ -27,7 +27,7 @@ export type Quote = {
 };
 export type FieldErrors = Partial<Record<string, string>>;
 export type FulfillmentType = "DELIVERY" | "PICKUP";
-export type PaymentMethod = "STRIPE" | "CASH_ON_DELIVERY" | "PAY_AT_PICKUP";
+export type PaymentMethod = "STRIPE" | "CASH_ON_DELIVERY" | "PAY_AT_PICKUP" | "INVOICE_BANK_TRANSFER";
 
 const radioCard =
   "flex min-h-14 cursor-pointer items-center gap-3  border border-border bg-surface px-4 py-3 has-[:checked]:border-primary has-[:checked]:ring-2 has-[:checked]:ring-primary/15";
@@ -228,12 +228,14 @@ export function PaymentChoices({
   paymentMethod,
   errors,
   onChange,
+  b2b = false,
 }: {
   de: boolean;
   fulfillmentType: FulfillmentType;
   paymentMethod: PaymentMethod;
   errors: FieldErrors;
   onChange: (value: PaymentMethod) => void;
+  b2b?: boolean;
 }) {
   const cashMethod =
     fulfillmentType === "DELIVERY" ? "CASH_ON_DELIVERY" : "PAY_AT_PICKUP";
@@ -261,7 +263,7 @@ export function PaymentChoices({
               type="radio"
               name="paymentMethod"
               value={cashMethod}
-              checked={paymentMethod !== "STRIPE"}
+              checked={paymentMethod === cashMethod}
               onChange={() => onChange(cashMethod)}
             />
             <span className="font-semibold">
@@ -274,6 +276,12 @@ export function PaymentChoices({
                   : "Cash at pickup"}
             </span>
           </label>
+          {b2b ? (
+            <label className={radioCard}>
+              <input type="radio" name="paymentMethod" value="INVOICE_BANK_TRANSFER" checked={paymentMethod === "INVOICE_BANK_TRANSFER"} onChange={() => onChange("INVOICE_BANK_TRANSFER")} />
+              <span className="font-semibold">{de ? "Unbezahlte Bestellung (Rechnung / Banküberweisung)" : "Unpaid order (invoice / bank transfer)"}</span>
+            </label>
+          ) : null}
         </div>
         {errors.paymentMethod ? (
           <p className="mt-2 text-sm text-destructive">

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { siteConfig } from "@/config/site";
-import { allocateDiscount, formatMoney, formatOrderNumber, nextOrderStatus, orderStatusLabel, promoDiscount, publicOrderAddress, shippingFeeRappen } from "@/lib/orders";
+import { allocateDiscount, formatMoney, formatOrderNumber, initialPaymentState, nextOrderStatus, orderStatusLabel, promoDiscount, publicOrderAddress, shippingFeeRappen } from "@/lib/orders";
 import { zurichDateToUtc } from "@/lib/zurich-time";
 
 test("order money and lifecycle rules stay server-shaped", () => {
@@ -16,6 +16,7 @@ test("order money and lifecycle rules stay server-shaped", () => {
   assert.equal(orderStatusLabel("OUT_FOR_DELIVERY", "de"), "Unterwegs");
   assert.equal(nextOrderStatus("DELIVERED", "DELIVERY"), null);
   assert.deepEqual(allocateDiscount([850, 1_200], 1_000), [0, 1_050]);
+  assert.deepEqual(initialPaymentState("INVOICE_BANK_TRANSFER"), { orderStatus: "CONFIRMED", provider: "INVOICE_BANK_TRANSFER", paymentStatus: "PENDING_VERIFICATION", reserveStock: false });
 });
 
 test("public order addresses never expose the BigInt order id", () => {

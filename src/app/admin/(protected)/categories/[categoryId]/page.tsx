@@ -13,7 +13,7 @@ export default async function CategoryPage({
   const [categories, category] = await Promise.all([
     prisma.category.findMany({
       where: { deletedAt: null },
-      select: { id: true, nameEn: true },
+      select: { id: true, nameEn: true, is_b2b: true },
       orderBy: { nameEn: "asc" },
     }),
     prisma.category.findFirst({ where: { id: categoryId, deletedAt: null } }),

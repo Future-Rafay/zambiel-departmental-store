@@ -15,7 +15,7 @@ export function assertSameOrigin(request: Request) {
 export function apiError(error: unknown) {
   if (error instanceof ZodError) return NextResponse.json({ error: "INVALID_INPUT", details: error.issues }, { status: 400 });
   if (error instanceof OrderError) {
-    const status = error.code === "INVALID_ORIGIN" ? 403 : error.code.endsWith("NOT_FOUND") ? 404 : error.code === "ORDER_CHANGED" ? 409 : 400;
+    const status = ["INVALID_ORIGIN", "B2B_ACCESS_REQUIRED"].includes(error.code) ? 403 : error.code.endsWith("NOT_FOUND") ? 404 : error.code === "ORDER_CHANGED" ? 409 : 400;
     return NextResponse.json({ error: error.code }, { status });
   }
   if (error instanceof AdminError) return NextResponse.json({ error: error.code }, { status: error.code === "ORDER_NOT_FOUND" ? 404 : 400 });

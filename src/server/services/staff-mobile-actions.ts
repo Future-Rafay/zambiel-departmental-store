@@ -1,10 +1,10 @@
-import type { OrderStatus } from "@/generated/prisma/enums";
+import type { OrderStatus, PaymentProvider } from "@/generated/prisma/enums";
 import { nextOrderStatus } from "@/lib/orders";
 
 export function allowedOrderActions(order: {
   status: OrderStatus;
   fulfillmentType: "DELIVERY" | "PICKUP";
-  payment?: { provider: "STRIPE" | "CASH"; status: string } | null;
+  payment?: { provider: PaymentProvider; status: string } | null;
 }) {
   return {
     nextStatus: nextOrderStatus(order.status, order.fulfillmentType),

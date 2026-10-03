@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import { saveRetailProduct } from "@/app/admin/(protected)/retail-actions";
 import { Check, Field, SaveBar, SelectField } from "@/components/admin/admin-ui";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
@@ -7,12 +11,15 @@ import type { RetailCategoryOption, RetailProductEdit } from "@/components/admin
 import { Card } from "@/components/ui/card";
 
 export function RetailProductBasics({ categories, product }: { categories: RetailCategoryOption[]; product?: RetailProductEdit }) {
+  const [isB2b, setIsB2b] = useState(product?.is_b2b ?? false);
+  const compatibleCategories = categories.filter((category) => category.is_b2b === isB2b);
   return (
     <form action={saveRetailProduct} className="space-y-5">
       <input type="hidden" name="id" value={product?.id ?? ""} />
       <Card className="grid gap-4 p-5 sm:grid-cols-2">
-        <SelectField label="Category" name="categoryId" defaultValue={product?.categoryId}>
-          {categories.map((category) => <option key={category.id} value={category.id}>{category.parent ? `${category.parent.nameEn} / ` : ""}{category.nameEn}</option>)}
+        <SelectField key={String(isB2b)} label="Category" name="categoryId" defaultValue={compatibleCategories.some(({ id }) => id === product?.categoryId) ? product?.categoryId : ""} required>
+          <option value="">Select a {isB2b ? "B2B" : "B2C"} category</option>
+          {compatibleCategories.map((category) => <option key={category.id} value={category.id}>{category.parent ? `${category.parent.nameEn} / ` : ""}{category.nameEn} ({isB2b ? "B2B" : "B2C"})</option>)}
         </SelectField>
         <SlugField defaultValue={product?.slug} />
         <Field label="English name" name="nameEn" defaultValue={product?.nameEn} required />
@@ -24,6 +31,7 @@ export function RetailProductBasics({ categories, product }: { categories: Retai
           <option value="DRAFT">Draft</option><option value="ACTIVE">Active</option>
         </SelectField>
         <Check label="Featured product" name="featured" defaultChecked={product?.featured} />
+        <label className="flex min-h-11 items-center gap-2 text-sm font-medium"><input type="checkbox" name="is_b2b" checked={isB2b} onChange={(event) => setIsB2b(event.currentTarget.checked)} className="size-5 accent-primary" />B2B product</label>
         <Field label="Tags (comma separated)" name="tags" defaultValue={product?.tags.map(({ name }) => name).join(", ") ?? ""} />
       </Card>
       <Card className="grid gap-4 p-5 sm:grid-cols-2">

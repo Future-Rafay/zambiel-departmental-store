@@ -42,12 +42,16 @@ export async function getDeliveryQuote(countryCode: string, subtotalRappen: numb
 }
 
 export async function calculateQuote(input: QuoteInput, db: Db = prisma, userId?: string) {
+  const b2b = input.storeMode === "b2b";
+  if (b2b) {
+    if (!userId || !(await db.user.findFirst({ where: { id: userId, active: true, b2b_status: "APPROVED" }, select: { id: true } }))) throw new OrderError("B2B_ACCESS_REQUIRED");
+  }
   const settings = await db.fulfillmentSettings.findUniqueOrThrow({ where: { id: 1 } });
   if ((input.fulfillmentType === "DELIVERY" && !settings.deliveryEnabled) || (input.fulfillmentType === "PICKUP" && !settings.pickupEnabled)) throw new OrderError("FULFILLMENT_DISABLED");
   const quantities = new Map<string, number>();
   for (const item of input.items) quantities.set(item.variantId, (quantities.get(item.variantId) ?? 0) + item.quantity);
   const variants = await db.productVariant.findMany({
-    where: { id: { in: [...quantities.keys()] }, active: true, deletedAt: null },
+    where: { id: { in: [...quantities.keys()] }, active: true, deletedAt: null, product: { is_b2b: b2b, category: { is_b2b: b2b } } },
     include: { product: { include: { media: { orderBy: { sortOrder: "asc" }, take: 1 } } }, optionValues: { include: { optionValue: { include: { option: true } } } } },
   });
   const variantsById = new Map(variants.map((variant) => [variant.id, variant]));

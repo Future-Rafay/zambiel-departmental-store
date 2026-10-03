@@ -8,7 +8,7 @@ import { RetailProductVariants } from "@/components/admin/retail-product-variant
 export function RetailProductForm({ categories, product, feedback }: {
   categories: RetailCategoryOption[];
   product?: RetailProductEdit;
-  feedback?: { saved?: string; error?: string; deleted?: string };
+  feedback?: { saved?: string; error?: string; warning?: string; deleted?: string };
 }) {
   return (
     <AdminPage title={product?.nameEn ?? "New product"} description="Bilingual catalog, publication, pricing, stock, and SEO.">

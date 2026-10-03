@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/orders";
 
-export function CartPage({ locale }: { locale: "de" | "en" }) {
+export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: boolean }) {
   const { items, remove, setQuantity } = useCart();
   const de = locale === "de";
   const total = items.reduce(
@@ -45,7 +45,7 @@ export function CartPage({ locale }: { locale: "de" | "en" }) {
               : "Discover products from our catalog."}
           </p>
           <Link
-            href={`/${locale}/products`}
+            href={b2b ? `/${locale}/b2b-shop` : `/${locale}/products`}
             className="inline-flex min-h-11 items-center rounded-xl bg-primary px-8 font-bold text-primary-foreground"
           >
             {de ? "Produkte entdecken" : "Browse Products"}
@@ -138,7 +138,7 @@ export function CartPage({ locale }: { locale: "de" | "en" }) {
               <dd className="font-bold">{formatMoney(total, locale)}</dd>
             </dl>
             <Link
-              href={`/${locale}/checkout`}
+              href={b2b ? `/${locale}/b2b-shop/checkout` : `/${locale}/checkout`}
               className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground"
             >
               {de ? "Zur Kasse" : "Proceed to Checkout"}

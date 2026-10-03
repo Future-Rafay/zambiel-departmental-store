@@ -6,11 +6,12 @@ import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/orders";
 import type { getOrderHistory } from "@/server/services/admin";
 
-export type OrderStatusFilter = "ALL" | "PAYMENT_PENDING" | "CONFIRMED" | "PROCESSING" | "READY_FOR_PICKUP" | "OUT_FOR_DELIVERY" | "DELIVERED" | "PICKED_UP" | "CANCELLED";
+export type OrderStatusFilter = "ALL" | "UNPAID_B2B" | "PAYMENT_PENDING" | "CONFIRMED" | "PROCESSING" | "READY_FOR_PICKUP" | "OUT_FOR_DELIVERY" | "DELIVERED" | "PICKED_UP" | "CANCELLED";
 type Order = Awaited<ReturnType<typeof getOrderHistory>>[number];
 
 const statusTabs = [
   { value: "ALL", label: "All", icon: ShoppingBag, color: "border-border text-foreground hover:bg-background", active: "bg-foreground text-surface border-foreground" },
+  { value: "UNPAID_B2B", label: "Unpaid B2B", icon: Clock, color: "border-amber-300 text-amber-800 hover:bg-amber-50", active: "bg-amber-600 text-white border-amber-600" },
   { value: "PAYMENT_PENDING", label: "Pending", icon: Clock, color: "border-orange-300 text-orange-700 hover:bg-orange-50", active: "bg-orange-600 text-white border-orange-600" },
   { value: "CONFIRMED", label: "Confirmed", icon: CheckCircle2, color: "border-blue-300 text-blue-700 hover:bg-blue-50", active: "bg-blue-600 text-white border-blue-600" },
   { value: "PROCESSING", label: "Processing", icon: Clock, color: "border-purple-300 text-purple-700 hover:bg-purple-50", active: "bg-purple-600 text-white border-purple-600" },
@@ -34,7 +35,7 @@ export function parseOrderStatus(value?: string): OrderStatusFilter {
 
 export function OrderStatusFilters({ activeStatus }: { activeStatus: OrderStatusFilter }) {
   return (
-    <div className="mb-6 space-y-1"><p className="text-xs font-bold uppercase tracking-wide text-muted">Filter by status</p>
+    <div className="mb-6 space-y-1"><p className="text-xs font-bold uppercase tracking-wide text-muted">Filter orders</p>
       <div className="flex flex-wrap gap-2">{statusTabs.map((tab) => {
         const selected = activeStatus === tab.value;
         const Icon = tab.icon;

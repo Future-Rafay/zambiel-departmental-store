@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function AuthForm({ locale, mode, admin = false }: { locale: "de" | "en"; mode: "login" | "register"; admin?: boolean }) {
+export function AuthForm({ locale, mode, admin = false, requestB2b = false }: { locale: "de" | "en"; mode: "login" | "register"; admin?: boolean; requestB2b?: boolean }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const de = locale === "de";
@@ -15,7 +15,7 @@ export function AuthForm({ locale, mode, admin = false }: { locale: "de" | "en";
     event.preventDefault();
     setBusy(true);
     setError("");
-    const data = Object.fromEntries(new FormData(event.currentTarget));
+    const data = { ...Object.fromEntries(new FormData(event.currentTarget)), ...(mode === "register" ? { requestB2b } : {}) };
     const response = await fetch(mode === "register" ? "/api/auth/register" : "/api/auth/credentials", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -31,7 +31,7 @@ export function AuthForm({ locale, mode, admin = false }: { locale: "de" | "en";
       setBusy(false);
       return;
     }
-    window.location.assign(admin ? "/admin" : `/${locale}/account/orders`);
+    window.location.assign(admin ? "/admin" : requestB2b ? `/${locale}/b2b-shop` : `/${locale}/account/orders`);
   }
 
   return (
@@ -71,7 +71,7 @@ export function AuthForm({ locale, mode, admin = false }: { locale: "de" | "en";
         {busy ? (de ? "Bitte warten..." : "Please wait...") : mode === "register" ? (de ? "Konto erstellen" : "Create account") : (de ? "Anmelden" : "Sign in")}
       </Button>
 
-      {!admin && (
+      {!admin && !requestB2b && (
         <div className="pt-2">
           <div className="relative flex py-2 items-center">
             <div className="flex-grow border-t border-border"></div>

@@ -6,6 +6,10 @@ Zambiel is one Swiss store and one seller. German is primary, English secondary,
 
 ## Implemented foundation
 
+- B2B Phase 1 adds default-off product/category classification, default-denied user authorization status, persistent B2C/B2B store mode, isolated browser carts, and strict B2C filtering at public catalogue, wishlist, and checkout seams. Admin and B2B frontend workflows remain future work.
+- B2B Phase 2 adds localized gated shop/category/product/cart/checkout routes, request-aware registration, idempotent access requests, strict server-side B2B catalogue and order validation, and confirmed invoice/bank-transfer orders whose payments await verification. Admin approval, payment verification, invoice documents, bank details, and B2B pricing rules remain future work.
+- B2B Phase 3 adds owner-controlled customer approval/rejection, default-B2C admin catalogue filters and classification controls, and audited invoice-payment verification without changing fulfillment or inventory. Invoice documents, bank details, credit limits, and B2B pricing rules remain future work.
+- B2B admin follow-up: the signed-in owner can appear in Customers and approve their own B2B status; category mode changes explain incompatible products, children, or parents; product saves use a single nested write with audit afterward and show a friendly duplicate-slug error. Admin product/category lists select only displayed fields.
 - Central typed store defaults in `src/config/store.ts`, runtime merge in `src/server/services/store-config.ts`, and rebranding instructions in `BRANDING.md`.
 - Forward retail migration adds product lifecycle, category hierarchy, arbitrary options, ordered media, variant pricing/barcode/stock, inventory ledger, retail statuses, and one-address constraint while preserving deployed migration history.
 - `src/server/services/ordering.ts` remains the stable public ordering facade. Focused `order-*.ts` modules own quotes, reads, notification claims, and Stripe lifecycle without changing callers; COD and cash-at-pickup remain retail flows.

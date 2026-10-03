@@ -51,6 +51,14 @@ export function Notice({
   deleted?: string;
 }) {
   if (!saved && !error && !warning && !deleted) return null;
+  const catalogErrors: Record<string, string> = {
+    PRODUCT_SLUG_TAKEN: "This slug is already in use. Please choose a different slug.",
+    PRODUCT_CATEGORY_MODE_MISMATCH: "Choose a category in the same B2C or B2B catalog as the product.",
+    CATEGORY_PARENT_MODE_MISMATCH: "Choose a parent category in the same catalog, or make this a top-level category.",
+    CATEGORY_HAS_OTHER_MODE_PRODUCTS: "Move this category's products to a compatible category before changing its B2C or B2B setting.",
+    CATEGORY_HAS_OTHER_MODE_CHILDREN: "Move or change this category's subcategories before changing its B2C or B2B setting.",
+    CATEGORY_HAS_MIXED_DEPENDENTS: "Move this category's products and subcategories before changing its B2C or B2B setting.",
+  };
   const deletedLabel =
     deleted === "product" || deleted === "variant" || deleted === "category"
       ? deleted
@@ -74,9 +82,9 @@ export function Notice({
       )}
       <span>
         {error
-          ? error.replaceAll("_", " ")
+          ? catalogErrors[error] ?? error.replaceAll("_", " ")
           : warning
-            ? "Invitation saved, but the email could not be sent. Check the Resend configuration and invite again."
+            ? warning === "CATALOG_AUDIT_FAILED" ? "Changes saved, but the audit entry failed. Contact an administrator; do not submit again." : "Invitation saved, but the email could not be sent. Check the Resend configuration and invite again."
             : deleted
               ? `${deletedLabel[0].toUpperCase()}${deletedLabel.slice(1)} deleted from the catalog.`
               : "Changes successfully saved."}
@@ -148,12 +156,14 @@ export function SelectField({
   defaultValue,
   children,
   id,
+  required,
 }: {
   label: string;
   name: string;
   defaultValue?: string;
   children: ReactNode;
   id?: string;
+  required?: boolean;
 }) {
   const generatedId = useId();
   const inputId = id ?? `${name}-${generatedId}`;
@@ -166,6 +176,7 @@ export function SelectField({
         id={inputId}
         name={name}
         defaultValue={defaultValue}
+        required={required}
         className="min-h-11 w-full rounded-control border border-border bg-surface px-3 text-sm font-medium shadow-2xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
       >
         {children}

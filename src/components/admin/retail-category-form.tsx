@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 import { saveRetailCategory } from "@/app/admin/(protected)/retail-actions";
 import {
   AdminPage,
@@ -28,6 +32,7 @@ type Category = {
   seoDescriptionEn: string | null;
   seoDescriptionDe: string | null;
   active: boolean;
+  is_b2b: boolean;
 };
 
 export function RetailCategoryForm({
@@ -35,10 +40,12 @@ export function RetailCategoryForm({
   category,
   feedback,
 }: {
-  categories: Array<{ id: string; nameEn: string }>;
+  categories: Array<{ id: string; nameEn: string; is_b2b: boolean }>;
   category?: Category;
   feedback?: { saved?: string; error?: string; deleted?: string };
 }) {
+  const [isB2b, setIsB2b] = useState(category?.is_b2b ?? false);
+  const parentCompatible = !category?.parentId || categories.some((item) => item.id === category.parentId && item.is_b2b === isB2b);
   return (
     <AdminPage
       title={category?.nameEn ?? "New category"}
@@ -61,19 +68,21 @@ export function RetailCategoryForm({
           />
           <SlugField defaultValue={category?.slug} />
           <SelectField
+            key={String(isB2b)}
             label="Parent category"
             name="parentId"
-            defaultValue={category?.parentId ?? ""}
+            defaultValue={parentCompatible ? (category?.parentId ?? "") : ""}
           >
             <option value="">Top level</option>
             {categories
-              .filter((item) => item.id !== category?.id)
+              .filter((item) => item.id !== category?.id && item.is_b2b === isB2b)
               .map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.nameEn}
+                  {item.nameEn} ({isB2b ? "B2B" : "B2C"})
                 </option>
               ))}
           </SelectField>
+          {!parentCompatible ? <p className="text-sm text-muted sm:col-span-2" role="status">The previous parent belongs to the other catalog. This category will become top-level unless you select a compatible parent.</p> : null}
           <div className="sm:col-span-2">
             <TextareaField
               label="English description"
@@ -120,6 +129,7 @@ export function RetailCategoryForm({
             name="active"
             defaultChecked={category?.active}
           />
+          <label className="flex min-h-11 items-center gap-2 text-sm font-medium"><input type="checkbox" name="is_b2b" checked={isB2b} onChange={(event) => setIsB2b(event.currentTarget.checked)} className="size-5 accent-primary" />B2B category</label>
         </Card>
         <SaveBar
           returnTo={

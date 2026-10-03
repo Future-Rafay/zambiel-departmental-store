@@ -3,7 +3,7 @@ import type Stripe from "stripe";
 import { getStripeEnv } from "@/config/env";
 import { siteConfig } from "@/config/site";
 import type { Locale, OrderStatus } from "@/generated/prisma/enums";
-import { allocateDiscount, formatOrderNumber, hashToken, nextOrderStatus, parseOrderNumber } from "@/lib/orders";
+import { allocateDiscount, formatOrderNumber, hashToken, initialPaymentState, nextOrderStatus, parseOrderNumber } from "@/lib/orders";
 import { prisma } from "@/server/db";
 import { orderConfirmationEmail, orderStatusEmail } from "@/server/email/templates";
 import { getStripe } from "@/server/payments/stripe";
@@ -24,6 +24,7 @@ function createdOrderDto(order: { id: bigint; status: OrderStatus; totalRappen: 
   return { orderNumber: formatOrderNumber(order.id), status: order.status, totalRappen: order.totalRappen, trackingToken };
 }
 export async function createOrder(input: CreateOrderInput, userId?: string) {
+  if (input.storeMode === "b2b" && (!userId || !(await prisma.user.findFirst({ where: { id: userId, active: true, b2b_status: "APPROVED" }, select: { id: true } })))) throw new OrderError("B2B_ACCESS_REQUIRED");
   let stripeEnv: ReturnType<typeof getStripeEnv> | undefined;
   if (input.paymentMethod === "STRIPE") {
     try { stripeEnv = getStripeEnv(); } catch { throw new OrderError("PAYMENT_NOT_CONFIGURED"); }
@@ -44,7 +45,8 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
 
   const order = await prisma.$transaction(async (tx) => {
     const quote = await calculateQuote(input, tx, userId);
-    const status: OrderStatus = input.paymentMethod === "STRIPE" ? "PAYMENT_PENDING" : "CONFIRMED";
+    const paymentState = initialPaymentState(input.paymentMethod);
+    const status: OrderStatus = paymentState.orderStatus;
     const created = await tx.order.create({
       data: {
         checkoutKeyHash,
@@ -89,8 +91,8 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
         },
         payment: {
           create: {
-            provider: input.paymentMethod === "STRIPE" ? "STRIPE" : "CASH",
-            status: "PENDING",
+            provider: paymentState.provider,
+            status: paymentState.paymentStatus,
             amountRappen: quote.totalRappen,
           },
         },
@@ -109,7 +111,7 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
     for (const item of quote.items) {
       const variant = await tx.productVariant.findUniqueOrThrow({ where: { id: item.variantId }, select: { trackInventory: true } });
       if (!variant.trackInventory) continue;
-      const changed = input.paymentMethod === "STRIPE"
+      const changed = paymentState.reserveStock
         ? await tx.$executeRaw`UPDATE productvariant SET stockReserved = stockReserved + ${item.quantity}, updatedAt = NOW(3) WHERE id = ${item.variantId} AND active = 1 AND stockOnHand - stockReserved >= ${item.quantity}`
         : await tx.$executeRaw`UPDATE productvariant SET stockOnHand = stockOnHand - ${item.quantity}, updatedAt = NOW(3) WHERE id = ${item.variantId} AND active = 1 AND stockOnHand - stockReserved >= ${item.quantity}`;
       if (changed !== 1) throw new OrderError("OUT_OF_STOCK");
@@ -117,10 +119,10 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
         data: {
           variantId: item.variantId,
           orderId: created.id,
-          type: input.paymentMethod === "STRIPE" ? "ORDER_RESERVED" : "ORDER_SOLD",
+          type: paymentState.reserveStock ? "ORDER_RESERVED" : "ORDER_SOLD",
           quantityChange: -item.quantity,
-          reason: input.paymentMethod === "STRIPE" ? "Stripe checkout stock reservation" : "Order confirmed",
-          idempotencyKey: `order:${created.id}:${item.variantId}:${input.paymentMethod === "STRIPE" ? "reserve" : "sell"}`,
+          reason: paymentState.reserveStock ? "Stripe checkout stock reservation" : "Order confirmed",
+          idempotencyKey: `order:${created.id}:${item.variantId}:${paymentState.reserveStock ? "reserve" : "sell"}`,
         },
       });
     }

@@ -18,6 +18,7 @@ import { FaFacebookF, FaInstagram, FaWhatsapp } from "react-icons/fa6";
 
 import { BrandLogo } from "@/components/brand-logo";
 import { useCart } from "@/components/site/cart-context";
+import { useStoreMode } from "@/components/site/store-mode-context";
 import { storeConfig } from "@/config/store";
 
 type SiteUser = {
@@ -51,6 +52,7 @@ export function SiteShell({
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
   const { count } = useCart();
+  const { mode } = useStoreMode();
   const otherLocale = de ? "en" : "de";
   const otherPath =
     pathname?.replace(`/${locale}`, `/${otherLocale}`) || `/${otherLocale}`;
@@ -193,7 +195,7 @@ export function SiteShell({
             {otherLocale.toUpperCase()}
           </Link>
           <Link
-            href={`/${locale}/cart`}
+            href={mode === "b2b" ? `/${locale}/b2b-shop/cart` : `/${locale}/cart`}
             className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-control bg-primary px-3 text-white"
             aria-label={`${labels.cart}: ${count}`}
           >
@@ -397,6 +399,9 @@ export function SiteShell({
                   {link.label}
                 </Link>
               ))}
+              <Link href={`/${locale}/b2b-shop`} className="hover:text-secondary-light">
+                {de ? "B2B-Shop" : "B2B Shop"}
+              </Link>
             </div>
           </div>
           <div>

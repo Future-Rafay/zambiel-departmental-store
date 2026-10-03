@@ -14,6 +14,8 @@ import {
   saveSiteSettings,
   saveZone,
   setStaffActive,
+  setCustomerB2bAccess,
+  confirmInvoicePayment,
 } from "@/server/services/admin";
 import { inviteStaff } from "@/server/services/staff-invitations";
 import {
@@ -65,7 +67,7 @@ export async function adminAction(formData: FormData) {
   try {
     const input = values(formData);
     const intent = z.string().min(1).parse(input.intent);
-    const ownerOnly = !["cancel_order", "refund"].includes(intent);
+    const ownerOnly = !["cancel_order", "refund", "confirm_invoice_payment"].includes(intent);
     const actor = await requireRole(
       ...(ownerOnly
         ? ["OWNER" as const]
@@ -95,6 +97,12 @@ export async function adminAction(formData: FormData) {
           idSchema.parse(input.id),
           input.active === "true",
         );
+        break;
+      case "b2b_access":
+        await setCustomerB2bAccess(actor.id, idSchema.parse(input.id), z.enum(["true", "false"]).parse(input.approved) === "true");
+        break;
+      case "confirm_invoice_payment":
+        await confirmInvoicePayment(z.string().min(1).parse(input.orderNumber), actor.id);
         break;
       case "cancel_order": {
         const parsed = cancelOrderSchema.parse(input);

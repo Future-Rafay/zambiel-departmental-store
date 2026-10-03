@@ -5,8 +5,17 @@ import { storeConfig } from "@/config/store";
 import type {
   FulfillmentType,
   OrderStatus,
+  PaymentMethod,
+  PaymentProvider,
+  PaymentStatus,
   PromoType,
 } from "@/generated/prisma/enums";
+
+export function initialPaymentState(method: PaymentMethod): { orderStatus: OrderStatus; provider: PaymentProvider; paymentStatus: PaymentStatus; reserveStock: boolean } {
+  if (method === "STRIPE") return { orderStatus: "PAYMENT_PENDING", provider: "STRIPE", paymentStatus: "PENDING", reserveStock: true };
+  if (method === "INVOICE_BANK_TRANSFER") return { orderStatus: "CONFIRMED", provider: "INVOICE_BANK_TRANSFER", paymentStatus: "PENDING_VERIFICATION", reserveStock: false };
+  return { orderStatus: "CONFIRMED", provider: "CASH", paymentStatus: "PENDING", reserveStock: false };
+}
 
 const orderStatusLabels: Record<OrderStatus, { de: string; en: string }> = {
   PAYMENT_PENDING: {

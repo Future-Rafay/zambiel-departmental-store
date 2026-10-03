@@ -22,6 +22,7 @@ const quoteSchemaBase = z.object({
   items: z.array(cartItemSchema).min(1).max(100),
   promoCode: z.string().trim().max(64).optional(),
   customerEmail: z.string().trim().email().transform((value) => value.toLowerCase()).optional(),
+  storeMode: z.enum(["b2c", "b2b"]).optional(),
 });
 
 function requireDeliveryCountry(input: { fulfillmentType: "DELIVERY" | "PICKUP"; countryCode?: string }, context: z.RefinementCtx) {
@@ -48,7 +49,7 @@ export const createOrderSchema = quoteSchemaBase.extend({
   customerName: z.string().trim().min(2).max(160),
   customerEmail: z.string().trim().email().transform((value) => value.toLowerCase()),
   customerPhone: z.string().trim().min(6).max(40),
-  paymentMethod: z.enum(["STRIPE", "CASH_ON_DELIVERY", "PAY_AT_PICKUP"]),
+  paymentMethod: z.enum(["STRIPE", "CASH_ON_DELIVERY", "PAY_AT_PICKUP", "INVOICE_BANK_TRANSFER"]),
   note: z.string().trim().max(1000).optional(),
   address: addressSchema.optional(),
 }).superRefine((input, context) => {
@@ -64,6 +65,9 @@ export const createOrderSchema = quoteSchemaBase.extend({
     || (input.fulfillmentType === "PICKUP" && input.paymentMethod === "CASH_ON_DELIVERY")
   ) {
     context.addIssue({ code: "custom", path: ["paymentMethod"], message: "Payment method is not valid for this fulfillment type" });
+  }
+  if (input.paymentMethod === "INVOICE_BANK_TRANSFER" && input.storeMode !== "b2b") {
+    context.addIssue({ code: "custom", path: ["paymentMethod"], message: "Invoice payment is only available for B2B orders" });
   }
 });
 

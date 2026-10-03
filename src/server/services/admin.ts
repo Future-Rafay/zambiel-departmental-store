@@ -1,4 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
+import type { PaymentProvider } from "@/generated/prisma/enums";
 import type Stripe from "stripe";
 import { formatOrderNumber, parseOrderNumber } from "@/lib/orders";
 import { prisma } from "@/server/db";
@@ -61,7 +62,11 @@ function adminOrderDto(order: Prisma.OrderGetPayload<{ include: typeof adminOrde
 
 export async function getOrderHistory(status?: string) {
   const allowed = ["PAYMENT_PENDING", "CONFIRMED", "PROCESSING", "READY_FOR_PICKUP", "OUT_FOR_DELIVERY", "DELIVERED", "PICKED_UP", "CANCELLED"] as const;
-  const where = allowed.includes(status as typeof allowed[number]) ? { status: status as typeof allowed[number] } : {};
+  const where: Prisma.OrderWhereInput = status === "UNPAID_B2B"
+    ? { payment: { is: { provider: "INVOICE_BANK_TRANSFER", status: "PENDING_VERIFICATION" } } }
+    : allowed.includes(status as typeof allowed[number])
+      ? { status: status as typeof allowed[number] }
+      : {};
   const orders = await prisma.order.findMany({ where, include: adminOrderInclude, orderBy: { createdAt: "desc" }, take: 200 });
   return orders.map(adminOrderDto);
 }
@@ -140,10 +145,39 @@ export async function setStaffActive(actorId: string, staffId: string, active: b
   return row;
 }
 
+export async function setCustomerB2bAccess(actorId: string, customerId: string, approved: boolean) {
+  return prisma.$transaction(async (tx) => {
+    const customer = await tx.user.findFirst({ where: { id: customerId, OR: [{ role: "CUSTOMER" }, { role: "OWNER", id: actorId }] }, select: { id: true, b2b_status: true, is_b2b_authorized: true } });
+    if (!customer) throw new AdminError("CUSTOMER_NOT_FOUND");
+    const status = approved ? "APPROVED" : "REJECTED";
+    const authorized = approved;
+    if (customer.b2b_status === status && customer.is_b2b_authorized === authorized) return customer;
+    const updated = await tx.user.update({ where: { id: customer.id }, data: { b2b_status: status, is_b2b_authorized: authorized } });
+    await audit(tx, actorId, approved ? "B2B_ACCESS_APPROVED" : "B2B_ACCESS_REJECTED", "User", customer.id, { previousStatus: customer.b2b_status });
+    return updated;
+  });
+}
+
+export async function confirmInvoicePayment(orderNumber: string, actorUserId: string) {
+  const id = parseOrderNumber(orderNumber);
+  if (!id) throw new AdminError("ORDER_NOT_FOUND");
+  return prisma.$transaction(async (tx) => {
+    const payment = await tx.payment.findUnique({ where: { orderId: id }, select: { provider: true, status: true } });
+    if (!payment) throw new AdminError("ORDER_NOT_FOUND");
+    if (payment.provider !== "INVOICE_BANK_TRANSFER" || payment.status !== "PENDING_VERIFICATION") throw new AdminError("PAYMENT_CONFIRMATION_NOT_ALLOWED");
+    const now = new Date();
+    const changed = await tx.payment.updateMany({ where: { orderId: id, provider: "INVOICE_BANK_TRANSFER", status: "PENDING_VERIFICATION" }, data: { status: "PAID", paidAt: now } });
+    if (changed.count !== 1) throw new AdminError("PAYMENT_CONFIRMATION_NOT_ALLOWED");
+    await tx.order.update({ where: { id }, data: { version: { increment: 1 }, updatedAt: now } });
+    await audit(tx, actorUserId, "INVOICE_PAYMENT_CONFIRMED", "Order", id.toString());
+    return { paymentStatus: "PAID" as const };
+  });
+}
+
 async function restoreOrderInventory(
   tx: Prisma.TransactionClient,
   orderId: bigint,
-  payment: { provider: "STRIPE" | "CASH"; status: string } | null,
+  payment: { provider: PaymentProvider; status: string } | null,
   actorUserId: string | null,
   reason: string,
 ) {

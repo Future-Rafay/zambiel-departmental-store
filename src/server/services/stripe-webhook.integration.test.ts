@@ -27,6 +27,19 @@ test("checkout schemas require delivery details and compatible payment", () => {
   });
   assert.equal(order.success, false);
   assert.deepEqual(order.error?.issues.map((issue) => issue.path), [["address", "countryCode"], ["paymentMethod"]]);
+
+  const invoiceBase = {
+    items: cart,
+    fulfillmentType: "PICKUP" as const,
+    checkoutKey: crypto.randomUUID(),
+    locale: siteConfig.locale,
+    customerName: "Business Customer",
+    customerEmail: "business@example.com",
+    customerPhone: "123456",
+    paymentMethod: "INVOICE_BANK_TRANSFER" as const,
+  };
+  assert.equal(createOrderSchema.safeParse(invoiceBase).success, false);
+  assert.equal(createOrderSchema.safeParse({ ...invoiceBase, storeMode: "b2b" }).success, true);
 });
 
 test("Stripe events are replayable, delayed payments settle, failures cancel, and cash creates activity", async (context) => {
@@ -40,14 +53,17 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
   process.env.DATABASE_CONNECTION_LIMIT = "1";
   process.env.DATABASE_SSL ??= "false";
 
-  const [{ prisma }, { confirmCashPayment, getCustomerOrders, processStripeEvent }] = await Promise.all([
+  const [{ prisma }, { confirmCashPayment, getCustomerOrders, processStripeEvent }, { confirmInvoicePayment, getOrderHistory, setCustomerB2bAccess }] = await Promise.all([
     import("@/server/db"),
     import("@/server/services/ordering"),
+    import("@/server/services/admin"),
   ]);
   const suffix = crypto.randomUUID();
   const eventIds: string[] = [];
   const orderIds: bigint[] = [];
   let actorId: string | undefined;
+  let customerId: string | undefined;
+  let otherOwnerId: string | undefined;
 
   const createStripeOrder = async (sessionId: string) => {
     const order = await prisma.order.create({
@@ -150,11 +166,37 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
     const cashActivity = customerOrder?.activities.find((activity) => activity.kind === "CASH_PAYMENT_CONFIRMED");
     assert.equal(customerOrder?.version, 1);
     assert.equal(customerOrder?.activityAt, cashActivity?.at);
+
+    const customer = await prisma.user.create({ data: { email: `b2b-${suffix}@example.com`, role: "CUSTOMER", b2b_status: "PENDING" } });
+    customerId = customer.id;
+    await setCustomerB2bAccess(actor.id, customer.id, true);
+    await setCustomerB2bAccess(actor.id, customer.id, true);
+    assert.deepEqual(await prisma.user.findUnique({ where: { id: customer.id }, select: { b2b_status: true, is_b2b_authorized: true } }), { b2b_status: "APPROVED", is_b2b_authorized: true });
+    await setCustomerB2bAccess(actor.id, actor.id, true);
+    assert.deepEqual(await prisma.user.findUnique({ where: { id: actor.id }, select: { b2b_status: true, is_b2b_authorized: true } }), { b2b_status: "APPROVED", is_b2b_authorized: true });
+    const otherOwner = await prisma.user.create({ data: { email: `other-owner-${suffix}@example.com`, role: "OWNER" } });
+    otherOwnerId = otherOwner.id;
+    await assert.rejects(() => setCustomerB2bAccess(actor.id, otherOwner.id, true));
+
+    const invoiceOrder = await prisma.order.create({ data: { checkoutKeyHash: crypto.randomUUID().replaceAll("-", "").padEnd(64, "0"), userId: customer.id, locale: "EN", customerName: "B2B Test", customerEmail: customer.email, customerPhone: "123456", fulfillmentType: "DELIVERY", status: "CONFIRMED", paymentMethod: "INVOICE_BANK_TRANSFER", subtotalRappen: 2000, totalRappen: 2000, payment: { create: { provider: "INVOICE_BANK_TRANSFER", status: "PENDING_VERIFICATION", amountRappen: 2000 } }, statusEvents: { create: { toStatus: "CONFIRMED", reason: "ORDER_CREATED" } } } });
+    orderIds.push(invoiceOrder.id);
+    assert.equal((await getOrderHistory("UNPAID_B2B")).some(({ id }) => id === invoiceOrder.id.toString()), true);
+    await confirmInvoicePayment(formatOrderNumber(invoiceOrder.id), actor.id);
+    await assert.rejects(() => confirmInvoicePayment(formatOrderNumber(invoiceOrder.id), actor.id));
+    const paidInvoice = await prisma.order.findUniqueOrThrow({ where: { id: invoiceOrder.id }, include: { payment: true } });
+    assert.equal(paidInvoice.status, "CONFIRMED");
+    assert.equal(paidInvoice.version, 1);
+    assert.equal(paidInvoice.payment?.status, "PAID");
+    assert.ok(paidInvoice.payment?.paidAt);
   } finally {
     await prisma.auditLog.deleteMany({ where: { entityType: "Order", entityId: { in: orderIds.map(String) } } });
+    if (customerId) await prisma.auditLog.deleteMany({ where: { entityType: "User", entityId: customerId } });
+    if (actorId) await prisma.auditLog.deleteMany({ where: { entityType: "User", entityId: actorId } });
     await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
     await prisma.stripeWebhookEvent.deleteMany({ where: { eventId: { in: eventIds } } });
     if (actorId) await prisma.user.deleteMany({ where: { id: actorId } });
+    if (otherOwnerId) await prisma.user.deleteMany({ where: { id: otherOwnerId } });
+    if (customerId) await prisma.user.deleteMany({ where: { id: customerId } });
     await prisma.$disconnect();
   }
 });

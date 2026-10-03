@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { CartProvider } from "@/components/site/cart-context";
 import { SiteShell } from "@/components/site/site-shell";
+import { StoreModeProvider } from "@/components/site/store-mode-context";
 import { isAppLocale, locales } from "@/i18n/config";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getPublicConfig } from "@/server/services/catalog";
@@ -36,19 +37,21 @@ export default async function LocaleLayout({
     : null;
 
   return (
-    <CartProvider>
-      <SiteShell
-        locale={locale}
-        user={user}
-        publicConfig={{
-          announcements: publicConfig.announcements,
-          email: publicConfig.brand.email,
-          facebookUrl: publicConfig.brand.facebookUrl,
-          instagramUrl: publicConfig.brand.instagramUrl,
-        }}
-      >
-        {children}
-      </SiteShell>
-    </CartProvider>
+    <StoreModeProvider>
+      <CartProvider>
+        <SiteShell
+          locale={locale}
+          user={user}
+          publicConfig={{
+            announcements: publicConfig.announcements,
+            email: publicConfig.brand.email,
+            facebookUrl: publicConfig.brand.facebookUrl,
+            instagramUrl: publicConfig.brand.instagramUrl,
+          }}
+        >
+          {children}
+        </SiteShell>
+      </CartProvider>
+    </StoreModeProvider>
   );
 }

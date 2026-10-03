@@ -38,10 +38,12 @@ export function CheckoutForm({
   locale,
   user,
   countries,
+  storeMode = "b2c",
 }: {
   locale: "de" | "en";
   user?: CheckoutUser;
   countries: ShippingCountry[];
+  storeMode?: "b2c" | "b2b";
 }) {
   const { items, clear } = useCart();
   const de = locale === "de";
@@ -148,6 +150,7 @@ export function CheckoutForm({
             fulfillmentType === "DELIVERY" ? data.get("countryCode") : undefined,
           promoCode: data.get("promoCode") || undefined,
           customerEmail: data.get("customerEmail") || undefined,
+          storeMode,
         }),
       }).then(readResponse);
       if (!request.isCurrent()) return;
@@ -169,9 +172,7 @@ export function CheckoutForm({
   function chooseFulfillment(value: FulfillmentType) {
     quoteRequests.cancel();
     setFulfillmentType(value);
-    setPaymentMethod(
-      value === "DELIVERY" ? "CASH_ON_DELIVERY" : "PAY_AT_PICKUP",
-    );
+    setPaymentMethod((current) => current === "INVOICE_BANK_TRANSFER" ? current : value === "DELIVERY" ? "CASH_ON_DELIVERY" : "PAY_AT_PICKUP");
     setQuote(null);
   }
 
@@ -199,6 +200,7 @@ export function CheckoutForm({
           customerEmail: data.get("customerEmail"),
           customerPhone: data.get("customerPhone"),
           paymentMethod,
+          storeMode,
           note: data.get("note") || undefined,
           address:
             fulfillmentType === "DELIVERY"
@@ -260,6 +262,7 @@ export function CheckoutForm({
           paymentMethod={paymentMethod}
           errors={fieldErrors}
           onChange={setPaymentMethod}
+          b2b={storeMode === "b2b"}
         />
       </div>
       <CheckoutSummary

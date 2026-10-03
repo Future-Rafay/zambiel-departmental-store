@@ -14,11 +14,11 @@ export type RetailProductCardData = {
   available: boolean;
 };
 
-export function RetailProductCard({ product, locale }: { product: RetailProductCardData; locale: StoreLocale }) {
+export function RetailProductCard({ product, locale, hrefBase }: { product: RetailProductCardData; locale: StoreLocale; hrefBase?: string }) {
   const de = locale === "de";
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface transition-[transform,box-shadow,border-color] hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl">
-      <Link href={`/${locale}/products/${product.slug}`} className="relative aspect-square overflow-hidden bg-surface-warm" aria-label={`${product.name} ${de ? "ansehen" : "view"}`}>
+      <Link href={`${hrefBase ?? `/${locale}/products`}/${product.slug}`} className="relative aspect-square overflow-hidden bg-surface-warm" aria-label={`${product.name} ${de ? "ansehen" : "view"}`}>
         {product.imageUrl ? (
           <StorefrontImage src={product.imageUrl} alt="" fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-contain p-5 transition-transform duration-300 group-hover:scale-[1.03]" />
         ) : <StorefrontImage src={null} alt="" fill sizes="(max-width: 640px) 50vw, 25vw" className="object-contain p-5" />}

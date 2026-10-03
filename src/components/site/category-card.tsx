@@ -1,7 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-import { StorefrontImage } from "@/components/site/storefront-image";
 import type { StoreLocale } from "@/config/store";
 
 export type CategoryCardData = {
