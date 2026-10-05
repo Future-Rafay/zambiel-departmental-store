@@ -90,6 +90,6 @@ Google Play preparation needs a production HTTPS origin, Google OAuth configurat
 
 Provider-dependent Google sign-in, live Stripe/webhooks, FCM/Expo push receipts, release signing, and Google Play publication remain release-environment checks.
 
-The production push dispatcher is registered in `vercel.json` and requires `CRON_SECRET`. The internal route also supports an explicitly configured external scheduler.
+The internal push-dispatch route supports an explicitly configured scheduler and requires `CRON_SECRET`. This repository currently has no `vercel.json`, so production scheduling is not verified and remains a deployment decision; do not assume queued notifications are dispatched until the hosting configuration is confirmed.
 
 Remaining release inputs are branded square/adaptive/store artwork, an installable signed APK/AAB, production HTTPS origins, Google/Firebase/Expo credentials, physical-device Google/payment/push checks, approved legal and retention content, and the Google Play account/listing. These are not represented as locally verified.

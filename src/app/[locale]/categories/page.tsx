@@ -1,6 +1,20 @@
 import { CategoryCard } from "@/components/site/category-card";
-import type { StoreLocale } from "@/config/store";
+import { storeConfig, type StoreLocale } from "@/config/store";
+import { localizedMetadata } from "@/lib/metadata";
 import { getRetailCategories } from "@/server/services/retail-catalog";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale === "en" ? "en" : "de";
+  return localizedMetadata(
+    locale,
+    "/categories",
+    { de: "Kategorien", en: "Categories" },
+    {
+      de: `Durchsuchen Sie das ${storeConfig.identity.name}-Sortiment nach Kategorie.`,
+      en: `Browse the ${storeConfig.identity.name} catalogue by category.`,
+    },
+  );
+}
 
 export default async function CategoriesPage({ params }: { params: Promise<{ locale: string }> }) {
   const locale: StoreLocale = (await params).locale === "en" ? "en" : "de";

@@ -11,7 +11,7 @@ import { accessTokenTtlSeconds, createStaffAccessToken, StaffMobileAuthError, ve
 
 const refreshTokenTtlMs = 30 * 24 * 60 * 60 * 1000;
 
-const loginSchema = z.object({
+export const staffMobileLoginSchema = z.object({
   email: z.string().trim().email().transform((value) => value.toLowerCase()),
   password: z.string().min(1).max(200),
   deviceName: z.string().trim().min(1).max(160),
@@ -39,8 +39,10 @@ function sessionResponse(user: { id: string; email: string; name: string | null;
   };
 }
 
-export async function loginStaffMobile(input: z.input<typeof loginSchema>) {
-  const values = loginSchema.parse(input);
+export async function loginStaffMobile(
+  input: z.input<typeof staffMobileLoginSchema>,
+) {
+  const values = staffMobileLoginSchema.parse(input);
   const user = await prisma.user.findUnique({
     where: { email: values.email },
     select: { id: true, email: true, name: true, role: true, active: true, passwordHash: true },

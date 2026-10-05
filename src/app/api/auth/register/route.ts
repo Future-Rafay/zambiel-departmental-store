@@ -2,14 +2,33 @@ import { cookies } from "next/headers";
 import { ZodError } from "zod";
 
 import { createCredentialsSession } from "@/server/auth/credentials";
-import { registerCustomer } from "@/server/auth/customer";
+import {
+  registerCustomer,
+  registerCustomerSchema,
+} from "@/server/auth/customer";
 import { getSessionCookie } from "@/server/auth/session-cookie";
 import { assertSameOrigin } from "@/server/http";
+import {
+  consumePublicRateLimit,
+  getForwardedClientIp,
+  rateLimitedResponse,
+} from "@/server/public-rate-limit";
 
 export async function POST(request: Request) {
   try {
     assertSameOrigin(request);
-    const input = await request.json();
+    const clientIp = getForwardedClientIp(request.headers);
+    if (clientIp) {
+      const limit = await consumePublicRateLimit({
+        scope: "web-register-ip",
+        identifier: clientIp,
+        limit: 5,
+        windowMs: 60 * 60_000,
+      });
+      if (!limit.allowed) return rateLimitedResponse(limit.retryAfterSeconds);
+    }
+
+    const input = registerCustomerSchema.parse(await request.json());
     await registerCustomer(input);
     const session = await createCredentialsSession(input);
     if (!session) throw new Error("SESSION_FAILED");

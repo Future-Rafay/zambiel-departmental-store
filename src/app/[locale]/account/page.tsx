@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { saveCustomerProfile } from "@/app/[locale]/account/actions";
@@ -7,6 +8,10 @@ import { Label } from "@/components/ui/label";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { prisma } from "@/server/db";
 import { getShippingCountries } from "@/server/services/ordering";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AccountPage({
   params,

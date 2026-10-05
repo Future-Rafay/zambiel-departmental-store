@@ -18,6 +18,7 @@ import {
   parseRecentProducts,
   RECENT_PRODUCTS_COOKIE,
 } from "@/lib/recent-products";
+import { localizedMetadata } from "@/lib/metadata";
 import {
   getRetailProduct,
   getRetailProductsBySlugs,
@@ -32,12 +33,18 @@ export async function generateMetadata({
   const { locale: rawLocale, slug } = await params;
   const locale: StoreLocale = rawLocale === "en" ? "en" : "de";
   const product = await getRetailProduct(slug, locale);
-  return product
-    ? {
-        title: product.seoTitle || product.name,
-        description: product.seoDescription || undefined,
-      }
-    : {};
+  if (!product) return { robots: { index: false, follow: false } };
+  const title = product.seoTitle || product.name;
+  const description = product.seoDescription || (locale === "de"
+    ? `${product.name} bei Zambiel entdecken.`
+    : `Discover ${product.name} at Zambiel.`);
+  return localizedMetadata(
+    locale,
+    `/products/${slug}`,
+    { de: title, en: title },
+    { de: description, en: description },
+    product.imageUrl ? [product.imageUrl] : [],
+  );
 }
 
 export default async function ProductPage({
@@ -62,10 +69,15 @@ export default async function ProductPage({
     getRetailRelatedProducts(product.id, product.category.id, locale),
     getRetailProductsBySlugs(recentSlugs, locale),
   ]);
+  const shareUrl = new URL(
+    `/${locale}/products/${slug}`,
+    process.env.APP_URL ?? "http://localhost:3000",
+  ).href;
   const jsonLd = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
+    url: shareUrl,
     image: product.media.map(({ url }) => url).filter(Boolean),
     description: product.seoDescription || undefined,
     sku: product.variants[0]?.sku || undefined,
@@ -77,18 +89,29 @@ export default async function ProductPage({
         variant.stockAvailable === 0
           ? "https://schema.org/OutOfStock"
           : "https://schema.org/InStock",
+      url: shareUrl,
     })),
   }).replaceAll("<", "\\u003c");
-  const shareUrl = new URL(
-    `/${locale}/products/${slug}`,
-    process.env.APP_URL ?? "http://localhost:3000",
-  ).href;
+  const breadcrumbJsonLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: de ? "Startseite" : "Home", item: new URL(`/${locale}`, shareUrl).href },
+      { "@type": "ListItem", position: 2, name: de ? "Produkte" : "Products", item: new URL(`/${locale}/products`, shareUrl).href },
+      { "@type": "ListItem", position: 3, name: product.category.name, item: new URL(`/${locale}/categories/${product.category.slug}`, shareUrl).href },
+      { "@type": "ListItem", position: 4, name: product.name, item: shareUrl },
+    ],
+  }).replaceAll("<", "\\u003c");
   return (
     <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-16">
       <RecentlyViewedTracker slug={slug} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLd }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }}
       />
       <nav
         aria-label={de ? "Brotkrumen" : "Breadcrumb"}

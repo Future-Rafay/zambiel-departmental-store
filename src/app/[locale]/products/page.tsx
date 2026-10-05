@@ -2,13 +2,27 @@ import { Filter, Search } from "lucide-react";
 import Link from "next/link";
 
 import { RetailProductCard } from "@/components/site/retail-product-card";
-import type { StoreLocale } from "@/config/store";
+import { storeConfig, type StoreLocale } from "@/config/store";
 import { categoryHierarchy, parsePriceRappen } from "@/lib/catalog-display";
+import { localizedMetadata } from "@/lib/metadata";
 import { getRetailCategories, listRetailProducts } from "@/server/services/retail-catalog";
 
 type Params = Record<string, string | string[] | undefined>;
 const one = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
 const many = (value: string | string[] | undefined) => value ? (Array.isArray(value) ? value : [value]) : [];
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const locale = (await params).locale === "en" ? "en" : "de";
+  return localizedMetadata(
+    locale,
+    "/products",
+    { de: "Alle Produkte", en: "All products" },
+    {
+      de: `Entdecken Sie das aktuelle Sortiment von ${storeConfig.identity.name}.`,
+      en: `Explore the current ${storeConfig.identity.name} catalogue.`,
+    },
+  );
+}
 
 function Filters({ locale, categories, values }: { locale: StoreLocale; categories: Array<Awaited<ReturnType<typeof getRetailCategories>>[number] & { path: string[] }>; values: Params }) {
   const de = locale === "de";

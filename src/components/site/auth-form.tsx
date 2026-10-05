@@ -15,23 +15,30 @@ export function AuthForm({ locale, mode, admin = false, requestB2b = false }: { 
     event.preventDefault();
     setBusy(true);
     setError("");
-    const data = { ...Object.fromEntries(new FormData(event.currentTarget)), ...(mode === "register" ? { requestB2b } : {}) };
-    const response = await fetch(mode === "register" ? "/api/auth/register" : "/api/auth/credentials", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      const result = await response.json();
-      setError(
-        result.error === "EMAIL_IN_USE"
-          ? (de ? "Diese E-Mail wird bereits verwendet." : "That email is already in use.")
-          : (de ? "Anmeldung nicht möglich. Prüfen Sie Ihre Angaben." : "Unable to sign in. Check your details.")
-      );
+    try {
+      const data = { ...Object.fromEntries(new FormData(event.currentTarget)), ...(mode === "register" ? { requestB2b } : {}) };
+      const response = await fetch(mode === "register" ? "/api/auth/register" : "/api/auth/credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const result = await response.json();
+        setError(
+          result.error === "RATE_LIMITED"
+            ? (de ? "Zu viele Versuche. Bitte warten Sie und versuchen Sie es erneut." : "Too many attempts. Wait and try again.")
+            : result.error === "EMAIL_IN_USE"
+              ? (de ? "Diese E-Mail wird bereits verwendet." : "That email is already in use.")
+              : (de ? "Anmeldung nicht möglich. Prüfen Sie Ihre Angaben." : "Unable to sign in. Check your details.")
+        );
+        return;
+      }
+      window.location.assign(admin ? "/admin" : requestB2b ? `/${locale}/b2b-shop` : `/${locale}/account/orders`);
+    } catch {
+      setError(de ? "Die Verbindung ist fehlgeschlagen. Versuchen Sie es erneut." : "The connection failed. Try again.");
+    } finally {
       setBusy(false);
-      return;
     }
-    window.location.assign(admin ? "/admin" : requestB2b ? `/${locale}/b2b-shop` : `/${locale}/account/orders`);
   }
 
   return (

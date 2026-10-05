@@ -19,7 +19,7 @@ test("database rate limits are atomic, scoped, and reset after expiry", async (c
     import("@/server/public-rate-limit"),
   ]);
   const identifier = `rate-${crypto.randomUUID()}@example.com`;
-  const scopes = ["email", "ip", "newsletter-ip", "newsletter-email", "password-reset-ip", "password-reset-email", "password-reset-submit-ip"];
+  const scopes = ["email", "ip", "newsletter-ip", "newsletter-email", "password-reset-ip", "password-reset-email", "password-reset-submit-ip", "web-login-ip", "web-login-email", "web-register-ip", "staff-login-ip", "staff-login-email"];
   const now = new Date("2026-09-02T00:00:00.000Z");
 
   try {

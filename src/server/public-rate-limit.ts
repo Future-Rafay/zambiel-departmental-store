@@ -8,6 +8,16 @@ export type RateLimitResult =
   | { allowed: true; remaining: number }
   | { allowed: false; retryAfterSeconds: number };
 
+export function rateLimitedResponse(retryAfterSeconds: number) {
+  return Response.json(
+    { error: "RATE_LIMITED", retryAfterSeconds },
+    {
+      status: 429,
+      headers: { "Retry-After": String(retryAfterSeconds) },
+    },
+  );
+}
+
 export function hashRateLimitIdentifier(scope: string, identifier: string, secret = getRateLimitSecret()) {
   return createHmac("sha256", secret).update(JSON.stringify([scope, identifier.trim().toLowerCase()])).digest("hex");
 }

@@ -151,7 +151,7 @@ export async function listRetailProducts(input: {
     )`);
   }
   if (input.tag) filters.push(Prisma.sql`EXISTS (
-    SELECT 1 FROM \`_ProductToProductTag\` productTags
+    SELECT 1 FROM \`_producttoproducttag\` productTags
     JOIN producttag tag ON tag.id = productTags.B
     WHERE productTags.A = p.id AND tag.slug = ${input.tag}
   )`);
@@ -195,10 +195,79 @@ export async function listRetailProducts(input: {
   return { items, page, pageCount: Math.max(1, Math.ceil(total / take)), total };
 }
 
-export async function getRetailProduct(slug: string, locale: StoreLocale, b2b = false) {
+export const getRetailProduct = cache(async (slug: string, locale: StoreLocale, b2b = false) => {
   const product = await prisma.product.findFirst({ where: { ...productModeWhere(b2b), slug, status: "ACTIVE", active: true, deletedAt: null }, include: retailProductInclude });
   return product ? retailProductDto(product, locale) : null;
-}
+});
+
+export const getRetailCategorySeo = cache(async (slug: string, locale: StoreLocale) => {
+  const category = await prisma.category.findFirst({
+    where: { slug, active: true, is_b2b: false, deletedAt: null },
+    select: {
+      slug: true,
+      nameDe: true,
+      nameEn: true,
+      descriptionDe: true,
+      descriptionEn: true,
+      seoTitleDe: true,
+      seoTitleEn: true,
+      seoDescriptionDe: true,
+      seoDescriptionEn: true,
+      imageKey: true,
+    },
+  });
+  if (!category) return null;
+  return {
+    slug: category.slug,
+    name: local(locale, category.nameDe, category.nameEn),
+    description: local(locale, category.descriptionDe, category.descriptionEn),
+    seoTitle: local(locale, category.seoTitleDe, category.seoTitleEn),
+    seoDescription: local(locale, category.seoDescriptionDe, category.seoDescriptionEn),
+    imageUrl: resolvePublicImageUrl(category.imageKey),
+  };
+});
+
+export const getRetailSitemapEntries = cache(async () => {
+  const [categories, products] = await Promise.all([
+    prisma.category.findMany({
+      where: { active: true, is_b2b: false, deletedAt: null },
+      orderBy: { slug: "asc" },
+      select: { slug: true, updatedAt: true, imageKey: true },
+    }),
+    prisma.product.findMany({
+      where: {
+        status: "ACTIVE",
+        active: true,
+        is_b2b: false,
+        deletedAt: null,
+        category: { is_b2b: false },
+      },
+      orderBy: { slug: "asc" },
+      select: {
+        slug: true,
+        updatedAt: true,
+        imageKey: true,
+        media: {
+          orderBy: { sortOrder: "asc" },
+          take: 1,
+          select: { sourceUrl: true, objectKey: true },
+        },
+      },
+    }),
+  ]);
+  return {
+    categories: categories.map((category) => ({
+      slug: category.slug,
+      updatedAt: category.updatedAt,
+      imageUrl: resolvePublicImageUrl(category.imageKey),
+    })),
+    products: products.map((product) => ({
+      slug: product.slug,
+      updatedAt: product.updatedAt,
+      imageUrl: resolveProductMediaUrl(product.media[0] ?? { objectKey: product.imageKey }),
+    })),
+  };
+});
 
 export async function getRetailRelatedProducts(productId: string, categoryId: string, locale: StoreLocale, b2b = false) {
   const products = await prisma.product.findMany({
