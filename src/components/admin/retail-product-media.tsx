@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { addRetailMedia, updateRetailMedia } from "@/app/admin/(protected)/retail-actions";
 import { Check, Field, SelectField } from "@/components/admin/admin-ui";
+import { DeferredSubmitButton, DeferredUploadForm } from "@/components/admin/deferred-upload-form";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { RetailMediaDelete } from "@/components/admin/retail-media-delete";
 import type { RetailProductEdit } from "@/components/admin/retail-product-types";
@@ -12,15 +13,15 @@ export function RetailProductMedia({ product }: { product: RetailProductEdit }) 
     <section className="mt-8 space-y-4" aria-labelledby="media">
       <h2 id="media" className="font-display text-xl font-bold">Product gallery</h2>
       <Card className="p-5">
-        <form action={addRetailMedia} className="grid gap-4 sm:grid-cols-2">
+        <DeferredUploadForm action={addRetailMedia} className="grid gap-4 sm:grid-cols-2">
           <input type="hidden" name="productId" value={product.id} />
-          <div className="sm:col-span-2"><ImageUploadField name="mediaKey" label="New gallery image" /></div>
+          <div className="sm:col-span-2"><ImageUploadField name="mediaKey" label="New gallery image" required /></div>
           <Field label="English alt text" name="altEn" />
           <Field label="German alt text" name="altDe" />
           <Field label="Position" name="sortOrder" type="number" min="0" defaultValue={product.media.length} required />
           <SelectField label="Variant (optional)" name="variantId"><option value="">All variants</option>{product.variants.map((variant) => <option key={variant.id} value={variant.id}>{variant.nameEn}</option>)}</SelectField>
-          <div className="sm:col-span-2 flex justify-end"><button className="min-h-11 rounded-lg bg-primary px-5 text-sm font-bold text-white">Add image</button></div>
-        </form>
+          <div className="sm:col-span-2 flex justify-end"><DeferredSubmitButton className="min-h-11 rounded-lg bg-primary px-5 text-sm font-bold text-white">Add image</DeferredSubmitButton></div>
+        </DeferredUploadForm>
       </Card>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {product.media.map((media) => (

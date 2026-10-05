@@ -2,7 +2,7 @@ import Link from "next/link";
 import { useId, type ComponentProps, type ReactNode } from "react";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { DeferredSubmitButton } from "@/components/admin/deferred-upload-form";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -217,13 +217,12 @@ export function SaveBar({
   return (
     <div className="mt-6 flex justify-end border-t border-border pt-4">
       <input type="hidden" name="returnTo" value={returnTo} />
-      <Button
-        type="submit"
+      <DeferredSubmitButton
         size="default"
         className="shadow-xs font-bold bg-primary hover:bg-primary-light text-xs"
       >
         {label}
-      </Button>
+      </DeferredSubmitButton>
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   SelectField,
   TextareaField,
 } from "@/components/admin/admin-ui";
+import { DeferredUploadForm } from "@/components/admin/deferred-upload-form";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { SlugField } from "@/components/admin/slug-field";
 import { Card } from "@/components/ui/card";
@@ -52,7 +53,7 @@ export function RetailCategoryForm({
       description="Hierarchy, localized content, media, and SEO."
     >
       <Notice {...feedback} />
-      <form action={saveRetailCategory} className="space-y-5">
+      <DeferredUploadForm action={saveRetailCategory} className="space-y-5">
         <input type="hidden" name="id" value={category?.id ?? ""} />
         <Card className="grid gap-4 p-5 sm:grid-cols-2">
           <Field
@@ -139,7 +140,7 @@ export function RetailCategoryForm({
           }
           label={category ? "Save category" : "Create category"}
         />
-      </form>
+      </DeferredUploadForm>
       {category ? <section className="mt-10 border-t border-destructive/20 pt-6"><h2 className="font-display text-lg font-bold text-destructive">Delete category</h2><p className="mb-4 text-sm text-muted">Active products and child categories must be moved or deleted first.</p><div className="flex justify-end"><DeleteCategoryDialog id={category.id} /></div></section> : null}
     </AdminPage>
   );

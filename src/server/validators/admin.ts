@@ -49,21 +49,6 @@ export const siteSettingsSchema = z.object({
   city: optionalText(120),
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  logoKey: optionalText(512),
-  compactLogoKey: optionalText(512),
-  faviconKey: optionalText(512),
-  heroImageKey: optionalText(512),
-  heroTitleDe: optionalText(240),
-  heroTitleEn: optionalText(240),
-  heroSubtitleDe: optionalText(5000),
-  heroSubtitleEn: optionalText(5000),
-  aboutDe: optionalText(10000),
-  aboutEn: optionalText(10000),
-  announcementDe: optionalText(500),
-  announcementEn: optionalText(500),
-  announcementActive: checkbox,
-  instagramUrl: z.union([z.literal(""), z.string().trim().url().max(512)]).transform((value) => value || null),
-  facebookUrl: z.union([z.literal(""), z.string().trim().url().max(512)]).transform((value) => value || null),
 });
 
 export const promoSchema = z.object({

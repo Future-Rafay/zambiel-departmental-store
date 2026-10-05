@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { saveRetailProduct } from "@/app/admin/(protected)/retail-actions";
 import { Check, Field, SaveBar, SelectField } from "@/components/admin/admin-ui";
+import { DeferredUploadForm } from "@/components/admin/deferred-upload-form";
 import { ImageUploadField } from "@/components/admin/image-upload-field";
 import { RichTextEditor } from "@/components/admin/rich-text-editor";
 import { SlugField } from "@/components/admin/slug-field";
@@ -14,7 +15,7 @@ export function RetailProductBasics({ categories, product }: { categories: Retai
   const [isB2b, setIsB2b] = useState(product?.is_b2b ?? false);
   const compatibleCategories = categories.filter((category) => category.is_b2b === isB2b);
   return (
-    <form action={saveRetailProduct} className="space-y-5">
+    <DeferredUploadForm action={saveRetailProduct} className="space-y-5">
       <input type="hidden" name="id" value={product?.id ?? ""} />
       <Card className="grid gap-4 p-5 sm:grid-cols-2">
         <SelectField key={String(isB2b)} label="Category" name="categoryId" defaultValue={compatibleCategories.some(({ id }) => id === product?.categoryId) ? product?.categoryId : ""} required>
@@ -42,6 +43,6 @@ export function RetailProductBasics({ categories, product }: { categories: Retai
         <Field label="German SEO description" name="seoDescriptionDe" defaultValue={product?.seoDescriptionDe ?? ""} />
       </Card>
       <SaveBar returnTo={product ? `/admin/products/${product.id}` : "/admin/products/new"} label={product ? "Save product" : "Create product"} />
-    </form>
+    </DeferredUploadForm>
   );
 }

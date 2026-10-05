@@ -39,6 +39,25 @@ export const storeConfig = {
     website: null as string | null,
     social: { instagram: "https://www.instagram.com/", facebook: "https://www.facebook.com/", whatsapp: "https://www.whatsapp.com/" },
   },
+  content: {
+    heroImage: null as string | null,
+    heroTitle: {
+      de: "Gutes für Alltag, Zuhause und unterwegs.",
+      en: "Useful goods for everyday life, home and the road.",
+    },
+    heroSubtitle: {
+      de: "Entdecken Sie praktische Technik, Haushalt und Fahrzeugzubehör in einem klar kuratierten Sortiment.",
+      en: "Discover practical technology, home essentials and vehicle accessories in one clearly curated range.",
+    },
+    about: { de: null as string | null, en: null as string | null },
+    announcement: {
+      active: true,
+      text: {
+        de: "10 % Willkommensrabatt mit WELCOME10 ab CHF 50.",
+        en: "10% welcome discount with WELCOME10 from CHF 50.",
+      },
+    },
+  },
   seo: {
     title: { de: "Zambiel – Schweizer Warenhaus", en: "Zambiel – Swiss department store" },
     description: {

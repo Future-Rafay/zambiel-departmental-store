@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { cancelOrderSchema, minorUnits, promoSchema, refundSchema, zoneSchema } from "@/server/validators/admin";
+import { cancelOrderSchema, minorUnits, promoSchema, refundSchema, siteSettingsSchema, zoneSchema } from "@/server/validators/admin";
 
 test("admin trust boundaries reject unsafe promo and refund input", () => {
   assert.equal(promoSchema.safeParse({ code: "TOO-MUCH", type: "PERCENT", value: "100.01", minimumSubtotalRappen: "0", startsAt: "", endsAt: "", totalUsageLimit: "", perCustomerLimit: "", active: "on" }).success, false);
@@ -20,4 +20,23 @@ test("admin money and order identifiers use CHF decimals and current or legacy p
   assert.equal(cancelOrderSchema.safeParse({ orderNumber: "ZAM-000123", reason: "Customer request" }).success, true);
   assert.equal(cancelOrderSchema.safeParse({ orderNumber: "SNP-000123", reason: "Legacy order" }).success, true);
   assert.equal(cancelOrderSchema.safeParse({ orderNumber: "BAD-000123", reason: "Invalid order" }).success, false);
+});
+
+test("site settings only accept database-backed business details and colours", () => {
+  const settings = siteSettingsSchema.parse({
+    displayName: "Zambiel",
+    legalName: "",
+    email: "",
+    phone: "",
+    street: "",
+    postalCode: "",
+    city: "",
+    primaryColor: "#153B35",
+    secondaryColor: "#D6A84B",
+    logoKey: "uploads/Zambiel/brand/ignored.png",
+    announcementActive: "on",
+  });
+
+  assert.equal("logoKey" in settings, false);
+  assert.equal("announcementActive" in settings, false);
 });
