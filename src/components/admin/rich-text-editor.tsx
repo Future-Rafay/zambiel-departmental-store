@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "@tiptap/extension-image";
+import { Color, TextStyle } from "@tiptap/extension-text-style";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
   Bold,
   Code2,
+  Heading1,
   Heading2,
   ImagePlus,
   Italic,
@@ -31,11 +33,16 @@ export function RichTextEditor({
   label,
   name,
   defaultValue = "",
+  variant = "product",
+  hint = "Paste formatted content or use the toolbar. Images upload when the product is saved, and HTML is sanitized on the server.",
 }: {
   label: string;
   name: string;
   defaultValue?: string | null;
+  variant?: "product" | "email";
+  hint?: string;
 }) {
+  const email = variant === "email";
   const fileInput = useRef<HTMLInputElement>(null);
   const pendingImages = useRef(new Map<string, File>());
   const [html, setHtml] = useState(defaultValue ?? "");
@@ -58,6 +65,7 @@ export function RichTextEditor({
     extensions: [
       StarterKit.configure({ link: { openOnClick: false } }),
       Image.configure({ allowBase64: false }),
+      ...(email ? [TextStyle, Color] : []),
     ],
     onUpdate: ({ editor: current }) => {
       const nextHtml = current.getHTML();
@@ -185,6 +193,14 @@ export function RichTextEditor({
             () => editor?.chain().focus().toggleItalic().run(),
             <Italic className="size-4" />,
           )}
+          {email
+            ? command(
+                "Heading 1",
+                editor?.isActive("heading", { level: 1 }) ?? false,
+                () => editor?.chain().focus().toggleHeading({ level: 1 }).run(),
+                <Heading1 className="size-4" />,
+              )
+            : null}
           {command(
             "Heading",
             editor?.isActive("heading", { level: 2 }) ?? false,
@@ -242,6 +258,35 @@ export function RichTextEditor({
             () => editor?.chain().focus().redo().run(),
             <Redo2 className="size-4" />,
           )}
+          {email ? (
+            <>
+              <label className="grid size-10 place-items-center border-r border-border hover:bg-background">
+                <span className="sr-only">Text colour</span>
+                <input
+                  type="color"
+                  defaultValue="#153B35"
+                  onChange={(event) => editor?.chain().focus().setColor(event.target.value).run()}
+                  className="size-6 cursor-pointer border-0 bg-transparent p-0"
+                />
+              </label>
+              <label className="inline-flex min-h-10 items-center border-r border-border px-2">
+                <span className="sr-only">Insert personal field</span>
+                <select
+                  value=""
+                  disabled={sourceMode}
+                  onChange={(event) => {
+                    if (event.target.value) editor?.chain().focus().insertContent(event.target.value).run();
+                  }}
+                  className="min-h-9 bg-transparent text-xs font-bold text-primary focus:outline-none"
+                >
+                  <option value="">Insert field</option>
+                  <option value="{{name}}">Full name</option>
+                  <option value="{{first_name}}">First name</option>
+                  <option value="{{email}}">Email</option>
+                </select>
+              </label>
+            </>
+          ) : null}
           <input
             ref={fileInput}
             type="file"
@@ -296,10 +341,7 @@ export function RichTextEditor({
           {error}
         </p>
       ) : null}
-      <p className="text-xs text-muted">
-        Paste formatted content or use the toolbar. Images upload when the
-        product is saved, and HTML is sanitized on the server.
-      </p>
+      <p className="text-xs text-muted">{hint}</p>
     </div>
   );
 }

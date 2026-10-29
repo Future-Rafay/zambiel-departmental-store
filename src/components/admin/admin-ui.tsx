@@ -58,6 +58,13 @@ export function Notice({
     CATEGORY_HAS_OTHER_MODE_PRODUCTS: "Move this category's products to a compatible category before changing its B2C or B2B setting.",
     CATEGORY_HAS_OTHER_MODE_CHILDREN: "Move or change this category's subcategories before changing its B2C or B2B setting.",
     CATEGORY_HAS_MIXED_DEPENDENTS: "Move this category's products and subcategories before changing its B2C or B2B setting.",
+    NO_RECIPIENTS: "Select at least one eligible customer.",
+    SCHEDULE_OUT_OF_RANGE: "Choose a send time between 5 minutes and 30 days from now.",
+    CAMPAIGN_NOT_DRAFT: "This campaign was already sent or scheduled. Duplicate it to make changes.",
+    EMAIL_BODY_REQUIRED: "Add some email content before saving.",
+    EMAIL_NOT_CONFIGURED: "Email sending is not configured. Add a valid Resend API key.",
+    TEST_SEND_FAILED: "The test email could not be sent. Check the Resend configuration and sender domain.",
+    CANCEL_PARTIALLY_FAILED: "Some scheduled emails could not be cancelled. Their errors are listed below; try again.",
   };
   const deletedLabel =
     deleted === "product" || deleted === "variant" || deleted === "category"

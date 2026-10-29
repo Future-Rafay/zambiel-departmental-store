@@ -13,6 +13,7 @@ import {
   Globe,
   LayoutDashboard,
   LogOut,
+  Mail,
   Menu,
   Settings,
   ShieldCheck,
@@ -121,6 +122,7 @@ export function AdminShell({ user, children }: { user: AdminUser; children: Reac
             items: [
               { label: "Staff Accounts", href: "/admin/staff", icon: <Users className="h-4 w-4" /> },
               { label: "Customers", href: "/admin/customers", icon: <Users className="h-4 w-4" /> },
+              { label: "Email Marketing", href: "/admin/marketing", icon: <Mail className="h-4 w-4" /> },
               { label: "Settings", href: "/admin/settings", icon: <Settings className="h-4 w-4" /> },
               { label: "Audit Logs", href: "/admin/audit", icon: <ClipboardList className="h-4 w-4" /> },
             ],
