@@ -4,10 +4,15 @@ import { prisma } from "../src/server/db";
 
 // Temporary bulk-email test data: N passwordless customers on Resend's simulator addresses (delivered+label@resend.dev), so no real inbox is mailed.
 // Usage: npm run marketing:test-customers -- --count 150   |   --remove
+// Any other database (e.g. Railway `zambiel`) needs its exact name: --allow-database zambiel
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error("DATABASE_URL is required.");
 const databaseName = new URL(databaseUrl).pathname.replace(/^\/+/, "");
-if (!["zambiel_dev", "zambiel_test"].includes(databaseName)) throw new Error("Refused: DATABASE_URL must target lowercase zambiel_dev or zambiel_test.");
+const allowArgIndex = process.argv.indexOf("--allow-database");
+const allowedDatabase = allowArgIndex === -1 ? undefined : process.argv[allowArgIndex + 1];
+if (!["zambiel_dev", "zambiel_test"].includes(databaseName) && databaseName !== allowedDatabase) {
+  throw new Error("Refused: DATABASE_URL must target lowercase zambiel_dev or zambiel_test, or pass --allow-database <exact name>.");
+}
 
 const emailPrefix = "delivered+zambiel-mkt-";
 const firstNames = ["Anna", "Luca", "Mia", "Noah", "Lea", "Elias", "Lina", "Leon", "Emma", "Matteo", "Sofia", "Jonas", "Laura", "Nico", "Sara", "David", "Nina", "Samuel", "Julia", "Tim"];
