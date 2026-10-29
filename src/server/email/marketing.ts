@@ -51,6 +51,12 @@ export function applyMergeFields(template: string, recipient: MergeRecipient, lo
   return template.replace(/\{\{(name|first_name|email)\}\}/g, (field) => (escape ? escapeHtml(values[field as keyof typeof values]) : values[field as keyof typeof values]));
 }
 
+// RFC 2606/6761 reserved domains never receive mail; Resend rejects the whole batch if one appears.
+export function isUndeliverableEmail(email: string) {
+  const domain = email.split("@").pop()?.toLowerCase() ?? "";
+  return /(^|\.)(test|example|invalid|localhost)$/.test(domain) || /(^|\.)example\.(com|net|org)$/.test(domain);
+}
+
 export function htmlToText(html: string) {
   return sanitizeHtml(html.replace(/<\/(p|h[1-3]|li|blockquote)>|<br\s*\/?>/gi, "\n"), { allowedTags: [], allowedAttributes: {} })
     .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'")

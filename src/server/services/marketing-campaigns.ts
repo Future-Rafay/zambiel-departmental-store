@@ -4,7 +4,7 @@ import { getEmailEnv, getRateLimitSecret } from "@/config/env";
 import type { MarketingRecipientStatus, Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/server/db";
 import { cancelScheduledEmail, sendEmail, sendEmailBatch, type BatchEmailMessage } from "@/server/email/client";
-import { applyMergeFields, htmlToText, marketingUnsubscribeToken, verifyMarketingUnsubscribeToken, type MergeRecipient } from "@/server/email/marketing";
+import { applyMergeFields, htmlToText, isUndeliverableEmail, marketingUnsubscribeToken, verifyMarketingUnsubscribeToken, type MergeRecipient } from "@/server/email/marketing";
 import { marketingEmail } from "@/server/email/templates";
 
 export const MARKETING_BATCH_SIZE = 100;
@@ -88,7 +88,9 @@ export async function deliverPendingRecipients(campaignId: string, deliver: Deli
     if (!chunk.length) break;
     const removed = chunk.filter((recipient) => !recipient.userId).map((recipient) => recipient.id);
     if (removed.length) await prisma.marketingCampaignRecipient.updateMany({ where: { id: { in: removed } }, data: { status: "FAILED", error: "RECIPIENT_REMOVED" } });
-    const sendable = chunk.filter((recipient): recipient is typeof recipient & { userId: string } => Boolean(recipient.userId));
+    const undeliverable = chunk.filter((recipient) => recipient.userId && isUndeliverableEmail(recipient.email)).map((recipient) => recipient.id);
+    if (undeliverable.length) await prisma.marketingCampaignRecipient.updateMany({ where: { id: { in: undeliverable } }, data: { status: "FAILED", error: "UNDELIVERABLE_ADDRESS" } });
+    const sendable = chunk.filter((recipient): recipient is typeof recipient & { userId: string } => Boolean(recipient.userId) && !isUndeliverableEmail(recipient.email));
     if (!sendable.length) continue;
     const ids = sendable.map((recipient) => recipient.id);
     const key = `marketing-${campaignId}-${createHash("sha256").update(`${sendAt?.toISOString() ?? "now"}|${ids.join(",")}`).digest("hex").slice(0, 32)}`;

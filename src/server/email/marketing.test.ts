@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { applyMergeFields, htmlToText, marketingStarterTemplate, marketingStarterTemplateKeys, marketingUnsubscribeToken, sanitizeMarketingHtml, verifyMarketingUnsubscribeToken } from "./marketing";
+import { applyMergeFields, htmlToText, isUndeliverableEmail, marketingStarterTemplate, marketingStarterTemplateKeys, marketingUnsubscribeToken, sanitizeMarketingHtml, verifyMarketingUnsubscribeToken } from "./marketing";
 import { marketingEmail } from "./templates";
 
 const prefix = "https://cdn.example.com/uploads/Zambiel/products/";
@@ -44,4 +44,9 @@ test("marketing email uses the branded shell with an unsubscribe footer and plai
   assert.ok(!email.includes("Automatisch versendete Nachricht"));
   assert.equal(htmlToText("<h1>Hi &amp; welcome</h1><p>Line one<br>Line two</p><ul><li>A</li></ul>"), "Hi & welcome\nLine one\nLine two\nA");
   for (const key of marketingStarterTemplateKeys) assert.ok(marketingStarterTemplate(key, "https://example.com/de").html.includes("{{name}}"));
+});
+
+test("reserved test domains are undeliverable so they never reach a Resend batch", () => {
+  for (const email of ["anna@demo.zambiel.test", "a@example.com", "b@mail.example.org", "c@x.invalid", "d@localhost"]) assert.equal(isUndeliverableEmail(email), true, email);
+  for (const email of ["delivered+zambiel-mkt-0001@resend.dev", "owner@zambiel.ch", "x@gmail.com", "y@notexample.com", "z@testing.ch"]) assert.equal(isUndeliverableEmail(email), false, email);
 });
