@@ -29,6 +29,8 @@ function createPrismaClient() {
   return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    // Prisma's 2s/5s defaults are shorter than a cold TLS connect to the remote MySQL proxy.
+    transactionOptions: { maxWait: 10_000, timeout: 15_000 },
   });
 }
 
