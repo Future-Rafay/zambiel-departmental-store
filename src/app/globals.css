@@ -164,6 +164,24 @@ body {
   }
 }
 
+@keyframes pageProgress {
+  0% {
+    transform: scaleX(0.08);
+  }
+  20% {
+    transform: scaleX(0.38);
+  }
+  45% {
+    transform: scaleX(0.62);
+  }
+  70% {
+    transform: scaleX(0.78);
+  }
+  100% {
+    transform: scaleX(0.92);
+  }
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -182,6 +200,13 @@ body {
 
 .animate-pulse-badge {
   animation: pulseBadge 0.3s ease-in-out;
+}
+
+.page-progress-bar {
+  animation: pageProgress 8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  background: linear-gradient(90deg, var(--brand-primary-light), var(--brand-secondary));
+  box-shadow: 0 0 0.75rem var(--brand-secondary);
+  transform-origin: left center;
 }
 
 .department-rail {

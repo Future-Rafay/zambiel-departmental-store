@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Archivo, Inter } from "next/font/google";
 import { headers } from "next/headers";
-import type { CSSProperties, ReactNode } from "react";
+import { Suspense, type CSSProperties, type ReactNode } from "react";
 
+import { NavigationProgress } from "@/components/ui/navigation-progress";
 import { getPublicConfig } from "@/server/services/catalog";
 import { storeConfig } from "@/config/store";
 
@@ -72,6 +73,9 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: storeJsonLd }}
         />
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         {children}
       </body>
     </html>
