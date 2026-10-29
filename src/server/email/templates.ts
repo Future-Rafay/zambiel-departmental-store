@@ -16,6 +16,7 @@ function brandedEmail(input: {
   title: string;
   body: string;
   action?: { href: string; label: string };
+  footerHtml?: string;
 }) {
   const locale = input.locale ?? "en";
   const { colors, fonts } = storeConfig.brand;
@@ -25,7 +26,7 @@ function brandedEmail(input: {
   const action = input.action
     ? `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:28px 0"><tr><td bgcolor="${colors.primary}" style="border-radius:4px"><a href="${escapeHtml(input.action.href)}" style="display:inline-block;border:1px solid ${colors.primary};border-radius:4px;background:${colors.primary};color:${colors.surface};padding:16px 24px;text-decoration:none;font-family:${displayFont};font-weight:700">${escapeHtml(input.action.label)}</a></td></tr></table><p style="font-size:12px;color:${colors.muted};word-break:break-all">${locale === "de" ? "Falls der Button nicht funktioniert:" : "If the button does not work:"}<br><a href="${escapeHtml(input.action.href)}" style="color:${colors.primary}">${escapeHtml(input.action.href)}</a></p>`
     : "";
-  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(input.title)}</title></head><body style="margin:0;padding:0;background:${colors.background};color:${colors.foreground};font-family:${bodyFont};-webkit-text-size-adjust:100%"><div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${escapeHtml(input.eyebrow)} — ${escapeHtml(input.title)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${colors.background}"><tr><td align="center" style="padding:32px 12px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;border:1px solid ${colors.border};background:${colors.surface}"><tr><td bgcolor="${colors.primary}" style="padding:28px 28px 24px;border-bottom:4px solid ${colors.accent};color:${colors.surface}"><p style="margin:0;font-family:${displayFont};font-size:32px;line-height:1.2;font-weight:800;letter-spacing:-1px">${name}</p><p style="margin:10px 0 0;font-size:12px;line-height:1.6;color:${colors.surface}">${escapeHtml(storeConfig.identity.tagline[locale])}</p></td></tr><tr><td style="padding:28px;font-size:16px;line-height:1.75;overflow-wrap:anywhere"><p style="margin:0 0 12px;color:${colors.primary};font-family:${displayFont};font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase">${escapeHtml(input.eyebrow)}</p><h1 style="margin:0 0 24px;font-family:${displayFont};font-size:28px;line-height:1.25;font-weight:750;letter-spacing:-0.5px;color:${colors.primary}">${escapeHtml(input.title)}</h1>${input.body}${action}</td></tr><tr><td style="padding:20px 28px;border-top:1px solid ${colors.border};background:${colors.background};font-size:12px;line-height:1.7;color:${colors.muted}"><strong style="font-family:${displayFont};color:${colors.primary}">${name}</strong><br>${escapeHtml(storeConfig.footer.text[locale])}<br>${locale === "de" ? "Automatisch versendete Nachricht" : "Automated email"}</td></tr></table></td></tr></table></body></html>`;
+  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(input.title)}</title></head><body style="margin:0;padding:0;background:${colors.background};color:${colors.foreground};font-family:${bodyFont};-webkit-text-size-adjust:100%"><div style="display:none;max-height:0;overflow:hidden;mso-hide:all">${input.eyebrow ? `${escapeHtml(input.eyebrow)} — ` : ""}${escapeHtml(input.title)}</div><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${colors.background}"><tr><td align="center" style="padding:32px 12px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;border:1px solid ${colors.border};background:${colors.surface}"><tr><td bgcolor="${colors.primary}" style="padding:28px 28px 24px;border-bottom:4px solid ${colors.accent};color:${colors.surface}"><p style="margin:0;font-family:${displayFont};font-size:32px;line-height:1.2;font-weight:800;letter-spacing:-1px">${name}</p><p style="margin:10px 0 0;font-size:12px;line-height:1.6;color:${colors.surface}">${escapeHtml(storeConfig.identity.tagline[locale])}</p></td></tr><tr><td style="padding:28px;font-size:16px;line-height:1.75;overflow-wrap:anywhere">${input.eyebrow ? `<p style="margin:0 0 12px;color:${colors.primary};font-family:${displayFont};font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase">${escapeHtml(input.eyebrow)}</p><h1 style="margin:0 0 24px;font-family:${displayFont};font-size:28px;line-height:1.25;font-weight:750;letter-spacing:-0.5px;color:${colors.primary}">${escapeHtml(input.title)}</h1>` : ""}${input.body}${action}</td></tr><tr><td style="padding:20px 28px;border-top:1px solid ${colors.border};background:${colors.background};font-size:12px;line-height:1.7;color:${colors.muted}"><strong style="font-family:${displayFont};color:${colors.primary}">${name}</strong><br>${escapeHtml(storeConfig.footer.text[locale])}<br>${input.footerHtml ?? (locale === "de" ? "Automatisch versendete Nachricht" : "Automated email")}</td></tr></table></td></tr></table></body></html>`;
 }
 
 export function contactInquiryEmail(input: ContactInput) {
@@ -156,4 +157,16 @@ export function orderStatusEmail(input: {
       body: `<p>${body}</p>`,
     }),
   };
+}
+
+export function marketingEmail(input: { locale: "de" | "en"; subject: string; bodyHtml: string; unsubscribeUrl: string }) {
+  const de = input.locale === "de";
+  const link = `<a href="${escapeHtml(input.unsubscribeUrl)}" style="color:${storeConfig.brand.colors.primary}">${de ? "Keine Marketing-E-Mails mehr erhalten" : "Unsubscribe from marketing emails"}</a>`;
+  return brandedEmail({
+    locale: input.locale,
+    eyebrow: "",
+    title: input.subject,
+    body: input.bodyHtml,
+    footerHtml: `${de ? "Sie erhalten diese E-Mail als registrierte Kundin oder registrierter Kunde." : "You receive this email as a registered customer."}<br>${link}`,
+  });
 }
