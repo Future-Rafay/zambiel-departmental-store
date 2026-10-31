@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 import { getEmailEnv, getRateLimitSecret } from "@/config/env";
-import type { MarketingRecipientStatus, Prisma } from "@/generated/prisma/client";
+import { Prisma, type MarketingRecipientStatus } from "@/generated/prisma/client";
 import { prisma } from "@/server/db";
 import { cancelScheduledEmail, sendEmail, sendEmailBatch, type BatchEmailMessage } from "@/server/email/client";
 import { applyMergeFields, htmlToText, isUndeliverableEmail, marketingUnsubscribeToken, verifyMarketingUnsubscribeToken, type MergeRecipient } from "@/server/email/marketing";
@@ -94,14 +94,24 @@ export async function deliverPendingRecipients(campaignId: string, deliver: Deli
     if (!sendable.length) continue;
     const ids = sendable.map((recipient) => recipient.id);
     const key = `marketing-${campaignId}-${createHash("sha256").update(`${sendAt?.toISOString() ?? "now"}|${ids.join(",")}`).digest("hex").slice(0, 32)}`;
+    let providerIds: string[];
     try {
       const messages = sendable.map((recipient) => ({ ...renderCampaignEmail(campaign, recipient), ...(sendAt ? { scheduledAt: sendAt.toISOString() } : {}) }));
-      const providerIds = await deliver(messages, key);
-      const now = new Date();
-      await prisma.$transaction(sendable.map((recipient, index) => prisma.marketingCampaignRecipient.update({ where: { id: recipient.id }, data: { status: sendAt ? "SCHEDULED" : "SENT", providerMessageId: providerIds[index] ?? null, sentAt: sendAt ?? now, error: null } })));
+      providerIds = await deliver(messages, key);
     } catch (error) {
       await prisma.marketingCampaignRecipient.updateMany({ where: { id: { in: ids } }, data: { status: "FAILED", error: (error instanceof Error ? error.message : "SEND_FAILED").slice(0, 500) } });
+      continue;
     }
+    // One statement: 100 per-row updates outlast the transaction timeout against the remote DB. If this throws, the rows stay
+    // PENDING (the emails were already accepted), so a resume reuses the same idempotency key instead of sending twice.
+    const now = new Date();
+    const providerIdCases = Prisma.join(sendable.map((recipient, index) => Prisma.sql`WHEN ${recipient.id} THEN ${providerIds[index] ?? null}`), " ");
+    await prisma.$executeRaw`
+      UPDATE marketingcampaignrecipient
+      SET \`status\` = ${sendAt ? "SCHEDULED" : "SENT"}, \`providerMessageId\` = CASE \`id\` ${providerIdCases} END,
+          \`sentAt\` = ${sendAt ?? now}, \`error\` = NULL, \`updatedAt\` = ${now}
+      WHERE \`id\` IN (${Prisma.join(ids)})
+    `;
   }
   await prisma.marketingCampaign.update({ where: { id: campaignId }, data: { status: sendAt ? "SCHEDULED" : "SENT", sentAt: sendAt ? null : new Date() } });
   return recipientCounts(campaignId);

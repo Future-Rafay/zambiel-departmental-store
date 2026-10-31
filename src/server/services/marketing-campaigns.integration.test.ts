@@ -15,7 +15,7 @@ test("bulk campaign sends one email per eligible customer in batches, then retri
   delete process.env.CONTACT_EMAIL_TO_DEV;
   const [{ prisma }, marketing] = await Promise.all([import("@/server/db"), import("@/server/services/marketing-campaigns")]);
   const run = crypto.randomUUID().slice(0, 8);
-  const emails = Array.from({ length: 150 }, (_, index) => `mkt-${run}-${String(index).padStart(3, "0")}@example.com`);
+  const emails = Array.from({ length: 150 }, (_, index) => `delivered+mkt-${run}-${String(index).padStart(3, "0")}@resend.dev`);
   const actor = await prisma.user.create({ data: { email: `mkt-owner-${run}@example.com`, role: "OWNER" } });
   try {
     await prisma.user.createMany({ data: emails.map((email, index) => ({ email, name: index % 10 ? `Customer ${index}` : null, role: "CUSTOMER" as const })) });
