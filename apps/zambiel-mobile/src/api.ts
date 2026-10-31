@@ -108,7 +108,11 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ idToken }),
     }),
-  logout: () => request<void>(`${customer}/auth/logout`, { method: "POST" }),
+  logout: (pushToken: string | null) =>
+    request<void>(`${customer}/auth/logout`, {
+      method: "POST",
+      body: JSON.stringify({ pushToken }),
+    }),
   profile: () =>
     request<{ user: User }>(`${customer}/auth/me`).then((x) => x.user),
   addresses: () =>

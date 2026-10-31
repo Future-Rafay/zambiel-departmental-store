@@ -10,7 +10,7 @@ import {
 import { addCartLines, readCart } from "./commerce";
 import { api, saveSession, sessionToken } from "./api";
 import type { CartLine, Locale, Session, User } from "./types";
-import { subscribeToOrders } from "./notifications";
+import { currentPushToken, subscribeToOrders } from "./notifications";
 
 type LocaleState = { locale: Locale; setLocale: (v: Locale) => void };
 type CartState = {
@@ -88,7 +88,8 @@ export function AppProvider({ children }: PropsWithChildren) {
         setUser(session.user);
       },
       logout: async () => {
-        await api.logout().catch(() => undefined);
+        const pushToken = await currentPushToken().catch(() => null);
+        await api.logout(pushToken).catch(() => undefined);
         await saveSession(null);
         setUser(null);
       },

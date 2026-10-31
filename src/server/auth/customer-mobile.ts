@@ -8,6 +8,7 @@ import { getAuthEnv } from "@/config/env";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/server/db";
 import { getCurrentUser } from "@/server/auth/current-user";
+import { pushDeviceSchema, pushScopeKey } from "@/server/services/mobile-push";
 
 const SESSION_DAYS = 30;
 const googleKeys = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
@@ -94,10 +95,12 @@ export async function requireCustomerApiUser(request: Request) {
 export async function logoutMobileCustomer(request: Request) {
   const token = bearer(request);
   if (!token) throw new CustomerMobileAuthError("TOKEN_REQUIRED");
+  const pushToken = pushDeviceSchema.shape.token.safeParse((await request.json().catch(() => null))?.pushToken).data;
   await prisma.$transaction(async (tx) => {
     const session = await tx.customerMobileSession.findUnique({ where: { tokenHash: tokenHash(token) }, select: { userId: true } });
     if (!session) return;
-    await tx.customerPushSubscription.deleteMany({ where: { userId: session.userId } });
+    // Unsubscribe only this device; older app builds send no push token, so they keep the all-devices fallback.
+    await tx.customerPushSubscription.deleteMany({ where: pushToken ? { scopeKey: pushScopeKey(pushToken, `user:${session.userId}`) } : { userId: session.userId } });
     await tx.customerMobileSession.delete({ where: { tokenHash: tokenHash(token) } });
   });
 }
