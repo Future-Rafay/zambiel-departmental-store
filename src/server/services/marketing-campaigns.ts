@@ -4,7 +4,7 @@ import { getEmailEnv, getRateLimitSecret } from "@/config/env";
 import { Prisma, type MarketingRecipientStatus } from "@/generated/prisma/client";
 import { prisma } from "@/server/db";
 import { cancelScheduledEmail, sendEmail, sendEmailBatch, type BatchEmailMessage } from "@/server/email/client";
-import { applyMergeFields, htmlToText, isUndeliverableEmail, marketingUnsubscribeToken, verifyMarketingUnsubscribeToken, type MergeRecipient } from "@/server/email/marketing";
+import { applyMergeFields, domainAcceptsMail, htmlToText, isUndeliverableEmail, marketingUnsubscribeToken, verifyMarketingUnsubscribeToken, type MergeRecipient } from "@/server/email/marketing";
 import { marketingEmail } from "@/server/email/templates";
 
 export const MARKETING_BATCH_SIZE = 100;
@@ -83,14 +83,22 @@ export async function dispatchCampaign(input: { campaignId: string; userIds: str
 export async function deliverPendingRecipients(campaignId: string, deliver: DeliverBatch = sendEmailBatch) {
   const campaign = await prisma.marketingCampaign.findUniqueOrThrow({ where: { id: campaignId }, select: { subject: true, html: true, locale: true, scheduledAt: true } });
   const sendAt = campaign.scheduledAt && campaign.scheduledAt.getTime() > Date.now() + 60_000 ? campaign.scheduledAt : null;
+  const domainChecks = new Map<string, Promise<boolean>>();
+  const deliverable = (email: string) => {
+    if (isUndeliverableEmail(email)) return Promise.resolve(false);
+    const domain = email.split("@").pop()!.toLowerCase();
+    if (!domainChecks.has(domain)) domainChecks.set(domain, domainAcceptsMail(domain));
+    return domainChecks.get(domain)!;
+  };
   for (;;) {
     const chunk = await prisma.marketingCampaignRecipient.findMany({ where: { campaignId, status: "PENDING" }, orderBy: { id: "asc" }, take: MARKETING_BATCH_SIZE, select: { id: true, userId: true, email: true, name: true } });
     if (!chunk.length) break;
     const removed = chunk.filter((recipient) => !recipient.userId).map((recipient) => recipient.id);
     if (removed.length) await prisma.marketingCampaignRecipient.updateMany({ where: { id: { in: removed } }, data: { status: "FAILED", error: "RECIPIENT_REMOVED" } });
-    const undeliverable = chunk.filter((recipient) => recipient.userId && isUndeliverableEmail(recipient.email)).map((recipient) => recipient.id);
+    const checks = await Promise.all(chunk.map((recipient) => (recipient.userId ? deliverable(recipient.email) : false)));
+    const undeliverable = chunk.filter((recipient, index) => recipient.userId && !checks[index]).map((recipient) => recipient.id);
     if (undeliverable.length) await prisma.marketingCampaignRecipient.updateMany({ where: { id: { in: undeliverable } }, data: { status: "FAILED", error: "UNDELIVERABLE_ADDRESS" } });
-    const sendable = chunk.filter((recipient): recipient is typeof recipient & { userId: string } => Boolean(recipient.userId) && !isUndeliverableEmail(recipient.email));
+    const sendable = chunk.filter((recipient, index): recipient is typeof recipient & { userId: string } => Boolean(recipient.userId) && checks[index]);
     if (!sendable.length) continue;
     const ids = sendable.map((recipient) => recipient.id);
     const key = `marketing-${campaignId}-${createHash("sha256").update(`${sendAt?.toISOString() ?? "now"}|${ids.join(",")}`).digest("hex").slice(0, 32)}`;

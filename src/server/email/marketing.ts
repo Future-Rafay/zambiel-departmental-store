@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { resolve4, resolve6, resolveMx } from "node:dns/promises";
 
 import sanitizeHtml from "sanitize-html";
 
@@ -55,6 +56,20 @@ export function applyMergeFields(template: string, recipient: MergeRecipient, lo
 export function isUndeliverableEmail(email: string) {
   const domain = email.split("@").pop()?.toLowerCase() ?? "";
   return /(^|\.)(test|example|invalid|localhost)$/.test(domain) || /(^|\.)example\.(com|net|org)$/.test(domain);
+}
+
+// A domain with no MX/A/AAAA record (e.g. a not-yet-live zambiel.ch) is rejected by Resend and fails the whole batch.
+// Only "no such domain/record" counts as undeliverable; timeouts or offline DNS let the address through.
+export async function domainAcceptsMail(domain: string) {
+  for (const lookup of [resolveMx, resolve4, resolve6]) {
+    try {
+      if ((await lookup(domain)).length) return true;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code !== "ENOTFOUND" && code !== "ENODATA") return true;
+    }
+  }
+  return false;
 }
 
 export function htmlToText(html: string) {
