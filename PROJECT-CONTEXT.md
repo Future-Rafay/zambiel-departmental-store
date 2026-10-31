@@ -53,6 +53,7 @@ Administration:
 - `/admin/products`, `/admin/products/new`, `/admin/products/[productId]`
 - `/admin/categories`, `/admin/categories/new`, `/admin/categories/[categoryId]`
 - `/admin/inventory`, `/orders`, `/customers`, `/discounts`, `/payments`, `/settings`, `/staff`, `/audit`
+- `/admin/marketing`, `/admin/marketing/new`, `/admin/marketing/[campaignId]` (owner only)
 - Old `/admin/menu/*`, `/admin/availability`, and `/admin/settings/hours` routes redirect to retail replacements.
 
 APIs:
@@ -63,6 +64,7 @@ APIs:
 - Media: `/api/uploads/images`; owner-authorized and limited by MIME, size, and configured object prefix.
 - Public inquiries: `POST /api/v1/public/contact`; same-origin, Zod-validated, honeypot- and rate-limit-protected contact/product-request delivery.
 - Newsletter: `POST /api/v1/public/newsletter` and `POST /api/v1/public/newsletter/unsubscribe`; immediate idempotent subscription, token-protected unsubscribe, and durable IP/email throttling.
+- Marketing unsubscribe: `/{locale}/marketing/unsubscribe?token=` confirmation page and `POST /api/v1/public/marketing/unsubscribe` (form and RFC 8058 one-click); HMAC-signed per-user token sets `User.marketingOptOutAt`.
 - Password recovery: `POST /api/auth/password/forgot` and `POST /api/auth/password/reset`; generic forgot responses, one-hour single-use hashed tokens, password rehashing, and session revocation.
 
 ## Catalog and inventory contract
@@ -77,6 +79,14 @@ APIs:
 - Product descriptions are sanitized HTML edited through the focused TipTap toolbar. Description images are limited to store-owned upload URLs or already-imported mapped media.
 - Admin money inputs accept decimal CHF (for example `49.65`) through the shared parser; persistence and calculations remain integer rappen.
 
+## Email marketing contract (2026-10-30)
+
+- Owner-only workflow: design (template or blank, shared TipTap editor in `email` mode with headings, colour, images, `{{name}}`/`{{first_name}}`/`{{email}}` fields) → save draft → choose recipients (name A–Z/Z–A, top 100/200/500, select all on page) → send now or schedule (Zurich time, 5 minutes to 30 days).
+- Audience: active `CUSTOMER` accounts without `marketingOptOutAt` or a deletion request. Each recipient gets a separate email with an unsubscribe footer and `List-Unsubscribe` headers.
+- `src/server/email/marketing.ts` holds sanitizing/inline styles, merge fields, and tokens; `src/server/services/marketing-campaigns.ts` holds audience, dispatch, retry, cancel, and test sends. Recipients are snapshotted in `MarketingCampaignRecipient`; delivery uses the Resend batch API (100 per call, idempotency key per batch), and scheduling uses Resend `scheduledAt` with no cron. Cancelling calls Resend cancel per email.
+- Sending runs inside the admin request; very large lists can time out and resume through the Resume button (documented `shortcut:`). Opens, bounces, and inbox delivery are not tracked.
+- Verified 2026-10-30: all 13 migrations applied to local `zambiel_dev`, local `zambiel_test`, and Railway `zambiel` (Railway already contained the B2B foundation columns without a migration record, so `20260925000000_add_b2b_foundation` was marked applied with `migrate resolve` before deploying; the schema diff is now empty). 150 simulator customers seeded in `zambiel_dev`. The 150-recipient integration test passes on `zambiel_test`. Live Resend delivery, inbox rendering, and authenticated browser checks are not yet verified.
+- Test data: `npm.cmd run marketing:test-customers -- --count 150` (or `--remove`) creates passwordless customers on `delivered+…@resend.dev` simulator addresses, guarded to `zambiel_dev`/`zambiel_test`; any other database needs `--allow-database <exact name>`. 150 simulator customers were seeded in Railway `zambiel` on 2026-10-30 at the owner's request. Simulator emails still count toward the Resend quota.
 ## Order, payment, and stock rules
 
 - Retail transitions: `CONFIRMED → PROCESSING → OUT_FOR_DELIVERY → DELIVERED` or `CONFIRMED → PROCESSING → READY_FOR_PICKUP → PICKED_UP`, plus cancellation.

@@ -16,6 +16,8 @@ function createPrismaClient() {
     acquireTimeout: 30_000,
     connectTimeout: 15_000,
     idleTimeout: 300,
+    // MySQL 8 caching_sha2_password without TLS needs the server RSA key after every server restart; only trusted on loopback.
+    allowPublicKeyRetrieval: ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname),
     ssl: env.DATABASE_SSL
       ? {
           rejectUnauthorized: true,
@@ -29,6 +31,8 @@ function createPrismaClient() {
   return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    // Prisma's 2s/5s defaults are shorter than a cold TLS connect to the remote MySQL proxy.
+    transactionOptions: { maxWait: 10_000, timeout: 15_000 },
   });
 }
 

@@ -349,24 +349,26 @@ model ProductMedia {
 }
 
 model User {
-  id                  String                     @id @default(cuid())
-  email               String                     @unique(map: "User_email_key") @db.VarChar(320)
-  passwordHash        String?                    @db.VarChar(255)
-  name                String?                    @db.VarChar(160)
-  phone               String?                    @db.VarChar(40)
-  image               String?                    @db.VarChar(512)
+  id                  String                       @id @default(cuid())
+  email               String                       @unique(map: "User_email_key") @db.VarChar(320)
+  passwordHash        String?                      @db.VarChar(255)
+  name                String?                      @db.VarChar(160)
+  phone               String?                      @db.VarChar(40)
+  image               String?                      @db.VarChar(512)
   emailVerified       DateTime?
-  role                UserRole                   @default(CUSTOMER)
-  active              Boolean                    @default(true)
-  is_b2b_authorized   Boolean                    @default(false)
-  b2b_status          String                     @default("NONE") @db.VarChar(32)
+  role                UserRole                     @default(CUSTOMER)
+  active              Boolean                      @default(true)
+  is_b2b_authorized   Boolean                      @default(false)
+  b2b_status          String                       @default("NONE") @db.VarChar(32)
   lastLoginAt         DateTime?
-  createdAt           DateTime                   @default(now())
-  updatedAt           DateTime                   @updatedAt
+  marketingOptOutAt   DateTime?
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+  marketingRecipients MarketingCampaignRecipient[]
   accounts            Account[]
   sessions            Session[]
   passwordResetTokens PasswordResetToken[]
-  invitationsSent     StaffInvitation[]          @relation("InvitedBy")
+  invitationsSent     StaffInvitation[]            @relation("InvitedBy")
   addresses           CustomerAddress[]
   mobileSessions      CustomerMobileSession[]
   wishlist            CustomerWishlist[]
@@ -838,4 +840,58 @@ model NewsletterSubscriber {
 
   @@index([unsubscribedAt, subscribedAt], map: "NewsletterSubscriber_unsubscribedAt_subscribedAt_idx")
   @@map("newslettersubscriber")
+}
+
+enum MarketingCampaignStatus {
+  DRAFT
+  SENDING
+  SENT
+  SCHEDULED
+  CANCELLED
+}
+
+enum MarketingRecipientStatus {
+  PENDING
+  SENT
+  SCHEDULED
+  FAILED
+  CANCELLED
+}
+
+model MarketingCampaign {
+  id          String                       @id @default(cuid())
+  name        String                       @db.VarChar(160)
+  subject     String                       @db.VarChar(200)
+  locale      Locale                       @default(DE)
+  html        String                       @db.MediumText
+  status      MarketingCampaignStatus      @default(DRAFT)
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  createdAt   DateTime                     @default(now())
+  updatedAt   DateTime                     @updatedAt
+  recipients  MarketingCampaignRecipient[]
+
+  @@index([status, updatedAt], map: "MarketingCampaign_status_updatedAt_idx")
+  @@map("marketingcampaign")
+}
+
+model MarketingCampaignRecipient {
+  id                String                   @id @default(cuid())
+  campaignId        String
+  userId            String?
+  email             String                   @db.VarChar(320)
+  name              String?                  @db.VarChar(160)
+  status            MarketingRecipientStatus @default(PENDING)
+  providerMessageId String?                  @db.VarChar(120)
+  error             String?                  @db.VarChar(500)
+  sentAt            DateTime?
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  campaign          MarketingCampaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade, map: "MarketingCampaignRecipient_campaignId_fkey")
+  user              User?                    @relation(fields: [userId], references: [id], onDelete: SetNull, map: "MarketingCampaignRecipient_userId_fkey")
+
+  @@unique([campaignId, email], map: "MarketingCampaignRecipient_campaignId_email_key")
+  @@index([campaignId, status], map: "MarketingCampaignRecipient_campaignId_status_idx")
+  @@index([userId], map: "MarketingCampaignRecipient_userId_idx")
+  @@map("marketingcampaignrecipient")
 }

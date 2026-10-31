@@ -23,6 +23,7 @@
     "db:validate": "prisma validate",
     "catalog:import": "tsx scripts/import-products.ts",
     "catalog:stats": "tsx scripts/catalog-stats.ts",
+    "marketing:test-customers": "tsx scripts/seed-marketing-test-customers.ts",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed"
@@ -35,6 +36,7 @@
     "@prisma/client": "7.9.1",
     "@radix-ui/react-dialog": "1.1.23",
     "@tiptap/extension-image": "^3.31.2",
+    "@tiptap/extension-text-style": "^3.31.2",
     "@tiptap/react": "^3.31.2",
     "@tiptap/starter-kit": "^3.31.2",
     "bcryptjs": "3.0.3",

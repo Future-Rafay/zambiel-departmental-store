@@ -9,12 +9,13 @@ import {
   useMemo,
   useRef,
   useState,
+  startTransition,
   type ComponentProps,
   type FormEvent,
   type ReactNode,
 } from "react";
 import { LoaderCircle } from "lucide-react";
-import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { unstable_rethrow } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
@@ -68,20 +69,33 @@ export function DeferredUploadForm({
       for (const prepare of tasks.current.values()) {
         await prepare(formData);
       }
-      setPhase("saving");
-      await action(formData);
-      setPhase("idle");
     } catch (caught) {
-      if (isRedirectError(caught)) throw caught;
       setPhase("idle");
       setError(
         caught instanceof Error
           ? caught.message
           : "The changes could not be saved. Try again.",
       );
-    } finally {
       submitting.current = false;
+      return;
     }
+
+    setPhase("saving");
+    startTransition(async () => {
+      try {
+        await action(formData);
+      } catch (caught) {
+        unstable_rethrow(caught);
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "The changes could not be saved. Try again.",
+        );
+      } finally {
+        setPhase("idle");
+        submitting.current = false;
+      }
+    });
   }
 
   return (

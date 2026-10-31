@@ -73,12 +73,12 @@ Statuses:
 ### ZAM-AUD-006 — Missing App Router failure/loading states
 
 - **Severity:** Medium
-- **File/path:** `src/app/[locale]/error.tsx`, `src/app/[locale]/loading.tsx`, `src/app/[locale]/not-found.tsx`, `src/app/global-error.tsx`, `src/app/not-found.tsx`
+- **File/path:** `src/app/loading.tsx`, `src/app/[locale]/error.tsx`, `src/app/[locale]/loading.tsx`, `src/app/[locale]/not-found.tsx`, `src/app/global-error.tsx`, `src/app/not-found.tsx`, `src/components/ui/navigation-progress.tsx`, `src/components/ui/page-loading.tsx`
 - **Problem:** The app had no localized route error, loading, or not-found treatment and no global render-failure fallback.
 - **Why it matters:** Failures and slow routes fell back to framework defaults instead of accessible recovery within the existing design system.
-- **Recommended fix:** Add minimal special files with recovery/navigation actions and no new UI abstraction.
+- **Recommended fix:** Add minimal special files with recovery/navigation actions and one shared loading treatment.
 - **Fix status:** **Fixed — verified**
-- **Verification evidence:** Next.js recognized all files in the successful production build. A browser request to `/de/does-not-exist` returned 404, localized recovery UI, and `noindex`; it had no horizontal overflow at 375px. A forced production render exception was not introduced solely for testing.
+- **Verification evidence:** Next.js recognized all files in successful production builds. A browser request to `/de/does-not-exist` returned 404, localized recovery UI, and `noindex`; it had no horizontal overflow at 375px. Root and localized loading boundaries now share an accessible loading card, while internal link navigation starts a reduced-motion-safe Zambiel green/gold top progress bar immediately. Tests, type-check, lint, and the production build passed. A forced production render exception was not introduced solely for testing.
 
 ### ZAM-AUD-007 — Product media objects return provider 403 responses
 
