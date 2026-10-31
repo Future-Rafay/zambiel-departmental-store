@@ -149,7 +149,6 @@ export type OrderReceipt = {
   checkoutUrl?: string | null;
 };
 export type CheckoutInput = {
-  checkoutKey: string;
   channel: "mobile";
   locale: Locale;
   fulfillmentType: "DELIVERY" | "PICKUP";

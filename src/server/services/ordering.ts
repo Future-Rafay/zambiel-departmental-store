@@ -33,6 +33,8 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
   const existing = await prisma.order.findUnique({ where: { checkoutKeyHash }, include: { payment: true } });
   if (existing) {
     if (existing.userId && existing.userId !== userId) throw new OrderError("ORDER_NOT_FOUND");
+    // A failed checkout's key must not hand back the cancelled order for a new attempt.
+    if (existing.status === "CANCELLED") throw new OrderError("CHECKOUT_KEY_USED");
     const session = existing.status === "PAYMENT_PENDING" && existing.payment?.stripeCheckoutSessionId
       ? await getStripe().checkout.sessions.retrieve(existing.payment.stripeCheckoutSessionId) : null;
     return { ...createdOrderDto(existing, input.checkoutKey), checkoutUrl: session?.status === "open" ? session.url : null };

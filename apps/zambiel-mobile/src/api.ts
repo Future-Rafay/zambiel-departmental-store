@@ -1,4 +1,5 @@
 import Constants from "expo-constants";
+import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 import type {
   Address,
@@ -145,12 +146,20 @@ export const api = {
   checkout: async (value: CheckoutInput) => {
     const keyName = "zambiel.pending-checkout";
     const checkoutKey =
-      (await SecureStore.getItemAsync(keyName)) ?? value.checkoutKey;
+      (await SecureStore.getItemAsync(keyName)) ?? Crypto.randomUUID();
     await SecureStore.setItemAsync(keyName, checkoutKey);
-    const receipt = await request<OrderReceipt>("/api/v1/customer/orders", {
-      method: "POST",
-      body: JSON.stringify({ ...value, checkoutKey }),
-    });
+    let receipt: OrderReceipt;
+    try {
+      receipt = await request<OrderReceipt>("/api/v1/customer/orders", {
+        method: "POST",
+        body: JSON.stringify({ ...value, checkoutKey }),
+      });
+    } catch (error) {
+      // Keep the key only when the outcome is unknown (network or 5xx); a rejected checkout must retry with a new one.
+      if (!(error instanceof TypeError) && !/^HTTP_5/.test((error as Error).message))
+        await SecureStore.deleteItemAsync(keyName);
+      throw error;
+    }
     await SecureStore.deleteItemAsync(keyName);
     return receipt;
   },
