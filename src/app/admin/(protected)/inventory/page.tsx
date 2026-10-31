@@ -5,7 +5,7 @@ import { prisma } from "@/server/db";
 export default async function InventoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; q?: string; all?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; q?: string; all?: string }>;
 }) {
   const filters = await searchParams;
   const variants = await prisma.productVariant.findMany({
@@ -42,7 +42,7 @@ export default async function InventoryPage({
       title="Inventory"
       description="Variant stock, low-stock visibility, and audited manual adjustments."
     >
-      <Notice saved={filters.saved} />
+      <Notice saved={filters.saved} error={filters.error} />
       <form className="mb-5 flex gap-3">
         <input
           name="q"
@@ -93,6 +93,7 @@ export default async function InventoryPage({
                 <div className="mt-5 grid gap-5 border-t pt-5 lg:grid-cols-2">
                   <form action={adjustInventory} className="space-y-3">
                     <input type="hidden" name="variantId" value={variant.id} />
+                    <input type="hidden" name="adjustmentKey" value={crypto.randomUUID()} />
                     <Field
                       label="Quantity change (use negative to remove)"
                       name="quantityChange"

@@ -67,6 +67,7 @@ export function Notice({
     CANCEL_PARTIALLY_FAILED: "Some scheduled emails could not be cancelled. Their errors are listed below; try again.",
     RECIPIENT_NOT_EXCLUDABLE: "Only failed recipients can be excluded.",
     STRIPE_PAYMENT_IN_PROGRESS: "The customer already completed Stripe Checkout. Wait for the payment to confirm, then refund and cancel.",
+    INVENTORY_BELOW_RESERVED: "Stock cannot go below zero or below the quantity reserved by open checkouts.",
   };
   const deletedLabel =
     deleted === "product" || deleted === "variant" || deleted === "category"
