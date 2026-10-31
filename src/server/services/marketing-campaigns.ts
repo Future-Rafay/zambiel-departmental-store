@@ -92,7 +92,7 @@ export async function dispatchCampaign(input: { campaignId: string; userIds: str
   return deliverPendingRecipients(input.campaignId, deliver);
 }
 
-// shortcut: runs inside the admin request; each batch of 100 is 1 Resend call plus 100 row updates (several seconds against a remote DB); past a few thousand recipients it can hit the Vercel function timeout and the owner must press Resume. Move to a background job (cron/queue) when lists grow that large.
+// shortcut: runs inside the admin request; each batch of 100 is a DNS check per new domain, 1 Resend call and 1 recording UPDATE; past a few thousand recipients it can hit the Vercel function timeout and the owner must press Resume. Move to a background job (cron/queue) when lists grow that large.
 // Sends every PENDING recipient in batches of 100; each batch leaves PENDING, so a crash is resumable and a resend of the same batch reuses its idempotency key.
 export async function deliverPendingRecipients(campaignId: string, deliver: DeliverBatch = sendEmailBatch) {
   const campaign = await prisma.marketingCampaign.findUniqueOrThrow({ where: { id: campaignId }, select: { subject: true, html: true, locale: true, scheduledAt: true } });
