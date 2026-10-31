@@ -109,10 +109,15 @@ export async function deliverPendingRecipients(campaignId: string, deliver: Deli
     if (!chunk.length) break;
     const removed = chunk.filter((recipient) => !recipient.userId).map((recipient) => recipient.id);
     if (removed.length) await prisma.marketingCampaignRecipient.updateMany({ where: { id: { in: removed } }, data: { status: "FAILED", error: "RECIPIENT_REMOVED" } });
-    const checks = await Promise.all(chunk.map((recipient) => (recipient.userId ? deliverable(recipient.email) : false)));
-    const undeliverable = chunk.filter((recipient, index) => recipient.userId && !checks[index]).map((recipient) => recipient.id);
+    // Re-check the audience at send time: retries and resumes can run days after the recipient list was saved.
+    const eligible = new Set((await prisma.user.findMany({ where: { ...audienceWhere, id: { in: chunk.flatMap((recipient) => (recipient.userId ? [recipient.userId] : [])) } }, select: { id: true } })).map((user) => user.id));
+    const optedOut = chunk.filter((recipient) => recipient.userId && !eligible.has(recipient.userId)).map((recipient) => recipient.id);
+    if (optedOut.length) await prisma.marketingCampaignRecipient.updateMany({ where: { id: { in: optedOut } }, data: { status: "CANCELLED", error: "NOT_IN_AUDIENCE" } });
+    const active = chunk.filter((recipient): recipient is typeof recipient & { userId: string } => Boolean(recipient.userId && eligible.has(recipient.userId)));
+    const checks = await Promise.all(active.map((recipient) => deliverable(recipient.email)));
+    const undeliverable = active.filter((_, index) => !checks[index]).map((recipient) => recipient.id);
     if (undeliverable.length) await prisma.marketingCampaignRecipient.updateMany({ where: { id: { in: undeliverable } }, data: { status: "FAILED", error: "UNDELIVERABLE_ADDRESS" } });
-    const sendable = chunk.filter((recipient, index): recipient is typeof recipient & { userId: string } => Boolean(recipient.userId) && checks[index]);
+    const sendable = active.filter((_, index) => checks[index]);
     if (!sendable.length) continue;
     const ids = sendable.map((recipient) => recipient.id);
     const key = `marketing-${campaignId}-${createHash("sha256").update(`${sendAt?.toISOString() ?? "now"}|${ids.join(",")}`).digest("hex").slice(0, 32)}`;
@@ -160,20 +165,26 @@ export async function cancelScheduledCampaign(campaignId: string, actorId: strin
   const campaign = await prisma.marketingCampaign.findUniqueOrThrow({ where: { id: campaignId }, select: { status: true, scheduledAt: true } });
   if (campaign.status !== "SCHEDULED" || !campaign.scheduledAt || campaign.scheduledAt.getTime() <= Date.now() + 60_000) throw new Error("CAMPAIGN_NOT_CANCELLABLE");
   await prisma.marketingCampaignRecipient.updateMany({ where: { campaignId, status: { in: ["PENDING", "FAILED"] } }, data: { status: "CANCELLED" } });
-  const scheduled = await prisma.marketingCampaignRecipient.findMany({ where: { campaignId, status: "SCHEDULED" }, select: { id: true, providerMessageId: true } });
+  const { scheduled, failed } = await cancelScheduledRecipients({ campaignId }, null, cancel);
+  if (!failed) await prisma.marketingCampaign.update({ where: { id: campaignId }, data: { status: "CANCELLED" } });
+  await prisma.auditLog.create({ data: { actorUserId: actorId, action: "MARKETING_CAMPAIGN_CANCELLED", entityType: "MarketingCampaign", entityId: campaignId, metadata: { cancelled: scheduled - failed, failed } } });
+  return { failed };
+}
+
+// Cancels SCHEDULED emails at Resend one by one; a failed cancel keeps the row SCHEDULED with the error so it can be retried.
+async function cancelScheduledRecipients(where: Prisma.MarketingCampaignRecipientWhereInput, reason: string | null, cancel: (id: string) => Promise<void>) {
+  const rows = await prisma.marketingCampaignRecipient.findMany({ where: { ...where, status: "SCHEDULED" }, select: { id: true, providerMessageId: true } });
   let failed = 0;
-  for (const recipient of scheduled) {
+  for (const recipient of rows) {
     try {
       if (recipient.providerMessageId) await cancel(recipient.providerMessageId);
-      await prisma.marketingCampaignRecipient.update({ where: { id: recipient.id }, data: { status: "CANCELLED", error: null } });
+      await prisma.marketingCampaignRecipient.update({ where: { id: recipient.id }, data: { status: "CANCELLED", error: reason } });
     } catch (error) {
       failed += 1;
       await prisma.marketingCampaignRecipient.update({ where: { id: recipient.id }, data: { error: `CANCEL_FAILED: ${error instanceof Error ? error.message : "unknown"}`.slice(0, 500) } });
     }
   }
-  if (!failed) await prisma.marketingCampaign.update({ where: { id: campaignId }, data: { status: "CANCELLED" } });
-  await prisma.auditLog.create({ data: { actorUserId: actorId, action: "MARKETING_CAMPAIGN_CANCELLED", entityType: "MarketingCampaign", entityId: campaignId, metadata: { cancelled: scheduled.length - failed, failed } } });
-  return { failed };
+  return { scheduled: rows.length, failed };
 }
 
 export async function sendCampaignTest(campaignId: string, actor: { id: string; email: string; name: string | null }, deliver: typeof sendEmail = sendEmail) {
@@ -182,9 +193,11 @@ export async function sendCampaignTest(campaignId: string, actor: { id: string; 
   await deliver({ ...message, subject: `[Test] ${message.subject}` });
 }
 
-export async function unsubscribeMarketing(token: string) {
+export async function unsubscribeMarketing(token: string, cancel: (id: string) => Promise<void> = cancelScheduledEmail) {
   const userId = verifyMarketingUnsubscribeToken(token, getRateLimitSecret());
   if (!userId) return false;
   await prisma.user.updateMany({ where: { id: userId, marketingOptOutAt: null }, data: { marketingOptOutAt: new Date() } });
+  // Scheduled emails were handed to Resend up to 30 days ahead; withdraw them so the opt-out takes effect now.
+  await cancelScheduledRecipients({ userId }, "OPTED_OUT", cancel);
   return true;
 }

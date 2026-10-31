@@ -46,9 +46,11 @@ test("bulk campaign sends one email per eligible customer in batches, then retri
     await assert.rejects(() => marketing.excludeCampaignRecipient({ campaignId, recipientId: sentRow.id, actorId: actor.id }), /RECIPIENT_NOT_EXCLUDABLE/);
     const failedRows = await prisma.marketingCampaignRecipient.findMany({ where: { campaignId, status: "FAILED" }, orderBy: { id: "asc" }, select: { id: true, email: true } });
     await marketing.excludeCampaignRecipient({ campaignId, recipientId: failedRows[0].id, actorId: actor.id });
+    await prisma.user.update({ where: { email: failedRows[1].email }, data: { marketingOptOutAt: new Date() } });
     const retried = await marketing.retryFailedRecipients(campaignId, actor.id, deliver);
-    assert.deepEqual(retried, { SENT: 148, CANCELLED: 1 });
+    assert.deepEqual(retried, { SENT: 147, CANCELLED: 2 });
     assert.ok(!batches[2].to.includes(failedRows[0].email), "an excluded recipient is not retried");
+    assert.ok(!batches[2].to.includes(failedRows[1].email), "a recipient who opted out after dispatch is not retried");
 
     const draftId = await marketing.saveCampaignDraft({ name: `Draft ${run}`, subject: "Draft", locale: "EN", html: "<p>Draft</p>" }, actor.id);
     await marketing.deleteCampaignDraft(draftId, actor.id);
@@ -59,13 +61,16 @@ test("bulk campaign sends one email per eligible customer in batches, then retri
     const sendAt = new Date(Date.now() + 2 * 86_400_000);
     assert.deepEqual(await marketing.dispatchCampaign({ campaignId: scheduledId, userIds: users.slice(1, 11).map((user) => user.id), sendAt, actorId: actor.id }, deliver), { SCHEDULED: 10 });
     assert.ok(batches.at(-1)!.scheduledAt.every((value) => value === sendAt.toISOString()));
-    const cancelled: string[] = [];
-    assert.deepEqual(await marketing.cancelScheduledCampaign(scheduledId, actor.id, async (id) => { cancelled.push(id); }), { failed: 0 });
-    assert.equal(cancelled.length, 10);
-    assert.equal((await prisma.marketingCampaign.findUniqueOrThrow({ where: { id: scheduledId } })).status, "CANCELLED");
-
     const { marketingUnsubscribeToken } = await import("@/server/email/marketing");
     const { getRateLimitSecret } = await import("@/config/env");
+    const withdrawn: string[] = [];
+    assert.equal(await marketing.unsubscribeMarketing(marketingUnsubscribeToken(users[1].id, getRateLimitSecret()), async (id) => { withdrawn.push(id); }), true);
+    assert.equal(withdrawn.length, 1, "opting out withdraws that customer's scheduled email");
+    const cancelled: string[] = [];
+    assert.deepEqual(await marketing.cancelScheduledCampaign(scheduledId, actor.id, async (id) => { cancelled.push(id); }), { failed: 0 });
+    assert.equal(cancelled.length, 9);
+    assert.equal((await prisma.marketingCampaign.findUniqueOrThrow({ where: { id: scheduledId } })).status, "CANCELLED");
+
     assert.equal(await marketing.unsubscribeMarketing(marketingUnsubscribeToken(users[1].id, getRateLimitSecret())), true);
     assert.equal(await marketing.unsubscribeMarketing(`${users[2].id}.forged`), false);
     const audience = (await marketing.listMarketingAudience({ sort: "asc", take: 1000 })).customers.map((customer) => customer.id);
