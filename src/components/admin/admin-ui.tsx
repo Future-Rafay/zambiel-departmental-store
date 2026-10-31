@@ -65,6 +65,7 @@ export function Notice({
     EMAIL_NOT_CONFIGURED: "Email sending is not configured. Add a valid Resend API key.",
     TEST_SEND_FAILED: "The test email could not be sent. Check the Resend configuration and sender domain.",
     CANCEL_PARTIALLY_FAILED: "Some scheduled emails could not be cancelled. Their errors are listed below; try again.",
+    RECIPIENT_NOT_EXCLUDABLE: "Only failed recipients can be excluded.",
   };
   const deletedLabel =
     deleted === "product" || deleted === "variant" || deleted === "category"
@@ -92,7 +93,9 @@ export function Notice({
           ? catalogErrors[error] ?? error.replaceAll("_", " ")
           : warning
             ? warning === "CATALOG_AUDIT_FAILED" ? "Changes saved, but the audit entry failed. Contact an administrator; do not submit again." : "Invitation saved, but the email could not be sent. Check the Resend configuration and invite again."
-            : deleted
+            : deleted === "campaign"
+              ? "Draft campaign deleted."
+              : deleted
               ? `${deletedLabel[0].toUpperCase()}${deletedLabel.slice(1)} deleted from the catalog.`
               : "Changes successfully saved."}
       </span>

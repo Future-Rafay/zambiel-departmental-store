@@ -92,7 +92,7 @@ export function verifyMarketingUnsubscribeToken(token: string, secret: string) {
   return expected.length === actual.length && timingSafeEqual(expected, actual) ? userId : null;
 }
 
-export const marketingStarterTemplateKeys = ["blank", "announcement", "promotion"] as const;
+export const marketingStarterTemplateKeys = ["blank", "announcement", "promotion", "newArrivals", "seasonalSale", "backInStock", "newsletter", "thankYou"] as const;
 export type MarketingStarterTemplate = (typeof marketingStarterTemplateKeys)[number];
 
 export function marketingStarterTemplate(key: MarketingStarterTemplate, shopUrl: string) {
@@ -101,5 +101,10 @@ export function marketingStarterTemplate(key: MarketingStarterTemplate, shopUrl:
     blank: { label: "Blank", subject: "", html: "<p>Dear {{name}},</p><p></p>" },
     announcement: { label: "Announcement", subject: `News from ${storeConfig.identity.name}`, html: `<h1>Something new at ${name}</h1><p>Dear {{name}},</p><p>Write your announcement here.</p><p>Kind regards,<br>Your ${name} team</p>` },
     promotion: { label: "Promotion", subject: "A special offer for you, {{first_name}}", html: `<h1>This week only</h1><p>Dear {{name}},</p><p>Describe the offer, its conditions, and when it ends.</p><h2>Featured products</h2><ul><li>Product one</li><li>Product two</li></ul><p><a href="${escapeHtml(shopUrl)}">Shop now</a></p>` },
+    newArrivals: { label: "New arrivals", subject: `Just arrived at ${storeConfig.identity.name}`, html: `<h1>New in store</h1><p>Dear {{name}},</p><p>Introduce the new products and what makes them worth a look.</p><h2>Now available</h2><ul><li>New product one</li><li>New product two</li><li>New product three</li></ul><p><a href="${escapeHtml(shopUrl)}">Discover the new arrivals</a></p><p>Kind regards,<br>Your ${name} team</p>` },
+    seasonalSale: { label: "Seasonal sale", subject: "Our seasonal sale has started, {{first_name}}", html: `<h1>Seasonal sale</h1><p>Dear {{name}},</p><p>Describe the sale: which products are included, the discount, and the exact start and end dates.</p><h2>Highlights</h2><ul><li>Highlight one</li><li>Highlight two</li></ul><p><a href="${escapeHtml(shopUrl)}">Shop the sale</a></p><p>Conditions: add the terms of the offer here.</p>` },
+    backInStock: { label: "Back in stock", subject: `Back in stock at ${storeConfig.identity.name}`, html: `<h1>It's back</h1><p>Dear {{name}},</p><p>Popular products are available again. Name them here and mention if quantities are limited.</p><ul><li>Product one</li><li>Product two</li></ul><p><a href="${escapeHtml(shopUrl)}">Order now</a></p>` },
+    newsletter: { label: "Newsletter", subject: `${storeConfig.identity.name} news for you, {{first_name}}`, html: `<h1>${name} newsletter</h1><p>Dear {{name}},</p><p>A short introduction to this edition.</p><h2>What's new</h2><p>Share store news, new products, or useful tips.</p><h2>Recommended for you</h2><ul><li>Recommendation one</li><li>Recommendation two</li></ul><p><a href="${escapeHtml(shopUrl)}">Visit the shop</a></p><p>Kind regards,<br>Your ${name} team</p>` },
+    thankYou: { label: "Thank you", subject: "Thank you, {{first_name}}", html: `<h1>Thank you</h1><p>Dear {{name}},</p><p>Thank your customers for their trust and support. Mention anything you would like them to know next.</p><p><a href="${escapeHtml(shopUrl)}">Visit ${name}</a></p><p>Warm regards,<br>Your ${name} team</p>` },
   }[key];
 }

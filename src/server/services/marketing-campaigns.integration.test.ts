@@ -42,9 +42,18 @@ test("bulk campaign sends one email per eligible customer in batches, then retri
     assert.ok(sentHtml.some((html) => html.includes("Dear Customer 1<")) && sentHtml.some((html) => html.includes("Dear customer<")));
     await assert.rejects(() => marketing.dispatchCampaign({ campaignId, userIds: users.map((user) => user.id), sendAt: null, actorId: actor.id }, deliver), /CAMPAIGN_NOT_DRAFT/);
 
+    const sentRow = await prisma.marketingCampaignRecipient.findFirstOrThrow({ where: { campaignId, status: "SENT" }, select: { id: true } });
+    await assert.rejects(() => marketing.excludeCampaignRecipient({ campaignId, recipientId: sentRow.id, actorId: actor.id }), /RECIPIENT_NOT_EXCLUDABLE/);
+    const failedRows = await prisma.marketingCampaignRecipient.findMany({ where: { campaignId, status: "FAILED" }, orderBy: { id: "asc" }, select: { id: true, email: true } });
+    await marketing.excludeCampaignRecipient({ campaignId, recipientId: failedRows[0].id, actorId: actor.id });
     const retried = await marketing.retryFailedRecipients(campaignId, actor.id, deliver);
-    assert.deepEqual(retried, { SENT: 149 });
-    assert.equal(batches[2].key, batches[1].key, "retrying the same failed batch reuses its idempotency key");
+    assert.deepEqual(retried, { SENT: 148, CANCELLED: 1 });
+    assert.ok(!batches[2].to.includes(failedRows[0].email), "an excluded recipient is not retried");
+
+    const draftId = await marketing.saveCampaignDraft({ name: `Draft ${run}`, subject: "Draft", locale: "EN", html: "<p>Draft</p>" }, actor.id);
+    await marketing.deleteCampaignDraft(draftId, actor.id);
+    assert.equal(await prisma.marketingCampaign.count({ where: { id: draftId } }), 0);
+    await assert.rejects(() => marketing.deleteCampaignDraft(campaignId, actor.id), /CAMPAIGN_NOT_DRAFT/, "sent campaigns keep their history");
 
     const scheduledId = await marketing.saveCampaignDraft({ name: `Scheduled ${run}`, subject: "Later", locale: "DE", html: "<p>Hallo {{name}}</p>" }, actor.id);
     const sendAt = new Date(Date.now() + 2 * 86_400_000);

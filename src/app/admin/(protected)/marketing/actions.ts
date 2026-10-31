@@ -8,10 +8,10 @@ import { zurichDateToUtc } from "@/lib/zurich-time";
 import { requireRole } from "@/server/auth/current-user";
 import { EmailNotConfiguredError } from "@/server/email/client";
 import { sanitizeMarketingHtml } from "@/server/email/marketing";
-import { cancelScheduledCampaign, dispatchCampaign, duplicateCampaign, retryFailedRecipients, saveCampaignDraft, sendCampaignTest } from "@/server/services/marketing-campaigns";
+import { cancelScheduledCampaign, deleteCampaignDraft, dispatchCampaign, duplicateCampaign, excludeCampaignRecipient, retryFailedRecipients, saveCampaignDraft, sendCampaignTest } from "@/server/services/marketing-campaigns";
 import { getProductUploadPublicPrefix } from "@/server/storage/s3";
 
-const knownErrors = new Set(["CAMPAIGN_NOT_DRAFT", "NO_RECIPIENTS", "SCHEDULE_OUT_OF_RANGE", "CAMPAIGN_NOT_RETRYABLE", "CAMPAIGN_NOT_CANCELLABLE", "INVALID_INPUT"]);
+const knownErrors = new Set(["CAMPAIGN_NOT_DRAFT", "NO_RECIPIENTS", "SCHEDULE_OUT_OF_RANGE", "CAMPAIGN_NOT_RETRYABLE", "CAMPAIGN_NOT_CANCELLABLE", "RECIPIENT_NOT_EXCLUDABLE", "INVALID_INPUT"]);
 const errorCode = (error: unknown) => error instanceof EmailNotConfiguredError ? "EMAIL_NOT_CONFIGURED" : error instanceof z.ZodError ? "INVALID_INPUT" : error instanceof Error && knownErrors.has(error.message) ? error.message : null;
 
 const campaignInput = z.object({
@@ -47,6 +47,36 @@ export async function duplicateMarketingCampaign(formData: FormData) {
   const id = await duplicateCampaign(z.string().min(1).parse(formData.get("id")), actor.id);
   revalidatePath("/admin/marketing");
   redirect(`/admin/marketing/${id}?saved=1`);
+}
+
+export async function deleteMarketingCampaign(formData: FormData) {
+  const actor = await requireRole("OWNER");
+  const id = z.string().min(1).parse(formData.get("id"));
+  try {
+    await deleteCampaignDraft(id, actor.id);
+  } catch (error) {
+    const code = errorCode(error);
+    if (!code) throw error;
+    redirect(`/admin/marketing/${encodeURIComponent(id)}?error=${code}`);
+  }
+  revalidatePath("/admin/marketing");
+  redirect("/admin/marketing?deleted=campaign");
+}
+
+export async function excludeMarketingRecipient(formData: FormData) {
+  const actor = await requireRole("OWNER");
+  const id = z.string().min(1).parse(formData.get("id"));
+  const recipientId = z.string().min(1).parse(formData.get("recipientId"));
+  let result = "done=excluded";
+  try {
+    await excludeCampaignRecipient({ campaignId: id, recipientId, actorId: actor.id });
+  } catch (error) {
+    const code = errorCode(error);
+    if (!code) throw error;
+    result = `error=${code}`;
+  }
+  revalidatePath(`/admin/marketing/${id}`);
+  redirect(`/admin/marketing/${id}?${result}`);
 }
 
 export async function sendMarketingTest(formData: FormData) {

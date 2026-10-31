@@ -54,6 +54,20 @@ export async function saveCampaignDraft(input: { id?: string; name: string; subj
   return input.id;
 }
 
+// Drafts have no recipients or delivery history; sent campaigns are kept as records.
+export async function deleteCampaignDraft(id: string, actorId: string) {
+  const deleted = await prisma.marketingCampaign.deleteMany({ where: { id, status: "DRAFT" } });
+  if (!deleted.count) throw new Error("CAMPAIGN_NOT_DRAFT");
+  await prisma.auditLog.create({ data: { actorUserId: actorId, action: "MARKETING_CAMPAIGN_DELETED", entityType: "MarketingCampaign", entityId: id } });
+}
+
+// Takes a failed address out of the campaign so "Retry failed" stops sending it.
+export async function excludeCampaignRecipient(input: { campaignId: string; recipientId: string; actorId: string }) {
+  const excluded = await prisma.marketingCampaignRecipient.updateMany({ where: { id: input.recipientId, campaignId: input.campaignId, status: "FAILED" }, data: { status: "CANCELLED", error: "EXCLUDED_BY_OWNER" } });
+  if (!excluded.count) throw new Error("RECIPIENT_NOT_EXCLUDABLE");
+  await prisma.auditLog.create({ data: { actorUserId: input.actorId, action: "MARKETING_RECIPIENT_EXCLUDED", entityType: "MarketingCampaign", entityId: input.campaignId, metadata: { recipientId: input.recipientId } } });
+}
+
 export async function duplicateCampaign(id: string, actorId: string) {
   const source = await prisma.marketingCampaign.findUniqueOrThrow({ where: { id }, select: { name: true, subject: true, locale: true, html: true } });
   return saveCampaignDraft({ ...source, name: `${source.name} (copy)`.slice(0, 160) }, actorId);

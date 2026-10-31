@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { duplicateMarketingCampaign, retryMarketingCampaign, sendMarketingTest } from "@/app/admin/(protected)/marketing/actions";
 import { AdminPage, Notice } from "@/components/admin/admin-ui";
-import { CancelCampaignDialog } from "@/components/admin/danger-actions";
+import { CancelCampaignDialog, DeleteCampaignDialog, ExcludeRecipientDialog } from "@/components/admin/danger-actions";
 import { MarketingCampaignForm } from "@/components/admin/marketing-campaign-form";
 import { MarketingSendForm } from "@/components/admin/marketing-send-form";
 import { CampaignStatusBadge } from "@/components/admin/marketing-status";
@@ -15,7 +15,7 @@ import { prisma } from "@/server/db";
 import { listMarketingAudience, MARKETING_MAX_SCHEDULE_DAYS, recipientCounts, renderCampaignEmail } from "@/server/services/marketing-campaigns";
 
 const limits = [100, 200, 500] as const;
-const doneMessages: Record<string, string> = { sent: "Campaign sent. Resend accepted the emails listed below.", scheduled: "Campaign scheduled. Resend will send it at the chosen time.", retried: "Failed emails were sent again.", cancelled: "Scheduled emails were cancelled." };
+const doneMessages: Record<string, string> = { sent: "Campaign sent. Resend accepted the emails listed below.", scheduled: "Campaign scheduled. Resend will send it at the chosen time.", retried: "Failed emails were sent again.", cancelled: "Scheduled emails were cancelled.", excluded: "Recipient excluded. Retry will skip this address." };
 
 // Request-time clock reads live outside components to keep render pure.
 function scheduleBounds(now = Date.now()) {
@@ -56,6 +56,7 @@ export default async function MarketingCampaignPage({ params, searchParams }: { 
         </Card>
 
         {draft ? <RecipientPicker campaignId={campaign.id} sort={query.sort === "desc" ? "desc" : "asc"} top={limits.find((limit) => String(limit) === query.top) ?? 100} /> : <DeliverySummary campaign={campaign} />}
+        {draft ? <div className="border-t border-destructive/30 pt-5"><h2 className="mb-2 text-sm font-bold text-destructive">Danger zone</h2><DeleteCampaignDialog id={campaign.id} name={campaign.name} /></div> : null}
       </div>
     </AdminPage>
   );
@@ -96,8 +97,8 @@ async function DeliverySummary({ campaign }: { campaign: { id: string; status: s
       {failed || stale ? <form action={retryMarketingCampaign} className="mb-5"><input type="hidden" name="id" value={campaign.id} /><Button type="submit" size="compact">{stale ? "Resume sending" : `Retry ${failed} failed`}</Button></form> : null}
       <div className="overflow-x-auto rounded-xl border bg-white">
         <table className="w-full min-w-[560px] text-left text-sm">
-          <thead className="border-b bg-[#F6F6F7] text-xs uppercase text-muted"><tr><th className="p-3">Recipient</th><th className="p-3">Status</th><th className="p-3">Error</th></tr></thead>
-          <tbody className="divide-y">{recipients.map((recipient) => <tr key={recipient.id}><td className="p-3"><span className="font-semibold">{recipient.name ?? "—"}</span><br />{recipient.email}</td><td className="p-3 font-bold">{recipient.status}</td><td className="p-3 text-xs text-destructive">{recipient.error ?? ""}</td></tr>)}</tbody>
+          <thead className="border-b bg-[#F6F6F7] text-xs uppercase text-muted"><tr><th className="p-3">Recipient</th><th className="p-3">Status</th><th className="p-3">Error</th><th className="p-3 text-right"><span className="sr-only">Actions</span></th></tr></thead>
+          <tbody className="divide-y">{recipients.map((recipient) => <tr key={recipient.id}><td className="p-3"><span className="font-semibold">{recipient.name ?? "—"}</span><br />{recipient.email}</td><td className="p-3 font-bold">{recipient.status}</td><td className="p-3 text-xs text-destructive">{recipient.error ?? ""}</td><td className="p-3 text-right">{recipient.status === "FAILED" && !stale ? <ExcludeRecipientDialog id={campaign.id} recipientId={recipient.id} email={recipient.email} /> : null}</td></tr>)}</tbody>
         </table>
       </div>
       {cancellable ? <div className="mt-8 border-t border-destructive/30 pt-5"><h3 className="mb-2 text-sm font-bold text-destructive">Danger zone</h3><CancelCampaignDialog id={campaign.id} recipients={counts.SCHEDULED ?? 0} /></div> : null}

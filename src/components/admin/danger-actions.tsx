@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 import { adminAction } from "@/app/admin/(protected)/actions";
-import { cancelMarketingCampaign } from "@/app/admin/(protected)/marketing/actions";
+import { cancelMarketingCampaign, deleteMarketingCampaign, excludeMarketingRecipient } from "@/app/admin/(protected)/marketing/actions";
 import { deleteRetailCategory, deleteRetailProduct, deleteRetailVariant } from "@/app/admin/(protected)/retail-actions";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
@@ -36,6 +36,14 @@ export function DeleteCategoryDialog({ id }: { id: string }) {
 
 export function DeleteVariantDialog({ id, productId }: { id: string; productId: string }) {
   return <Dialog><DialogTrigger asChild><Button variant="destructive">Delete variant</Button></DialogTrigger><DialogContent><DialogTitle>Delete variant</DialogTitle><DialogDescription>The variant leaves catalog and admin views while order snapshots and inventory activity remain intact.</DialogDescription><form action={deleteRetailVariant} className="mt-6"><input type="hidden" name="id" value={id} /><input type="hidden" name="productId" value={productId} /><div className="flex flex-wrap justify-end gap-3"><DialogClose asChild><Button variant="outline">Keep variant</Button></DialogClose><Button type="submit" variant="destructive">Confirm deletion</Button></div></form></DialogContent></Dialog>;
+}
+
+export function DeleteCampaignDialog({ id, name }: { id: string; name: string }) {
+  return <Dialog><DialogTrigger asChild><Button variant="destructive">Delete draft</Button></DialogTrigger><DialogContent><DialogTitle>Delete draft campaign</DialogTitle><DialogDescription>“{name}” and its email content will be permanently deleted. Nothing has been sent from this draft.</DialogDescription><form action={deleteMarketingCampaign} className="mt-6"><input type="hidden" name="id" value={id} /><div className="flex flex-wrap justify-end gap-3"><DialogClose asChild><Button variant="outline">Keep draft</Button></DialogClose><Button type="submit" variant="destructive">Confirm deletion</Button></div></form></DialogContent></Dialog>;
+}
+
+export function ExcludeRecipientDialog({ id, recipientId, email }: { id: string; recipientId: string; email: string }) {
+  return <Dialog><DialogTrigger asChild><Button variant="destructive" size="compact" aria-label={`Exclude ${email}`}>Exclude</Button></DialogTrigger><DialogContent><DialogTitle>Exclude recipient</DialogTitle><DialogDescription>{email} will be removed from this campaign and skipped by “Retry failed”. The customer account is not changed.</DialogDescription><form action={excludeMarketingRecipient} className="mt-6"><input type="hidden" name="id" value={id} /><input type="hidden" name="recipientId" value={recipientId} /><div className="flex flex-wrap justify-end gap-3"><DialogClose asChild><Button variant="outline">Keep recipient</Button></DialogClose><Button type="submit" variant="destructive">Confirm exclusion</Button></div></form></DialogContent></Dialog>;
 }
 
 export function CancelCampaignDialog({ id, recipients }: { id: string; recipients: number }) {
