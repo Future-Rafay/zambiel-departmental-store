@@ -53,7 +53,7 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
   process.env.DATABASE_CONNECTION_LIMIT = "1";
   process.env.DATABASE_SSL ??= "false";
 
-  const [{ prisma }, { confirmCashPayment, getCustomerOrders, processStripeEvent }, { confirmInvoicePayment, getOrderHistory, setCustomerB2bAccess }] = await Promise.all([
+  const [{ prisma }, { calculateQuote, confirmCashPayment, getCustomerOrders, processStripeEvent }, { confirmInvoicePayment, getOrderHistory, setCustomerB2bAccess }] = await Promise.all([
     import("@/server/db"),
     import("@/server/services/ordering"),
     import("@/server/services/admin"),
@@ -64,6 +64,8 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
   let actorId: string | undefined;
   let customerId: string | undefined;
   let otherOwnerId: string | undefined;
+  let categoryId: string | undefined;
+  let promoId: string | undefined;
 
   const createStripeOrder = async (sessionId: string) => {
     const order = await prisma.order.create({
@@ -141,6 +143,28 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
     assert.equal(failed.statusEvents.at(-1)?.reason, "STRIPE_PAYMENT_FAILED");
     assert.equal(await prisma.notificationDelivery.count({ where: { orderId: failedOrder.id, channel: "PUSH", kind: "CANCELLED" } }), 1);
 
+    // An expired checkout releases only the reserved (tracked) stock, and its promo use stops counting.
+    const category = await prisma.category.create({ data: { slug: `webhook-${suffix}`, nameDe: "Test", nameEn: "Test" } });
+    categoryId = category.id;
+    const product = await prisma.product.create({ data: { categoryId: category.id, slug: `webhook-${suffix}`, nameDe: "Test", nameEn: "Test", status: "ACTIVE" } });
+    const tracked = await prisma.productVariant.create({ data: { productId: product.id, nameDe: "T", nameEn: "T", priceRappen: 500, stockOnHand: 5, stockReserved: 2 } });
+    const untracked = await prisma.productVariant.create({ data: { productId: product.id, nameDe: "U", nameEn: "U", priceRappen: 500, trackInventory: false } });
+    const promo = await prisma.promoCode.create({ data: { code: `ONCE${suffix.slice(0, 8)}`.toUpperCase(), type: "FIXED", value: 100, perCustomerLimit: 1 } });
+    promoId = promo.id;
+    const expiringOrder = await createStripeOrder(`cs_expired_${suffix}`);
+    await prisma.orderItem.createMany({ data: [tracked, untracked].map((variant) => ({ orderId: expiringOrder.id, productId: product.id, variantId: variant.id, productNameDeSnapshot: "Test", productNameEnSnapshot: "Test", unitPriceRappen: 500, quantity: 2, lineSubtotalRappen: 1000 })) });
+    await prisma.inventoryMovement.create({ data: { variantId: tracked.id, orderId: expiringOrder.id, type: "ORDER_RESERVED", quantityChange: -2, idempotencyKey: `order:${expiringOrder.id}:${tracked.id}:reserve` } });
+    await prisma.promoRedemption.create({ data: { promoCodeId: promo.id, orderId: expiringOrder.id, customerEmail: `webhook-${suffix}@example.com`, discountRappen: 100 } });
+    const promoQuote = { fulfillmentType: "PICKUP" as const, items: [{ variantId: tracked.id, quantity: 1 }], promoCode: promo.code, customerEmail: `webhook-${suffix}@example.com` };
+    await assert.rejects(() => calculateQuote(promoQuote), /PROMO_LIMIT_REACHED/);
+    const expiredId = `evt_expired_${suffix}`;
+    eventIds.push(expiredId);
+    await processStripeEvent(checkoutEvent(expiredId, "checkout.session.expired", `cs_expired_${suffix}`, expiringOrder.id, "unpaid"));
+    assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: expiringOrder.id } })).status, "CANCELLED");
+    assert.equal((await prisma.productVariant.findUniqueOrThrow({ where: { id: tracked.id } })).stockReserved, 0);
+    assert.equal((await prisma.productVariant.findUniqueOrThrow({ where: { id: untracked.id } })).stockReserved, 0);
+    assert.equal((await calculateQuote(promoQuote)).discountRappen, 100);
+
     const actor = await prisma.user.create({ data: { email: `cash-${suffix}@example.com`, role: "OWNER" } });
     actorId = actor.id;
     const cashOrder = await prisma.order.create({
@@ -194,6 +218,12 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
     if (actorId) await prisma.auditLog.deleteMany({ where: { entityType: "User", entityId: actorId } });
     await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
     await prisma.stripeWebhookEvent.deleteMany({ where: { eventId: { in: eventIds } } });
+    if (categoryId) {
+      await prisma.inventoryMovement.deleteMany({ where: { variant: { product: { categoryId } } } });
+      await prisma.product.deleteMany({ where: { categoryId } });
+      await prisma.category.delete({ where: { id: categoryId } });
+    }
+    if (promoId) await prisma.promoCode.delete({ where: { id: promoId } });
     if (actorId) await prisma.user.deleteMany({ where: { id: actorId } });
     if (otherOwnerId) await prisma.user.deleteMany({ where: { id: otherOwnerId } });
     if (customerId) await prisma.user.deleteMany({ where: { id: customerId } });

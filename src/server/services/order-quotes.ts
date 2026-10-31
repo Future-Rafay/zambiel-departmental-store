@@ -12,9 +12,11 @@ async function findPromo(db: Db, code?: string, email?: string, userId?: string)
   const now = new Date();
   const promo = await db.promoCode.findUnique({ where: { code: code.trim().toUpperCase() } });
   if (!promo || !promo.active || (promo.startsAt && promo.startsAt > now) || (promo.endsAt && promo.endsAt < now)) throw new OrderError("PROMO_INVALID");
+  // Failed, expired, and cancelled orders keep their redemption row for history but do not use up the code.
+  const counted = { promoCodeId: promo.id, order: { status: { not: "CANCELLED" as const } } };
   const [totalUses, customerUses] = await Promise.all([
-    promo.totalUsageLimit === null ? Promise.resolve(0) : db.promoRedemption.count({ where: { promoCodeId: promo.id } }),
-    promo.perCustomerLimit === null || !email ? Promise.resolve(0) : db.promoRedemption.count({ where: { promoCodeId: promo.id, OR: [{ customerEmail: email }, ...(userId ? [{ userId }] : [])] } }),
+    promo.totalUsageLimit === null ? Promise.resolve(0) : db.promoRedemption.count({ where: counted }),
+    promo.perCustomerLimit === null || !email ? Promise.resolve(0) : db.promoRedemption.count({ where: { ...counted, OR: [{ customerEmail: email }, ...(userId ? [{ userId }] : [])] } }),
   ]);
   if ((promo.totalUsageLimit !== null && totalUses >= promo.totalUsageLimit) || (promo.perCustomerLimit !== null && customerUses >= promo.perCustomerLimit)) throw new OrderError("PROMO_LIMIT_REACHED");
   return promo;
