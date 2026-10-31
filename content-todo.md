@@ -8,3 +8,6 @@
 - [ ] Configure dedicated S3 policy restricted to the selected store prefix.
 - [ ] Configure and stage-test Stripe webhook, delayed success, expiry, replay, and full refunds.
 - [ ] Keep imported catalog products in draft until commercial review is complete.
+- [ ] Verify the zambiel.ch sending domain in Resend and set a production EMAIL_FROM on it (marketing and transactional emails).
+- [ ] Confirm Swiss UWG consent rules for marketing emails to registered customers, and mention marketing emails and unsubscribing in the privacy policy.
+- [ ] Remove the 150 `delivered+zambiel-mkt-*@resend.dev` test customers (`npm.cmd run marketing:test-customers -- --remove`, plus `--allow-database zambiel` on Railway) before launch.

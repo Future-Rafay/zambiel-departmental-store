@@ -15,7 +15,8 @@ Zambiel is one Swiss store and one seller. German is primary, English secondary,
 - `src/server/services/ordering.ts` remains the stable public ordering facade. Focused `order-*.ts` modules own quotes, reads, notification claims, and Stripe lifecycle without changing callers; COD and cash-at-pickup remain retail flows.
 - Localized product, category, search, cart, checkout, account, and tracking routes; dedicated product/category/inventory admin workflows plus customers, discounts, payments, settings, orders, and audit surfaces.
 - Localized contact pages, durable contact/product-request delivery controls, compact database-backed filters, descendant-aware category counts, product breadcrumbs/gallery/sharing/recommendations/history, and a richer branded homepage/footer.
-- Immediate newsletter subscription/unsubscribe and localized password recovery reuse the existing Resend, rate-limit, session, and password-token seams without adding campaign tooling.
+- Immediate newsletter subscription/unsubscribe and localized password recovery reuse the existing Resend, rate-limit, session, and password-token seams.
+- Owner-only email marketing (`/admin/marketing`): template or blank design in the shared TipTap editor, registered-customer selection, send now or schedule through Resend batch/`scheduledAt`, per-recipient status, retry/resume/exclude/cancel, and a signed unsubscribe flow. The contract is in `PROJECT-CONTEXT.md`.
 - Safe catalog deletion hides products, variants, and categories operationally while preserving historical relations. Inventory defaults to low/empty stock and admin money fields accept decimal CHF while retaining integer-rappen storage.
 - Product/category forms generate slugs from English names. Product descriptions use a minimal bilingual TipTap editor with sanitized HTML and store-owned uploaded images.
 - Product-description image uploads expose an accessible in-toolbar progress state while the existing upload request runs.

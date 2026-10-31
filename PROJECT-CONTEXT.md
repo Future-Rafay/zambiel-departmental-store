@@ -84,9 +84,23 @@ APIs:
 - Owner-only workflow: design (template or blank, shared TipTap editor in `email` mode with headings, colour, images, `{{name}}`/`{{first_name}}`/`{{email}}` fields) → save draft → choose recipients (name A–Z/Z–A, top 100/200/500, select all on page) → send now or schedule (Zurich time, 5 minutes to 30 days).
 - Audience: active `CUSTOMER` accounts without `marketingOptOutAt` or a deletion request. Each recipient gets a separate email with an unsubscribe footer and `List-Unsubscribe` headers.
 - `src/server/email/marketing.ts` holds sanitizing/inline styles, merge fields, and tokens; `src/server/services/marketing-campaigns.ts` holds audience, dispatch, retry, cancel, and test sends. Recipients are snapshotted in `MarketingCampaignRecipient`; delivery uses the Resend batch API (100 per call, idempotency key per batch), and scheduling uses Resend `scheduledAt` with no cron. Cancelling calls Resend cancel per email.
+- Before each batch, recipients on reserved test domains (`*.test`, `example.*`, `.invalid`, `localhost`) or on domains with no MX/A/AAAA record are marked `FAILED` / `UNDELIVERABLE_ADDRESS`, because one rejected address makes Resend fail the whole batch. DNS timeouts let the address through. Accepted batches are recorded in one `UPDATE`; if that write fails, the rows stay `PENDING` so Resume reuses the same idempotency key.
+- The owner can exclude a failed recipient (`CANCELLED` / `EXCLUDED_BY_OWNER`, skipped by Retry) and delete draft campaigns. Sent campaigns keep their history and cannot be deleted. There are eight starter templates: blank, announcement, promotion, new arrivals, seasonal sale, back in stock, newsletter, and thank you.
 - Sending runs inside the admin request; very large lists can time out and resume through the Resume button (documented `shortcut:`). Opens, bounces, and inbox delivery are not tracked.
+- `src/server/db.ts` raises Prisma interactive transactions to `maxWait` 10 s / `timeout` 15 s for the remote Railway proxy, and allows MySQL RSA public-key retrieval only for loopback hosts (local MySQL 8 after a restart).
 - Verified 2026-10-30: all 13 migrations applied to local `zambiel_dev`, local `zambiel_test`, and Railway `zambiel` (Railway already contained the B2B foundation columns without a migration record, so `20260925000000_add_b2b_foundation` was marked applied with `migrate resolve` before deploying; the schema diff is now empty). 150 simulator customers seeded in `zambiel_dev`. The 150-recipient integration test passes on `zambiel_test`. Live Resend delivery, inbox rendering, and authenticated browser checks are not yet verified.
-- Test data: `npm.cmd run marketing:test-customers -- --count 150` (or `--remove`) creates passwordless customers on `delivered+…@resend.dev` simulator addresses, guarded to `zambiel_dev`/`zambiel_test`; any other database needs `--allow-database <exact name>`. 150 simulator customers were seeded in Railway `zambiel` on 2026-10-30 at the owner's request. Simulator emails still count toward the Resend quota.
+- Test data: `npm.cmd run marketing:test-customers -- --count 150` (or `--remove`) creates passwordless customers on `delivered+…@resend.dev` simulator addresses, guarded to `zambiel_dev`/`zambiel_test`; any other database needs `--allow-database <exact name>`. 150 simulator customers were seeded in Railway `zambiel` on 2026-10-30 at the owner's request. Simulator emails still count toward the Resend quota. Remove them before go-live: `npm.cmd run marketing:test-customers -- --remove --allow-database zambiel`.
+- Resend rejects an entire batch (422) when one address is invalid. Before each batch, `deliverPendingRecipients` marks recipients `FAILED`/`UNDELIVERABLE_ADDRESS` when their domain is reserved (`isUndeliverableEmail`: `*.test`, `example.com`, …) or has no MX/A/AAAA record (`domainAcceptsMail`, one lookup per domain per send; DNS timeouts let the address through). `zambiel.ch` had no DNS on 2026-10-31, so `@zambiel.ch` accounts are skipped until the domain is live.
+- A sent batch is recorded with one raw `UPDATE … CASE` statement. If that write fails, rows stay `PENDING` (never `FAILED`) so a resume reuses the batch idempotency key instead of emailing twice. Never go back to per-row updates inside a transaction.
+- Admin controls (2026-10-31): drafts can be deleted (danger zone, confirmation); sent campaigns keep history and cannot be deleted (archiving would need a schema field). Failed recipients have a confirmed Exclude action (`CANCELLED`/`EXCLUDED_BY_OWNER`) that Retry skips. Eight starter templates: Blank, Announcement, Promotion, New arrivals, Seasonal sale, Back in stock, Newsletter, Thank you (placeholder copy only).
+- PR [#1](https://github.com/Future-Rafay/zambiel-departmental-store/pull/1) (`feat/email-marketing` → `main`) is open with CI passing. Live Resend inbox delivery and the new admin screens are not browser-verified.
+## Current work state (2026-10-31)
+
+- Branch `feat/email-marketing` holds the email marketing feature plus the loading bar, deferred-form transition, categories grid, and DB connection fixes. It tracks `origin/feat/email-marketing`, is not merged into `main`, and has no pull request yet (check `git status -sb` for unpushed commits).
+- Not yet verified: a live Resend send to real inboxes (needs a verified `zambiel.ch` sending domain), Gmail/Outlook rendering, and an authenticated browser run of `/admin/marketing`.
+- Open product decision: Swiss UWG consent for marketing to registered customers who never purchased. The owner (Mahmood) must confirm before a real campaign.
+- Next planned work (from the 2026-10-29 meeting): reuse this marketing module for Foodeez restaurant data once the client shares that code and cloud access.
+
 ## Order, payment, and stock rules
 
 - Retail transitions: `CONFIRMED → PROCESSING → OUT_FOR_DELIVERY → DELIVERED` or `CONFIRMED → PROCESSING → READY_FOR_PICKUP → PICKED_UP`, plus cancellation.
@@ -106,6 +120,9 @@ APIs:
 - Never copy SaltNPepper production data or credentials into Zambiel.
 - Network media work stays outside database transactions; each validated product is written atomically.
 - `.env` is local and ignored. Change only `.env.example` when documenting variables.
+- Local `.env` (2026-10-31): line 1 is the commented local `zambiel_dev` URL and line 2 the active Railway `zambiel` URL, so `npm run dev` talks to Railway. Agents can read either URL into a shell variable without printing it, e.g. `LOCAL=$(sed -n '1s/^# *DATABASE_URL="\(.*\)"$/\1/p' .env)`, then derive `TEST_DATABASE_URL="${LOCAL%/zambiel_dev}/zambiel_test"`.
+- Railway latency from the developer machine is ~3 s for a cold connection and ~0.6–0.8 s per query. `src/server/db.ts` sets `transactionOptions: { maxWait: 10_000, timeout: 15_000 }`; Prisma's 2 s default caused login `P2028`. Avoid many sequential queries inside one transaction; prefer one set-based statement.
+- Local MySQL 8 (`MySQL80` service) uses `caching_sha2_password` without TLS, which needs the server RSA key after every restart. `db.ts` enables `allowPublicKeyRetrieval` for loopback hosts only; without it Prisma silently waits until a pool timeout.
 
 ## Shopify import state
 
@@ -200,6 +217,10 @@ npm.cmd run lint
 npm.cmd run build
 git diff --check
 ```
+
+DB integration tests (`*.integration.test.ts`) skip unless `TEST_DATABASE_URL` points to local `zambiel_test`; set it to run them. Known pre-existing failures with it set (2026-10-31): `email-flows.integration.test.ts` (`DEVELOPMENT_CONTACT_OVERRIDE_NOT_ALLOWED` because `.env` sets `CONTACT_EMAIL_TO_DEV`) and `retail-catalog.integration.test.ts` (catalogue data assumption in `zambiel_test`).
+
+Read-only DB probes: write a throwaway `scripts/.claude-*.ts` that imports `../src/server/db`, run it with `npx tsx --env-file=.env` (or a `DATABASE_URL=` override), then delete it. Browser checks of `/admin` need the owner to sign in; the owner's own `next dev` usually already holds port 3000.
 
 For UI changes, also test keyboard interaction, visible focus, reduced motion, structured errors, and responsive widths. Report credential-, provider-, database-, and hardware-dependent checks honestly.
 
