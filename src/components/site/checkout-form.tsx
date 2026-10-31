@@ -98,10 +98,6 @@ export function CheckoutForm({
         "Kartenzahlung ist noch nicht konfiguriert.",
         "Card payment is not configured yet.",
       ],
-      PAYMENT_OR_ADDRESS_INVALID: [
-        "Zahlungsart oder Lieferadresse ist ungültig.",
-        "The payment method or delivery address is invalid.",
-      ],
       INVALID_INPUT: [
         "Bitte prüfen Sie Ihre Eingaben.",
         "Please check your details.",

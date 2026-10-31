@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 
 import { getStripeEnv } from "@/config/env";
 import { siteConfig } from "@/config/site";
+import { Prisma } from "@/generated/prisma/client";
 import type { Locale, OrderStatus } from "@/generated/prisma/enums";
 import { allocateDiscount, formatOrderNumber, hashToken, initialPaymentState, nextOrderStatus, parseOrderNumber } from "@/lib/orders";
 import { prisma } from "@/server/db";
@@ -20,11 +21,20 @@ export { calculateQuote, getDeliveryQuote, getShippingCountries } from "@/server
 export { getAdminOrders, getCustomerOrders, getCustomerOrdersPage, getReorderCart, getTrackedOrder } from "@/server/services/order-queries";
 export { processStripeEvent } from "@/server/services/order-stripe";
 
+// Concurrent Serializable checkouts on the same variant or promo can deadlock; the database rolls one back, so one rerun is safe.
+async function withConflictRetry<T>(run: () => Promise<T>) {
+  try {
+    return await run();
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") return run();
+    throw error;
+  }
+}
+
 function createdOrderDto(order: { id: bigint; status: OrderStatus; totalRappen: number }, trackingToken: string) {
   return { orderNumber: formatOrderNumber(order.id), status: order.status, totalRappen: order.totalRappen, trackingToken };
 }
 export async function createOrder(input: CreateOrderInput, userId?: string) {
-  if (input.storeMode === "b2b" && (!userId || !(await prisma.user.findFirst({ where: { id: userId, active: true, b2b_status: "APPROVED" }, select: { id: true } })))) throw new OrderError("B2B_ACCESS_REQUIRED");
   let stripeEnv: ReturnType<typeof getStripeEnv> | undefined;
   if (input.paymentMethod === "STRIPE") {
     try { stripeEnv = getStripeEnv(); } catch { throw new OrderError("PAYMENT_NOT_CONFIGURED"); }
@@ -39,13 +49,8 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
       ? await getStripe().checkout.sessions.retrieve(existing.payment.stripeCheckoutSessionId) : null;
     return { ...createdOrderDto(existing, input.checkoutKey), checkoutUrl: session?.status === "open" ? session.url : null };
   }
-  if (
-    (input.fulfillmentType === "DELIVERY" && input.paymentMethod === "PAY_AT_PICKUP") ||
-    (input.fulfillmentType === "PICKUP" && input.paymentMethod === "CASH_ON_DELIVERY") ||
-    (input.fulfillmentType === "DELIVERY" && !input.address)
-  ) throw new OrderError("PAYMENT_OR_ADDRESS_INVALID");
-
-  const order = await prisma.$transaction(async (tx) => {
+  // calculateQuote re-checks B2B access inside the transaction; createOrderSchema already enforces payment/address rules.
+  const order = await withConflictRetry(() => prisma.$transaction(async (tx) => {
     const quote = await calculateQuote(input, tx, userId);
     const paymentState = initialPaymentState(input.paymentMethod);
     const status: OrderStatus = paymentState.orderStatus;
@@ -130,7 +135,7 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
     }
     await enqueueOrderPush(tx, created.id, status);
     return created;
-  }, { isolationLevel: "Serializable" });
+  }, { isolationLevel: "Serializable" }));
 
   if (input.paymentMethod === "STRIPE") {
     try {
