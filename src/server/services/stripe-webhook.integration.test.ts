@@ -155,6 +155,8 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
     await prisma.orderItem.createMany({ data: [tracked, untracked].map((variant) => ({ orderId: expiringOrder.id, productId: product.id, variantId: variant.id, productNameDeSnapshot: "Test", productNameEnSnapshot: "Test", unitPriceRappen: 500, quantity: 2, lineSubtotalRappen: 1000 })) });
     await prisma.inventoryMovement.create({ data: { variantId: tracked.id, orderId: expiringOrder.id, type: "ORDER_RESERVED", quantityChange: -2, idempotencyKey: `order:${expiringOrder.id}:${tracked.id}:reserve` } });
     await prisma.promoRedemption.create({ data: { promoCodeId: promo.id, orderId: expiringOrder.id, customerEmail: `webhook-${suffix}@example.com`, discountRappen: 100 } });
+    // Seeded databases already have the singleton; an unseeded test database needs it for quoting.
+    await prisma.fulfillmentSettings.upsert({ where: { id: 1 }, create: { id: 1 }, update: {} });
     const promoQuote = { fulfillmentType: "PICKUP" as const, items: [{ variantId: tracked.id, quantity: 1 }], promoCode: promo.code, customerEmail: `webhook-${suffix}@example.com` };
     await assert.rejects(() => calculateQuote(promoQuote), /PROMO_LIMIT_REACHED/);
     const expiredId = `evt_expired_${suffix}`;
