@@ -1,9 +1,10 @@
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 
 import { hash } from "bcryptjs";
 import { z } from "zod";
 
 import { getEmailEnv } from "@/config/env";
+import { hashToken } from "@/lib/orders";
 import { prisma } from "@/server/db";
 import { sendEmail } from "@/server/email/client";
 import { passwordResetEmail } from "@/server/email/templates";
@@ -17,8 +18,6 @@ export const resetPasswordSchema = z.object({
   token: z.string().min(32).max(256),
   password: z.string().min(10).max(200),
 });
-
-const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
 
 export async function requestPasswordReset(input: z.infer<typeof forgotPasswordSchema>, deliver: typeof sendEmail = sendEmail) {
   const user = await prisma.user.findFirst({ where: { email: input.email, active: true, passwordHash: { not: null } }, select: { id: true } });

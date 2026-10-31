@@ -40,17 +40,8 @@ export async function cancelScheduledEmail(id: string) {
 }
 
 export async function sendEmail(message: EmailMessage) {
-  const env = getEmailEnv();
-
-  if (env.RESEND_API_KEY === "re_placeholder") {
-    throw new EmailNotConfiguredError();
-  }
-
-  resend ??= new Resend(env.RESEND_API_KEY);
-  const result = await resend.emails.send({
-    from: env.EMAIL_FROM,
-    ...message,
-  });
+  const { resend, from } = client();
+  const result = await resend.emails.send({ from, ...message });
 
   if (result.error) {
     throw new Error(result.error.message);
