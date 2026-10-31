@@ -33,7 +33,7 @@ Read `PROJECT-CONTEXT.md` and `PLAN.md` before making changes. Then read `BRANDI
 - Delivery: Stripe or COD. Pickup: Stripe or cash at pickup. Server code validates stock, price, promotion, destination country, fulfillment, and payment. Stripe Checkout may present the CHF order in a supported local currency through Adaptive Pricing.
 - Retail transitions are `CONFIRMED → PROCESSING → OUT_FOR_DELIVERY → DELIVERED` or `CONFIRMED → PROCESSING → READY_FOR_PICKUP → PICKED_UP`, plus cancellation. Legacy enum values remain only during expand/contract migration.
 - Keep network calls outside long database transactions. Secrets and provider identifiers remain server-only.
-- The active dev database is remote (Railway, ~0.7 s per query). Never write per-row loops inside a transaction; use set-based statements. Seeding Railway `zambiel` needs the owner's explicit request and `--allow-database zambiel`.
+- The active dev database is remote (Railway, ~0.7 s per query). Never write per-row loops inside a transaction; use set-based statements.
 - Email batches: one invalid address makes Resend reject all 100. Keep the pre-send undeliverable-domain check, and never mark Resend-accepted emails `FAILED`.
 
 ## Environments and databases
@@ -48,7 +48,7 @@ Read `PROJECT-CONTEXT.md` and `PLAN.md` before making changes. Then read `BRANDI
 - PowerShell 5 `Set-Content`/`Out-File -Encoding utf8` writes a BOM, and MySQL rejects BOM-prefixed migration SQL (P3018, error 1064). Write files with the editor tool or `[IO.File]::WriteAllText(path, text, (New-Object Text.UTF8Encoding $false))`.
 - PowerShell shows UTF-8 umlauts and dashes as mojibake (`Ã¼`, `â€”`). The files are correct; do not "fix" them.
 - `getEmailEnv()` throws `DEVELOPMENT_CONTACT_OVERRIDE_NOT_ALLOWED` when `CONTACT_EMAIL_TO_DEV` is set outside `NODE_ENV=development` (for example under `node --test`). Tests that render email must delete that variable first.
-- One rejected address fails a whole Resend batch of 100. Test recipients use `delivered+label@resend.dev` simulator addresses (they count toward the Resend quota). The `onboarding@resend.dev` sender only reaches the Resend account owner until a sending domain is verified.
+- Test recipients use `delivered+label@resend.dev` simulator addresses (they count toward the Resend quota). The `onboarding@resend.dev` sender only reaches the Resend account owner until a sending domain is verified.
 
 ## UI and safety
 
