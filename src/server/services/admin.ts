@@ -212,9 +212,20 @@ async function restoreOrderInventory(
 export async function cancelOrder(actorId: string, orderNumber: string, reason: string) {
   const id = parseOrderNumber(orderNumber);
   if (!id) throw new AdminError("ORDER_NOT_FOUND");
+  // Close an open Stripe Checkout first (outside the transaction) so the customer cannot pay a cancelled order.
+  const pending = await prisma.payment.findUnique({ where: { orderId: id }, select: { provider: true, status: true, stripeCheckoutSessionId: true } });
+  let sessionExpired = false;
+  if (pending?.provider === "STRIPE" && pending.status === "PENDING" && pending.stripeCheckoutSessionId) {
+    const session = await getStripe().checkout.sessions.retrieve(pending.stripeCheckoutSessionId);
+    if (session.status === "complete") throw new AdminError("STRIPE_PAYMENT_IN_PROGRESS");
+    if (session.status === "open") await getStripe().checkout.sessions.expire(session.id);
+    sessionExpired = true;
+  }
   const cancelled = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id }, include: { payment: true } });
     if (!order) throw new AdminError("ORDER_NOT_FOUND");
+    // The checkout.session.expired webhook can cancel the order before this transaction runs.
+    if (sessionExpired && order.status === "CANCELLED") return undefined;
     if (["DELIVERED", "PICKED_UP", "CANCELLED"].includes(order.status)) throw new AdminError("CANCELLATION_NOT_ALLOWED");
     if (order.payment?.provider === "STRIPE" && ["PAID", "PARTIALLY_REFUNDED"].includes(order.payment.status)) throw new AdminError("OWNER_REFUND_REQUIRED");
     await tx.order.update({ where: { id }, data: { status: "CANCELLED", cancelledAt: new Date(), cancellationReason: reason, version: { increment: 1 } } });
