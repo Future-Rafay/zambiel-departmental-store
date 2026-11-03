@@ -1,4 +1,4 @@
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import type { PaymentProvider } from "@/generated/prisma/enums";
 import type Stripe from "stripe";
 import { formatOrderNumber, parseOrderNumber } from "@/lib/orders";
@@ -206,6 +206,22 @@ async function restoreOrderInventory(
         idempotencyKey,
       },
     });
+  }
+}
+
+// One key per rendered form: a double submit hits the unique ledger key instead of adjusting twice.
+export async function adjustVariantStock(actorId: string, input: { variantId: string; quantityChange: number; reason: string; adjustmentKey: string }) {
+  const { variantId, quantityChange, reason, adjustmentKey } = input;
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.inventoryMovement.create({ data: { variantId, type: "MANUAL_ADJUSTMENT", quantityChange, reason, actorUserId: actorId, idempotencyKey: `manual:${adjustmentKey}` } });
+      // Open Stripe checkouts hold stockReserved; going below it would make their payment finalization fail.
+      const changed = await tx.$executeRaw`UPDATE productvariant SET stockOnHand = stockOnHand + ${quantityChange}, updatedAt = NOW(3) WHERE id = ${variantId} AND (${quantityChange} > 0 OR stockOnHand + ${quantityChange} >= stockReserved)`;
+      if (changed !== 1) throw new AdminError("INVENTORY_BELOW_RESERVED");
+      await audit(tx, actorId, "INVENTORY_ADJUSTED", "ProductVariant", variantId, { quantityChange, reason });
+    });
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) throw error;
   }
 }
 

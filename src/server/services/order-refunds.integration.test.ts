@@ -1,5 +1,6 @@
+import "dotenv/config";
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, { mock } from "node:test";
 import type Stripe from "stripe";
 
 import { formatOrderNumber } from "@/lib/orders";
@@ -13,8 +14,11 @@ test("refund settlement restores stock exactly once and partial refunds keep the
   process.env.DATABASE_URL = testDatabaseUrl;
   process.env.DATABASE_CONNECTION_LIMIT = "1";
   process.env.DATABASE_SSL ??= "false";
+  // Order notifications must not reach Resend from tests; a delivery failure is logged and recorded.
+  delete process.env.CONTACT_EMAIL_TO_DEV;
+  process.env.RESEND_API_KEY = "re_placeholder";
 
-  const [{ prisma }, { cancelOrder, syncStripeRefund }] = await Promise.all([import("@/server/db"), import("@/server/services/admin")]);
+  const [{ prisma }, { adjustVariantStock, cancelOrder, syncStripeRefund }, { getStripe }] = await Promise.all([import("@/server/db"), import("@/server/services/admin"), import("@/server/payments/stripe")]);
   const suffix = crypto.randomUUID();
   const actor = await prisma.user.create({ data: { email: `refund-${suffix}@example.com`, role: "OWNER" } });
   const category = await prisma.category.create({ data: { slug: `refund-${suffix}`, nameDe: "Test", nameEn: "Test" } });
@@ -68,7 +72,38 @@ test("refund settlement restores stock exactly once and partial refunds keep the
     assert.equal(await stockOnHand(), 8);
     await assert.rejects(() => cancelOrder(actor.id, formatOrderNumber(cash.id), "Again"), /CANCELLATION_NOT_ALLOWED/);
     assert.equal(await stockOnHand(), 8, "a second cancel does not restock again");
+
+    // Cancelling an unpaid Stripe order closes its open Checkout, and refuses once Checkout is complete.
+    const sessions = getStripe().checkout.sessions;
+    const pending = await prisma.order.create({ data: {
+      checkoutKeyHash: crypto.randomUUID().replaceAll("-", "").padEnd(64, "0"),
+      locale: "EN", customerName: "Pending Test", customerEmail: `refund-order-${suffix}@example.com`, customerPhone: "123456",
+      fulfillmentType: "PICKUP", status: "PAYMENT_PENDING", paymentMethod: "STRIPE", subtotalRappen: 1000, totalRappen: 1000,
+      payment: { create: { provider: "STRIPE", status: "PENDING", amountRappen: 1000, stripeCheckoutSessionId: `cs_${suffix}` } },
+    } });
+    orderIds.push(pending.id);
+    const retrieve = mock.method(sessions, "retrieve", async () => ({ id: `cs_${suffix}`, status: "complete" }) as never);
+    const expire = mock.method(sessions, "expire", async () => ({}) as never);
+    await assert.rejects(() => cancelOrder(actor.id, formatOrderNumber(pending.id), "Too late"), /STRIPE_PAYMENT_IN_PROGRESS/);
+    assert.equal(expire.mock.callCount(), 0);
+    retrieve.mock.mockImplementation(async () => ({ id: `cs_${suffix}`, status: "open" }) as never);
+    await cancelOrder(actor.id, formatOrderNumber(pending.id), "Customer changed mind");
+    assert.equal(expire.mock.callCount(), 1);
+    assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: pending.id } })).status, "CANCELLED");
+
+    // Manual adjustments stay above reserved stock, and a double submit applies once.
+    await prisma.productVariant.update({ where: { id: variant.id }, data: { stockReserved: 5 } });
+    const adjust = (quantityChange: number, adjustmentKey = crypto.randomUUID()) => adjustVariantStock(actor.id, { variantId: variant.id, quantityChange, reason: "Stock count", adjustmentKey });
+    await assert.rejects(() => adjust(-4), /INVENTORY_BELOW_RESERVED/);
+    assert.equal(await stockOnHand(), 8);
+    const doubleSubmit = crypto.randomUUID();
+    await adjust(-3, doubleSubmit);
+    await adjust(-3, doubleSubmit);
+    assert.equal(await stockOnHand(), 5);
+    await adjust(2);
+    assert.equal(await stockOnHand(), 7);
   } finally {
+    mock.restoreAll();
     await prisma.auditLog.deleteMany({ where: { actorUserId: actor.id } });
     await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
     await prisma.inventoryMovement.deleteMany({ where: { variant: { product: { categoryId: category.id } } } });
