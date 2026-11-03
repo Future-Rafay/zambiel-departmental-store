@@ -73,6 +73,24 @@ test("refund settlement restores stock exactly once and partial refunds keep the
     await assert.rejects(() => cancelOrder(actor.id, formatOrderNumber(cash.id), "Again"), /CANCELLATION_NOT_ALLOWED/);
     assert.equal(await stockOnHand(), 8, "a second cancel does not restock again");
 
+    // Cancelling follows the ledger, not the variant's current trackInventory setting.
+    const toggledOff = await soldOrder("CASH");
+    assert.equal(await stockOnHand(), 6);
+    await prisma.productVariant.update({ where: { id: variant.id }, data: { trackInventory: false } });
+    await cancelOrder(actor.id, formatOrderNumber(toggledOff.id), "Tracking turned off");
+    assert.equal(await stockOnHand(), 8, "sold stock returns even when tracking is now off");
+    await prisma.productVariant.update({ where: { id: variant.id }, data: { trackInventory: true } });
+    const neverSold = await prisma.order.create({ data: {
+      checkoutKeyHash: crypto.randomUUID().replaceAll("-", "").padEnd(64, "0"),
+      locale: "EN", customerName: "Untracked Test", customerEmail: `refund-order-${suffix}@example.com`, customerPhone: "123456",
+      fulfillmentType: "PICKUP", status: "CONFIRMED", paymentMethod: "PAY_AT_PICKUP", subtotalRappen: 1000, totalRappen: 1000,
+      items: { create: { productId: product.id, variantId: variant.id, productNameDeSnapshot: "Test", productNameEnSnapshot: "Test", unitPriceRappen: 500, quantity: 2, lineSubtotalRappen: 1000 } },
+      payment: { create: { provider: "CASH", status: "PENDING", amountRappen: 1000 } },
+    } });
+    orderIds.push(neverSold.id);
+    await cancelOrder(actor.id, formatOrderNumber(neverSold.id), "Tracking turned on later");
+    assert.equal(await stockOnHand(), 8, "an order that never took stock gives none back");
+
     // Cancelling an unpaid Stripe order closes its open Checkout, and refuses once Checkout is complete.
     const sessions = getStripe().checkout.sessions;
     const pending = await prisma.order.create({ data: {
@@ -82,6 +100,8 @@ test("refund settlement restores stock exactly once and partial refunds keep the
       payment: { create: { provider: "STRIPE", status: "PENDING", amountRappen: 1000, stripeCheckoutSessionId: `cs_${suffix}` } },
     } });
     orderIds.push(pending.id);
+    await prisma.productVariant.update({ where: { id: variant.id }, data: { stockReserved: 2 } });
+    await prisma.inventoryMovement.create({ data: { variantId: variant.id, orderId: pending.id, type: "ORDER_RESERVED", quantityChange: -2, idempotencyKey: `order:${pending.id}:${variant.id}:reserve` } });
     const retrieve = mock.method(sessions, "retrieve", async () => ({ id: `cs_${suffix}`, status: "complete" }) as never);
     const expire = mock.method(sessions, "expire", async () => ({}) as never);
     await assert.rejects(() => cancelOrder(actor.id, formatOrderNumber(pending.id), "Too late"), /STRIPE_PAYMENT_IN_PROGRESS/);
@@ -90,6 +110,8 @@ test("refund settlement restores stock exactly once and partial refunds keep the
     await cancelOrder(actor.id, formatOrderNumber(pending.id), "Customer changed mind");
     assert.equal(expire.mock.callCount(), 1);
     assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: pending.id } })).status, "CANCELLED");
+    assert.equal((await prisma.productVariant.findUniqueOrThrow({ where: { id: variant.id } })).stockReserved, 0, "cancelling releases the reservation");
+    assert.equal(await stockOnHand(), 8, "releasing a reservation does not add stock");
 
     // Manual adjustments stay above reserved stock, and a double submit applies once.
     await prisma.productVariant.update({ where: { id: variant.id }, data: { stockReserved: 5 } });
