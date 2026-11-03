@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 
 import { compare, hash } from "bcryptjs";
 import { createRemoteJWKSet, jwtVerify } from "jose";
@@ -7,7 +7,9 @@ import { z } from "zod";
 import { getAuthEnv } from "@/config/env";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/server/db";
+import { hashToken } from "@/lib/orders";
 import { getCurrentUser } from "@/server/auth/current-user";
+import { pushDeviceSchema, pushScopeKey } from "@/server/services/mobile-push";
 
 const SESSION_DAYS = 30;
 const googleKeys = createRemoteJWKSet(new URL("https://www.googleapis.com/oauth2/v3/certs"));
@@ -20,14 +22,13 @@ export class CustomerMobileAuthError extends Error {
   constructor(public code: "EMAIL_IN_USE" | "INVALID_CREDENTIALS" | "TOKEN_REQUIRED" | "TOKEN_INVALID" | "FORBIDDEN" | "GOOGLE_ACCOUNT_NOT_LINKED") { super(code); }
 }
 
-function tokenHash(token: string) { return createHash("sha256").update(token).digest("hex"); }
 function publicUser(user: { id: string; email: string; name: string | null; phone: string | null }) { return user; }
 
 async function issueSession(user: { id: string; email: string; name: string | null; phone: string | null }) {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 86_400_000);
   await prisma.$transaction([
-    prisma.customerMobileSession.create({ data: { userId: user.id, tokenHash: tokenHash(token), expiresAt } }),
+    prisma.customerMobileSession.create({ data: { userId: user.id, tokenHash: hashToken(token), expiresAt } }),
     prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }),
   ]);
   return { token, expiresAt: expiresAt.toISOString(), user: publicUser(user) };
@@ -80,7 +81,7 @@ function bearer(request: Request) {
 export async function getCustomerApiUser(request: Request) {
   const token = bearer(request);
   if (!token) return getCurrentUser();
-  const session = await prisma.customerMobileSession.findUnique({ where: { tokenHash: tokenHash(token) }, include: { user: { select: { id: true, email: true, name: true, phone: true, role: true, active: true } } } });
+  const session = await prisma.customerMobileSession.findUnique({ where: { tokenHash: hashToken(token) }, include: { user: { select: { id: true, email: true, name: true, phone: true, role: true, active: true } } } });
   if (!session || session.expiresAt <= new Date() || !session.user.active || !["CUSTOMER", "OWNER"].includes(session.user.role)) return null;
   return session.user;
 }
@@ -94,10 +95,12 @@ export async function requireCustomerApiUser(request: Request) {
 export async function logoutMobileCustomer(request: Request) {
   const token = bearer(request);
   if (!token) throw new CustomerMobileAuthError("TOKEN_REQUIRED");
+  const pushToken = pushDeviceSchema.shape.token.safeParse((await request.json().catch(() => null))?.pushToken).data;
   await prisma.$transaction(async (tx) => {
-    const session = await tx.customerMobileSession.findUnique({ where: { tokenHash: tokenHash(token) }, select: { userId: true } });
+    const session = await tx.customerMobileSession.findUnique({ where: { tokenHash: hashToken(token) }, select: { userId: true } });
     if (!session) return;
-    await tx.customerPushSubscription.deleteMany({ where: { userId: session.userId } });
-    await tx.customerMobileSession.delete({ where: { tokenHash: tokenHash(token) } });
+    // Unsubscribe only this device; older app builds send no push token, so they keep the all-devices fallback.
+    await tx.customerPushSubscription.deleteMany({ where: pushToken ? { scopeKey: pushScopeKey(pushToken, `user:${session.userId}`) } : { userId: session.userId } });
+    await tx.customerMobileSession.delete({ where: { tokenHash: hashToken(token) } });
   });
 }

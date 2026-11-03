@@ -24,7 +24,7 @@ function assertStripeSession(order: StripeOrder, session: Stripe.Checkout.Sessio
 
 export async function failPendingOrder(orderId: bigint, reason = "PAYMENT_SESSION_FAILED", session?: Stripe.Checkout.Session) {
   await prisma.$transaction(async (tx) => {
-    const order = await tx.order.findUniqueOrThrow({ where: { id: orderId }, include: { payment: true, items: { select: { variantId: true, quantity: true } } } });
+    const order = await tx.order.findUniqueOrThrow({ where: { id: orderId }, include: { payment: true } });
     if (session) assertStripeSession(order, session);
     if (order.status !== "PAYMENT_PENDING") return;
     const now = new Date();
@@ -33,11 +33,13 @@ export async function failPendingOrder(orderId: bigint, reason = "PAYMENT_SESSIO
     await tx.payment.update({ where: { orderId }, data: { status: "FAILED", failedAt: now } });
     await tx.orderStatusEvent.create({ data: { orderId, fromStatus: "PAYMENT_PENDING", toStatus: "CANCELLED", reason } });
     await enqueueOrderPush(tx, orderId, "CANCELLED");
-    for (const item of order.items) {
-      if (!item.variantId) continue;
-      const released = await tx.$executeRaw`UPDATE productvariant SET stockReserved = stockReserved - ${item.quantity}, updatedAt = NOW(3) WHERE id = ${item.variantId} AND stockReserved >= ${item.quantity}`;
+    // Release exactly what checkout reserved: untracked variants never had a reservation.
+    const reservations = await tx.inventoryMovement.findMany({ where: { orderId, type: "ORDER_RESERVED" }, select: { variantId: true, quantityChange: true } });
+    for (const { variantId, quantityChange } of reservations) {
+      const quantity = -quantityChange;
+      const released = await tx.$executeRaw`UPDATE productvariant SET stockReserved = stockReserved - ${quantity}, updatedAt = NOW(3) WHERE id = ${variantId} AND stockReserved >= ${quantity}`;
       if (released !== 1) throw new OrderError("INVENTORY_RESERVATION_INVALID");
-      await tx.inventoryMovement.create({ data: { variantId: item.variantId, orderId, type: "ORDER_RELEASED", quantityChange: item.quantity, reason, idempotencyKey: `order:${orderId}:${item.variantId}:release` } });
+      await tx.inventoryMovement.create({ data: { variantId, orderId, type: "ORDER_RELEASED", quantityChange: quantity, reason, idempotencyKey: `order:${orderId}:${variantId}:release` } });
     }
   });
 }
@@ -66,7 +68,7 @@ export async function finalizePaidStripeSession(session: Stripe.Checkout.Session
   if (session.payment_status !== "paid") throw new OrderError("STRIPE_EVENT_INVALID");
   return prisma.$transaction(async (tx) => {
     const orderId = stripeOrderId(session);
-    const current = await tx.order.findUniqueOrThrow({ where: { id: orderId }, include: { payment: true, items: { include: { variant: { select: { trackInventory: true } } } } } });
+    const current = await tx.order.findUniqueOrThrow({ where: { id: orderId }, include: { payment: true } });
     assertStripeSession(current, session);
     if (current.status !== "PAYMENT_PENDING") {
       if (current.payment?.status !== "PAID") throw new OrderError("STRIPE_EVENT_INVALID");
@@ -77,11 +79,13 @@ export async function finalizePaidStripeSession(session: Stripe.Checkout.Session
     if (!paymentIntentId) throw new OrderError("STRIPE_EVENT_INVALID");
     const payment = await tx.payment.updateMany({ where: { orderId, status: "PENDING" }, data: { status: "PAID", stripePaymentIntentId: paymentIntentId, paidAt: now } });
     if (payment.count !== 1) throw new OrderError("STRIPE_EVENT_INVALID");
-    for (const item of current.items) {
-      if (!item.variantId || !item.variant?.trackInventory) continue;
-      const consumed = await tx.$executeRaw`UPDATE productvariant SET stockOnHand = stockOnHand - ${item.quantity}, stockReserved = stockReserved - ${item.quantity}, updatedAt = NOW(3) WHERE id = ${item.variantId} AND stockOnHand >= ${item.quantity} AND stockReserved >= ${item.quantity}`;
+    // Consume exactly what checkout reserved, even if trackInventory changed during the open checkout.
+    const reservations = await tx.inventoryMovement.findMany({ where: { orderId, type: "ORDER_RESERVED" }, select: { variantId: true, quantityChange: true } });
+    for (const { variantId, quantityChange } of reservations) {
+      const quantity = -quantityChange;
+      const consumed = await tx.$executeRaw`UPDATE productvariant SET stockOnHand = stockOnHand - ${quantity}, stockReserved = stockReserved - ${quantity}, updatedAt = NOW(3) WHERE id = ${variantId} AND stockOnHand >= ${quantity} AND stockReserved >= ${quantity}`;
       if (consumed !== 1) throw new OrderError("INVENTORY_RESERVATION_INVALID");
-      await tx.inventoryMovement.create({ data: { variantId: item.variantId, orderId, type: "ORDER_SOLD", quantityChange: -item.quantity, reason: "Stripe payment confirmed", idempotencyKey: `order:${orderId}:${item.variantId}:sell` } });
+      await tx.inventoryMovement.create({ data: { variantId, orderId, type: "ORDER_SOLD", quantityChange: -quantity, reason: "Stripe payment confirmed", idempotencyKey: `order:${orderId}:${variantId}:sell` } });
     }
     await tx.orderStatusEvent.create({ data: { orderId, fromStatus: "PAYMENT_PENDING", toStatus: "CONFIRMED", reason: "STRIPE_PAID" } });
     await enqueueOrderPush(tx, orderId, "CONFIRMED");

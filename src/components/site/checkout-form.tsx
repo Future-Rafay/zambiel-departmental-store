@@ -78,6 +78,10 @@ export function CheckoutForm({
         "Der Mindestbestellwert ist noch nicht erreicht.",
         "The delivery minimum has not been reached.",
       ],
+      CHECKOUT_KEY_USED: [
+        "Der letzte Zahlungsversuch ist fehlgeschlagen. Bitte senden Sie die Bestellung erneut.",
+        "The last payment attempt failed. Please submit your order again.",
+      ],
       OUT_OF_STOCK: [
         "Ein Artikel ist nicht mehr in der gewünschten Menge verfügbar.",
         "An item is no longer available in the requested quantity.",
@@ -93,10 +97,6 @@ export function CheckoutForm({
       PAYMENT_NOT_CONFIGURED: [
         "Kartenzahlung ist noch nicht konfiguriert.",
         "Card payment is not configured yet.",
-      ],
-      PAYMENT_OR_ADDRESS_INVALID: [
-        "Zahlungsart oder Lieferadresse ist ungültig.",
-        "The payment method or delivery address is invalid.",
       ],
       INVALID_INPUT: [
         "Bitte prüfen Sie Ihre Eingaben.",
@@ -221,6 +221,8 @@ export function CheckoutForm({
           `/${locale}/orders/${order.orderNumber}?token=${encodeURIComponent(order.trackingToken)}`,
       );
     } catch (caught) {
+      // The server answered (no live order holds this key), so the next submit must not replay it.
+      if (!(caught instanceof Error)) checkoutKey.current = crypto.randomUUID();
       applyApiError(caught);
       setBusy(false);
     }

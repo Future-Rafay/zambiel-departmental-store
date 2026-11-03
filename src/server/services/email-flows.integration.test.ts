@@ -13,6 +13,7 @@ test("newsletter resubscription and password reset stay idempotent and single-us
   process.env.DATABASE_URL = testDatabaseUrl;
   process.env.DATABASE_CONNECTION_LIMIT = "1";
   process.env.DATABASE_SSL ??= "false";
+  delete process.env.CONTACT_EMAIL_TO_DEV;
   const [{ prisma }, newsletter, passwordReset] = await Promise.all([
     import("@/server/db"),
     import("@/server/services/newsletter"),

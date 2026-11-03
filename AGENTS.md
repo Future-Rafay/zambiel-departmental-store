@@ -30,9 +30,29 @@ Read `PROJECT-CONTEXT.md` and `PLAN.md` before making changes. Then read `BRANDI
 
 - Local seed/import targets only lowercase `zambiel_dev` or `zambiel_test`. Never use `saltnpepper_dev`, another client database, or production. Preserve deployed migrations and add forward migrations.
 - Stock belongs to variants. Changes require ledger entries and idempotency keys. Stripe reserves stock until signature-verified finalization; cancellation/terminal failure restores it exactly once. Paid orders use the refund-and-cancel flow.
+- Reservation, confirmation, release, and restock follow the order's `InventoryMovement` rows, never the variant's current `trackInventory`, which can change while an order is open. An order with no ledger rows gives no stock back.
+- Promotion limits count only orders that are not `CANCELLED`; redemption rows stay as history. A cancelled order's `checkoutKey` is refused with `CHECKOUT_KEY_USED`, and clients rotate the key after any server rejection (kept only for network/5xx outcomes).
+- Cancelling an unpaid Stripe order expires its Checkout session first, outside the transaction. Manual stock adjustments cannot go below `stockReserved`.
 - Delivery: Stripe or COD. Pickup: Stripe or cash at pickup. Server code validates stock, price, promotion, destination country, fulfillment, and payment. Stripe Checkout may present the CHF order in a supported local currency through Adaptive Pricing.
 - Retail transitions are `CONFIRMED → PROCESSING → OUT_FOR_DELIVERY → DELIVERED` or `CONFIRMED → PROCESSING → READY_FOR_PICKUP → PICKED_UP`, plus cancellation. Legacy enum values remain only during expand/contract migration.
 - Keep network calls outside long database transactions. Secrets and provider identifiers remain server-only.
+- The active dev database is remote (Railway, ~0.7 s per query). Never write per-row loops inside a transaction; use set-based statements.
+- Email batches: one invalid address makes Resend reject all 100. Keep the pre-send undeliverable-domain check, and never mark Resend-accepted emails `FAILED`.
+- Marketing re-checks the audience before every batch, and unsubscribing withdraws that customer's scheduled emails. Never send from the saved recipient list alone.
+
+## Environments and databases
+
+- Root `.env` `DATABASE_URL` targets the remote Railway MySQL database `zambiel` (shared, holds real data). Migrate it only when the owner asks; seed it only with `--allow-database zambiel`. Line 1 of `.env` is a commented local `zambiel_dev` URL: for local work set `$env:DATABASE_URL` from that line in the same command and never print it.
+- Local MySQL 8 runs as the Windows service `MySQL80` with `zambiel_dev` and `zambiel_test`. By owner decision (2026-11-03), `.env` `TEST_DATABASE_URL` points to `zambiel_dev`, so `npm test` writes to local dev data. `*.integration.test.ts` files skip unless `TEST_DATABASE_URL` is set and differs from `DATABASE_URL`. They load `.env`, must remove every row they create, and must scope counts to their own rows because the database holds real catalog data.
+- Before `prisma migrate deploy` on any database, run `prisma migrate status` and `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`. When a pending migration's changes already exist (Railway drift), mark it with `prisma migrate resolve --applied <name>` instead of re-running it.
+- Dev server: `.claude/launch.json` configuration `zambiel-dev` (`npm.cmd run dev`, port 3000). Admin sign-in is typed by the owner.
+
+## Windows and tooling gotchas
+
+- PowerShell 5 `Set-Content`/`Out-File -Encoding utf8` writes a BOM, and MySQL rejects BOM-prefixed migration SQL (P3018, error 1064). Write files with the editor tool or `[IO.File]::WriteAllText(path, text, (New-Object Text.UTF8Encoding $false))`.
+- PowerShell shows UTF-8 umlauts and dashes as mojibake (`Ã¼`, `â€”`). The files are correct; do not "fix" them.
+- `getEmailEnv()` throws `DEVELOPMENT_CONTACT_OVERRIDE_NOT_ALLOWED` when `CONTACT_EMAIL_TO_DEV` is set outside `NODE_ENV=development` (for example under `node --test`). Tests that render email must delete that variable first. Tests that trigger order notifications also set `RESEND_API_KEY=re_placeholder` so they never reach Resend.
+- Test recipients use `delivered+label@resend.dev` simulator addresses (they count toward the Resend quota). The `onboarding@resend.dev` sender only reaches the Resend account owner until a sending domain is verified.
 
 ## UI and safety
 

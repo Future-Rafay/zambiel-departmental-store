@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Crypto from "expo-crypto";
 import * as WebBrowser from "expo-web-browser";
 import { router } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -16,7 +15,6 @@ import { Button, Field } from "../src/ui";
 export default function CheckoutScreen() {
   const { bottom } = useSafeAreaInsets();
   const { cart, clear, user, locale } = useApp();
-  const [checkoutKey] = useState(() => Crypto.randomUUID());
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState(user?.phone || "");
@@ -91,7 +89,6 @@ export default function CheckoutScreen() {
   );
   const checkoutInput = useMemo<CheckoutInput>(
     () => ({
-      checkoutKey,
       channel: "mobile",
       locale,
       fulfillmentType: fulfillment,
@@ -107,7 +104,6 @@ export default function CheckoutScreen() {
       address,
     }),
     [
-      checkoutKey,
       locale,
       fulfillment,
       countryCode,

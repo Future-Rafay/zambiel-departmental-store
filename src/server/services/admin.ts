@@ -1,5 +1,4 @@
-import type { Prisma } from "@/generated/prisma/client";
-import type { PaymentProvider } from "@/generated/prisma/enums";
+import { Prisma } from "@/generated/prisma/client";
 import type Stripe from "stripe";
 import { formatOrderNumber, parseOrderNumber } from "@/lib/orders";
 import { prisma } from "@/server/db";
@@ -174,53 +173,65 @@ export async function confirmInvoicePayment(orderNumber: string, actorUserId: st
   });
 }
 
-async function restoreOrderInventory(
-  tx: Prisma.TransactionClient,
-  orderId: bigint,
-  payment: { provider: PaymentProvider; status: string } | null,
-  actorUserId: string | null,
-  reason: string,
-) {
-  const items = await tx.orderItem.findMany({
-    where: { orderId, variantId: { not: null } },
-    select: { variantId: true, quantity: true, variant: { select: { trackInventory: true } } },
-  });
-  for (const item of items) {
-    if (!item.variantId || !item.variant?.trackInventory) continue;
-    const reservationOnly = payment?.provider === "STRIPE" && payment.status === "PENDING";
-    const idempotencyKey = `order:${orderId}:${item.variantId}:${reservationOnly ? "release" : "restore"}`;
-    if (await tx.inventoryMovement.findUnique({ where: { idempotencyKey } })) continue;
-    const changed = reservationOnly
-      ? await tx.$executeRaw`UPDATE productvariant SET stockReserved = stockReserved - ${item.quantity}, updatedAt = NOW(3) WHERE id = ${item.variantId} AND stockReserved >= ${item.quantity}`
-      : await tx.productVariant.updateMany({ where: { id: item.variantId }, data: { stockOnHand: { increment: item.quantity }, updatedAt: new Date() } });
-    const count = typeof changed === "number" ? changed : changed.count;
-    if (count !== 1) throw new AdminError("INVENTORY_RESTORE_FAILED");
-    await tx.inventoryMovement.create({
-      data: {
-        variantId: item.variantId,
-        orderId,
-        actorUserId,
-        type: reservationOnly ? "ORDER_RELEASED" : "ORDER_RESTORED",
-        quantityChange: item.quantity,
-        reason,
-        idempotencyKey,
-      },
+// Undo exactly what the order's ledger shows it took, whatever trackInventory says now: sold stock returns to the shelf, an unpaid reservation is released.
+async function restoreOrderInventory(tx: Prisma.TransactionClient, orderId: bigint, actorUserId: string | null, reason: string) {
+  const movements = await tx.inventoryMovement.findMany({ where: { orderId, type: { in: ["ORDER_RESERVED", "ORDER_SOLD", "ORDER_RELEASED", "ORDER_RESTORED"] } }, select: { variantId: true, type: true, quantityChange: true } });
+  const has = (variantId: string, type: string) => movements.some((movement) => movement.variantId === variantId && movement.type === type);
+  const sold = movements.filter((movement) => movement.type === "ORDER_SOLD" && !has(movement.variantId, "ORDER_RESTORED"));
+  const reserved = movements.filter((movement) => movement.type === "ORDER_RESERVED" && !has(movement.variantId, "ORDER_SOLD") && !has(movement.variantId, "ORDER_RELEASED"));
+  const quantities = (rows: typeof movements) => Prisma.join(rows.map((row) => Prisma.sql`WHEN ${row.variantId} THEN ${-row.quantityChange}`), " ");
+  const ids = (rows: typeof movements) => Prisma.join(rows.map((row) => row.variantId));
+  if (sold.length) {
+    const changed = await tx.$executeRaw`UPDATE productvariant SET stockOnHand = stockOnHand + CASE id ${quantities(sold)} END, updatedAt = NOW(3) WHERE id IN (${ids(sold)})`;
+    if (changed !== sold.length) throw new AdminError("INVENTORY_RESTORE_FAILED");
+  }
+  if (reserved.length) {
+    const changed = await tx.$executeRaw`UPDATE productvariant SET stockReserved = stockReserved - CASE id ${quantities(reserved)} END, updatedAt = NOW(3) WHERE id IN (${ids(reserved)}) AND stockReserved >= CASE id ${quantities(reserved)} END`;
+    if (changed !== reserved.length) throw new AdminError("INVENTORY_RESTORE_FAILED");
+  }
+  const undo = (rows: typeof movements, type: "ORDER_RESTORED" | "ORDER_RELEASED", suffix: string) => rows.map((row) => ({ variantId: row.variantId, orderId, actorUserId, type, quantityChange: -row.quantityChange, reason, idempotencyKey: `order:${orderId}:${row.variantId}:${suffix}` }));
+  await tx.inventoryMovement.createMany({ data: [...undo(sold, "ORDER_RESTORED", "restore"), ...undo(reserved, "ORDER_RELEASED", "release")] });
+}
+
+// One key per rendered form: a double submit hits the unique ledger key instead of adjusting twice.
+export async function adjustVariantStock(actorId: string, input: { variantId: string; quantityChange: number; reason: string; adjustmentKey: string }) {
+  const { variantId, quantityChange, reason, adjustmentKey } = input;
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.inventoryMovement.create({ data: { variantId, type: "MANUAL_ADJUSTMENT", quantityChange, reason, actorUserId: actorId, idempotencyKey: `manual:${adjustmentKey}` } });
+      // Open Stripe checkouts hold stockReserved; going below it would make their payment finalization fail.
+      const changed = await tx.$executeRaw`UPDATE productvariant SET stockOnHand = stockOnHand + ${quantityChange}, updatedAt = NOW(3) WHERE id = ${variantId} AND (${quantityChange} > 0 OR stockOnHand + ${quantityChange} >= stockReserved)`;
+      if (changed !== 1) throw new AdminError("INVENTORY_BELOW_RESERVED");
+      await audit(tx, actorId, "INVENTORY_ADJUSTED", "ProductVariant", variantId, { quantityChange, reason });
     });
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) throw error;
   }
 }
 
 export async function cancelOrder(actorId: string, orderNumber: string, reason: string) {
   const id = parseOrderNumber(orderNumber);
   if (!id) throw new AdminError("ORDER_NOT_FOUND");
+  // Close an open Stripe Checkout first (outside the transaction) so the customer cannot pay a cancelled order.
+  const pending = await prisma.payment.findUnique({ where: { orderId: id }, select: { provider: true, status: true, stripeCheckoutSessionId: true } });
+  let sessionExpired = false;
+  if (pending?.provider === "STRIPE" && pending.status === "PENDING" && pending.stripeCheckoutSessionId) {
+    const session = await getStripe().checkout.sessions.retrieve(pending.stripeCheckoutSessionId);
+    if (session.status === "complete") throw new AdminError("STRIPE_PAYMENT_IN_PROGRESS");
+    if (session.status === "open") await getStripe().checkout.sessions.expire(session.id);
+    sessionExpired = true;
+  }
   const cancelled = await prisma.$transaction(async (tx) => {
     const order = await tx.order.findUnique({ where: { id }, include: { payment: true } });
     if (!order) throw new AdminError("ORDER_NOT_FOUND");
+    // The checkout.session.expired webhook can cancel the order before this transaction runs.
+    if (sessionExpired && order.status === "CANCELLED") return undefined;
     if (["DELIVERED", "PICKED_UP", "CANCELLED"].includes(order.status)) throw new AdminError("CANCELLATION_NOT_ALLOWED");
     if (order.payment?.provider === "STRIPE" && ["PAID", "PARTIALLY_REFUNDED"].includes(order.payment.status)) throw new AdminError("OWNER_REFUND_REQUIRED");
     await tx.order.update({ where: { id }, data: { status: "CANCELLED", cancelledAt: new Date(), cancellationReason: reason, version: { increment: 1 } } });
     await tx.orderStatusEvent.create({ data: { orderId: id, actorUserId: actorId, fromStatus: order.status, toStatus: "CANCELLED", reason } });
     await enqueueOrderPush(tx, id, "CANCELLED");
-    await restoreOrderInventory(tx, id, order.payment, actorId, reason);
+    await restoreOrderInventory(tx, id, actorId, reason);
     await audit(tx, actorId, "ORDER_CANCELLED", "Order", id.toString(), { reason });
     return { id: order.id, email: order.customerEmail, locale: order.locale };
   });
@@ -273,7 +284,7 @@ async function settleSucceededRefund(stripeRefundId: string, cancelOrder: boolea
       await tx.order.update({ where: { id: order.id }, data: { status: "CANCELLED", cancelledAt: new Date(), cancellationReason: refund.reason, version: { increment: 1 } } });
       await tx.orderStatusEvent.create({ data: { orderId: order.id, actorUserId: refund.requestedByUserId, fromStatus: order.status, toStatus: "CANCELLED", reason: refund.reason } });
       await enqueueOrderPush(tx, order.id, "CANCELLED");
-      await restoreOrderInventory(tx, order.id, { provider: payment.provider, status: "REFUNDED" }, refund.requestedByUserId, refund.reason);
+      await restoreOrderInventory(tx, order.id, refund.requestedByUserId, refund.reason);
       await tx.auditLog.create({ data: { actorUserId: refund.requestedByUserId, action: "ORDER_CANCELLED_AFTER_REFUND", entityType: "Order", entityId: order.id.toString(), metadata: { stripeRefundId } } });
       return { id: order.id, email: order.customerEmail, locale: order.locale };
     }
