@@ -46,7 +46,7 @@ test("catalogue filtering pages IDs before loading product graphs", async (conte
     })) });
     await prisma.product.createMany({ data: [
       { id: b2bProductId, categoryId: childId, slug: `catalog-b2b-product-${suffix}`, nameDe: "B2B", nameEn: "B2B", status: "ACTIVE", active: true, is_b2b: true },
-      { id: b2bCategoryProductId, categoryId: b2bCategoryId, slug: `catalog-b2b-category-product-${suffix}`, nameDe: "B2B category", nameEn: "B2B category", status: "ACTIVE", active: true },
+      { id: b2bCategoryProductId, categoryId: b2bCategoryId, slug: `catalog-b2b-category-product-${suffix}`, nameDe: "B2B category", nameEn: "B2B category", status: "ACTIVE", active: true, is_b2b: true },
     ] });
     await prisma.productVariant.createMany({ data: productIds.map((productId, index) => ({
       id: `catalog-variant-${index}-${suffix}`,
@@ -74,14 +74,14 @@ test("catalogue filtering pages IDs before loading product graphs", async (conte
     const second = await listRetailProducts({ locale: "en", categorySlug: `catalog-root-${suffix}`, sort: "price-asc", page: 2 });
     assert.deepEqual(second.items.map(({ id }) => id), productIds.slice(24));
     assert.equal((await listRetailProducts({ locale: "en", categorySlug: `catalog-root-${suffix}`, availableOnly: true })).total, 24);
-    assert.equal((await listRetailProducts({ locale: "en", minPriceRappen: 2_000, maxPriceRappen: 2_500 })).total, 6);
+    assert.equal((await listRetailProducts({ locale: "en", categorySlug: `catalog-root-${suffix}`, minPriceRappen: 2_000, maxPriceRappen: 2_500 })).total, 6);
     assert.equal((await listRetailProducts({ locale: "en", query: `CATALOG-7-${suffix}` })).items[0]?.id, productIds[7]);
     assert.equal((await listRetailProducts({ locale: "en", tag: `catalog-tag-${suffix}` })).items[0]?.id, productIds[2]);
     const { getRetailCategories, getRetailProduct } = await import("@/server/services/retail-catalog");
     assert.equal(await getRetailProduct(`catalog-b2b-product-${suffix}`, "en"), null);
     assert.equal(await getRetailProduct(`catalog-b2b-category-product-${suffix}`, "en"), null);
     assert.equal((await getRetailCategories("en")).some(({ id }) => id === b2bCategoryId), false);
-    assert.equal((await listRetailProducts({ locale: "en", b2b: true })).total, 1);
+    assert.equal((await listRetailProducts({ locale: "en", categorySlug: `catalog-b2b-${suffix}`, b2b: true })).total, 1);
     assert.equal((await getRetailProduct(`catalog-b2b-category-product-${suffix}`, "en", true))?.id, b2bCategoryProductId);
   } finally {
     await prisma.product.deleteMany({ where: { id: { in: [...productIds, b2bProductId, b2bCategoryProductId] } } });
