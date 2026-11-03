@@ -52,7 +52,7 @@ export default async function HomePage({
           {de ? "Nach Kategorie einkaufen" : "Shop by category"}
         </h1>
         {catalog.categories.length ? (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {catalog.categories.map((category) => (
               <CategoryCard
                 key={category.id}
