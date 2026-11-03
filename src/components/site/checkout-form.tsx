@@ -55,6 +55,7 @@ export function CheckoutForm({
   const [paymentMethod, setPaymentMethod] =
     useState<PaymentMethod>("PAY_AT_PICKUP");
   const [quote, setQuote] = useState<Quote | null>(null);
+  const [quoting, setQuoting] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [busy, setBusy] = useState(false);
@@ -133,10 +134,13 @@ export function CheckoutForm({
 
   async function refreshQuote() {
     quoteRequests.cancel();
-    if (!formRef.current || items.length === 0) return;
-    const data = new FormData(formRef.current);
-    if (fulfillmentType === "DELIVERY" && !data.get("countryCode")) return;
+    const data = formRef.current && items.length > 0 ? new FormData(formRef.current) : null;
+    if (!data || (fulfillmentType === "DELIVERY" && !data.get("countryCode"))) {
+      setQuoting(false);
+      return;
+    }
     const request = quoteRequests.begin();
+    setQuoting(true);
     setError("");
     try {
       const next = await fetch("/api/v1/customer/quote", {
@@ -160,11 +164,13 @@ export function CheckoutForm({
       if (!request.isCurrent() || isAbortError(caught)) return;
       setQuote(null);
       applyApiError(caught);
+    } finally {
+      if (request.isCurrent()) setQuoting(false);
     }
   }
 
   useEffect(() => {
-    if (fulfillmentType === "PICKUP") void refreshQuote();
+    void refreshQuote();
     // refreshQuote intentionally reads the current form and cart snapshot.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fulfillmentType, items]);
@@ -181,6 +187,7 @@ export function CheckoutForm({
     if (!checkoutKey.current || items.length === 0) return;
     const data = new FormData(event.currentTarget);
     quoteRequests.cancel();
+    setQuoting(false);
     setBusy(true);
     setError("");
     setFieldErrors({});
@@ -272,6 +279,7 @@ export function CheckoutForm({
         locale={locale}
         items={items}
         quote={quote}
+        quoting={quoting}
         error={error}
         errors={fieldErrors}
         busy={busy}

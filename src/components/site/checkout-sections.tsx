@@ -309,6 +309,7 @@ export function CheckoutSummary({
   locale,
   items,
   quote,
+  quoting,
   error,
   errors,
   busy,
@@ -323,6 +324,7 @@ export function CheckoutSummary({
     unitPriceRappen: number;
   }>;
   quote: Quote | null;
+  quoting: boolean;
   error: string;
   errors: FieldErrors;
   busy: boolean;
@@ -388,6 +390,17 @@ export function CheckoutSummary({
           </div>
         </dl>
       ) : null}
+      <p role="status" className="text-sm font-medium text-muted empty:hidden">
+        {quote || error
+          ? ""
+          : quoting
+            ? de
+              ? "Summe wird berechnet …"
+              : "Calculating your total…"
+            : de
+              ? "Bitte prüfen Sie Ihre Angaben und aktualisieren Sie die Summe, um zu bestellen."
+              : "Please check your details and update the total to place your order."}
+      </p>
       {error ? (
         <p
           role="alert"
