@@ -1,3 +1,4 @@
+import "dotenv/config";
 import assert from "node:assert/strict";
 import test from "node:test";
 import type Stripe from "stripe";
@@ -52,6 +53,9 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
   process.env.DATABASE_URL = testDatabaseUrl;
   process.env.DATABASE_CONNECTION_LIMIT = "1";
   process.env.DATABASE_SSL ??= "false";
+  // Order notifications must not reach Resend from tests; a delivery failure is logged and recorded.
+  delete process.env.CONTACT_EMAIL_TO_DEV;
+  process.env.RESEND_API_KEY = "re_placeholder";
 
   const [{ prisma }, { calculateQuote, confirmCashPayment, getCustomerOrders, processStripeEvent }, { confirmInvoicePayment, getOrderHistory, setCustomerB2bAccess }] = await Promise.all([
     import("@/server/db"),
@@ -96,7 +100,7 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
       amount_total: 1000,
       currency,
       metadata: { orderId: orderId.toString(), orderNumber: formatOrderNumber(orderId) },
-      payment_intent: paymentStatus === "paid" ? `pi_${suffix}` : null,
+      payment_intent: paymentStatus === "paid" ? `pi_${sessionId}` : null,
       payment_status: paymentStatus,
     } },
   }) as unknown as Stripe.Event;
@@ -129,7 +133,7 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
     const settled = await prisma.order.findUniqueOrThrow({ where: { id: paidOrder.id }, include: { payment: true, statusEvents: true } });
     assert.equal(settled.status, "CONFIRMED");
     assert.equal(settled.payment?.status, "PAID");
-    assert.equal(settled.payment?.stripePaymentIntentId, `pi_${suffix}`);
+    assert.equal(settled.payment?.stripePaymentIntentId, `pi_cs_paid_${suffix}`);
     assert.equal(settled.statusEvents.filter((event) => event.reason === "STRIPE_PAID").length, 1);
     assert.equal(await prisma.notificationDelivery.count({ where: { orderId: paidOrder.id, channel: "PUSH", kind: "CONFIRMED" } }), 1);
 
@@ -166,6 +170,20 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
     assert.equal((await prisma.productVariant.findUniqueOrThrow({ where: { id: tracked.id } })).stockReserved, 0);
     assert.equal((await prisma.productVariant.findUniqueOrThrow({ where: { id: untracked.id } })).stockReserved, 0);
     assert.equal((await calculateQuote(promoQuote)).discountRappen, 100);
+
+    // Payment consumes what checkout reserved even when trackInventory changed during the open checkout.
+    await prisma.productVariant.update({ where: { id: tracked.id }, data: { stockReserved: 2 } });
+    const toggledOrder = await createStripeOrder(`cs_toggled_${suffix}`);
+    await prisma.orderItem.createMany({ data: [tracked, untracked].map((variant) => ({ orderId: toggledOrder.id, productId: product.id, variantId: variant.id, productNameDeSnapshot: "Test", productNameEnSnapshot: "Test", unitPriceRappen: 500, quantity: 2, lineSubtotalRappen: 1000 })) });
+    await prisma.inventoryMovement.create({ data: { variantId: tracked.id, orderId: toggledOrder.id, type: "ORDER_RESERVED", quantityChange: -2, idempotencyKey: `order:${toggledOrder.id}:${tracked.id}:reserve` } });
+    await prisma.productVariant.update({ where: { id: tracked.id }, data: { trackInventory: false } });
+    await prisma.productVariant.update({ where: { id: untracked.id }, data: { trackInventory: true } });
+    const toggledId = `evt_toggled_${suffix}`;
+    eventIds.push(toggledId);
+    await processStripeEvent(checkoutEvent(toggledId, "checkout.session.completed", `cs_toggled_${suffix}`, toggledOrder.id, "paid"));
+    assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: toggledOrder.id } })).status, "CONFIRMED");
+    assert.deepEqual(await prisma.productVariant.findUniqueOrThrow({ where: { id: tracked.id }, select: { stockOnHand: true, stockReserved: true } }), { stockOnHand: 3, stockReserved: 0 });
+    assert.equal((await prisma.productVariant.findUniqueOrThrow({ where: { id: untracked.id } })).stockOnHand, 0);
 
     const actor = await prisma.user.create({ data: { email: `cash-${suffix}@example.com`, role: "OWNER" } });
     actorId = actor.id;
