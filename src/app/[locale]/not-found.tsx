@@ -16,7 +16,7 @@ export default function LocaleNotFound() {
         className="w-full rounded-card border border-border bg-surface p-6 sm:p-10"
       >
         <PackageSearch aria-hidden="true" className="size-10 text-secondary" />
-        <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+        <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">
           404
         </p>
         <h1

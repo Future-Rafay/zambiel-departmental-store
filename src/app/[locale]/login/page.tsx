@@ -28,7 +28,7 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
 
         <p className="text-center text-xs text-muted border-t border-border/60 pt-4">
           {de ? "Noch kein Konto?" : "No account yet?"}{" "}
-          <Link className="font-bold text-primary hover:text-secondary underline" href={`/${locale}/register`}>
+          <Link className="font-bold text-primary hover:text-secondary-text underline" href={`/${locale}/register`}>
             {de ? "Jetzt registrieren" : "Register now"}
           </Link>
         </p>

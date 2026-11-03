@@ -20,7 +20,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-12 sm:px-6 lg:px-8">
       <div className="flex items-end justify-between border-b border-border/60 pb-5">
         <div>
-          <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary">
+          <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary-text">
             ZAMBIEL
           </span>
           <h1 className="mt-1 font-display text-4xl font-extrabold text-primary">
@@ -28,7 +28,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
           </h1>
         </div>
         {items.length > 0 && (
-          <span className="rounded-full bg-secondary/15 px-4 py-1 text-xs font-bold text-secondary-light">
+          <span className="shrink-0 rounded-full bg-secondary/15 px-4 py-1 text-xs font-bold text-secondary-text">
             {items.reduce((sum, item) => sum + item.quantity, 0)}{" "}
             {de ? "Artikel" : "items"}
           </span>

@@ -37,7 +37,7 @@ export default async function AccountOrdersPage({
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-8">
       {/* Header */}
       <div className="border-b border-border/60 pb-5">
-        <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary">
+        <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary-text">
           ZAMBIEL ACCOUNT
         </span>
         <h1 className="font-display text-4xl font-extrabold text-primary mt-1">
@@ -84,7 +84,7 @@ export default async function AccountOrdersPage({
                 className="group flex h-full flex-col justify-between space-y-4 rounded-none p-6"
               >
                 <div className="flex items-center justify-between border-b border-border/60 pb-3">
-                  <span className="font-display font-extrabold text-lg text-primary group-hover:text-secondary transition-colors">
+                  <span className="font-display font-extrabold text-lg text-primary group-hover:text-secondary-text transition-colors">
                     {order.orderNumber}
                   </span>
                   <span
@@ -119,7 +119,7 @@ export default async function AccountOrdersPage({
                   </p>
                 )}
 
-                <div className="pt-2 flex items-center justify-between text-xs font-bold text-secondary border-t border-border/40">
+                <div className="pt-2 flex items-center justify-between text-xs font-bold text-secondary-text border-t border-border/40">
                   <span>
                     {de
                       ? "Details & Status verfolgen"

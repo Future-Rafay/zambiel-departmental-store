@@ -38,7 +38,7 @@ export function RetailProductSection({
     >
       <div className="flex items-end justify-between gap-5 border-b border-border pb-6">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">
             {eyebrow}
           </p>
           <h2
@@ -50,7 +50,7 @@ export function RetailProductSection({
         </div>
         <Link
           href={`/${locale}/products`}
-          className="hidden min-h-11 items-center gap-2 font-bold text-primary hover:text-secondary sm:inline-flex"
+          className="hidden min-h-11 items-center gap-2 font-bold text-primary hover:text-secondary-text sm:inline-flex"
         >
           {locale === "de" ? "Alle ansehen" : "View all"}
           <ArrowRight className="h-5 w-5" aria-hidden="true" />
@@ -122,7 +122,7 @@ export function WhyZambiel({
       aria-labelledby={compact ? "why-product-heading" : "why-heading"}
     >
       <div className="rounded-card bg-surface-warm p-7 sm:p-10">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">
           Zambiel
         </p>
         <h2
@@ -229,7 +229,7 @@ export function StoryAndRequest({ locale }: { locale: StoreLocale }) {
         </p>
       </article>
       <article className="rounded-card border border-border bg-surface p-7 sm:p-10">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">
           {de ? "Produkt gesucht" : "Product finder"}
         </p>
         <h2 className="mt-3 font-display text-4xl leading-tight text-primary">
@@ -258,7 +258,7 @@ export function NewsletterSignup({ locale }: { locale: StoreLocale }) {
       <div className="rounded-card border border-border bg-surface p-7 sm:p-10">
         <div className="grid gap-6 md:grid-cols-[1fr_0.8fr] md:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">
               {de ? "Newsletter" : "Newsletter"}
             </p>
             <h2

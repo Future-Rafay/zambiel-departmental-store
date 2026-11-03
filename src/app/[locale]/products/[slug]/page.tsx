@@ -154,7 +154,7 @@ export default async function ProductPage({
           productName={product.name}
         />
         <div className="min-w-0 lg:sticky lg:top-28 lg:self-start">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">
             {product.category.name}
           </p>
           <h1 className="mt-3 font-display text-4xl leading-tight tracking-[-0.045em] text-primary sm:text-6xl">

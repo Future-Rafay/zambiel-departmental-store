@@ -42,7 +42,7 @@ export default async function HomePage({
         className="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-20"
         aria-labelledby="category-heading"
       >
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">
           {de ? "Sortiment" : "Department directory"}
         </p>
         <h1
@@ -97,7 +97,7 @@ export default async function HomePage({
           className="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-20"
           aria-labelledby="promotions-heading"
         >
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">
             {de ? "Aktuelle Angebote" : "Current offers"}
           </p>
           <h2
