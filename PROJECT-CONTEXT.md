@@ -93,7 +93,7 @@ APIs:
 - Resend rejects an entire batch (422) when one address is invalid. Before each batch, `deliverPendingRecipients` marks recipients `FAILED`/`UNDELIVERABLE_ADDRESS` when their domain is reserved (`isUndeliverableEmail`: `*.test`, `example.com`, …) or has no MX/A/AAAA record (`domainAcceptsMail`, one lookup per domain per send; DNS timeouts let the address through). `zambiel.ch` had no DNS on 2026-10-31, so `@zambiel.ch` accounts are skipped until the domain is live.
 - A sent batch is recorded with one raw `UPDATE … CASE` statement. If that write fails, rows stay `PENDING` (never `FAILED`) so a resume reuses the batch idempotency key instead of emailing twice. Never go back to per-row updates inside a transaction.
 - Admin controls (2026-10-31): drafts can be deleted (danger zone, confirmation); sent campaigns keep history and cannot be deleted (archiving would need a schema field). Failed recipients have a confirmed Exclude action (`CANCELLED`/`EXCLUDED_BY_OWNER`) that Retry skips. Eight starter templates: Blank, Announcement, Promotion, New arrivals, Seasonal sale, Back in stock, Newsletter, Thank you (placeholder copy only).
-- PR [#1](https://github.com/Future-Rafay/zambiel-departmental-store/pull/1) (`feat/email-marketing` → `main`) is open with CI passing. Live Resend inbox delivery and the new admin screens are not browser-verified.
+- PR [#1](https://github.com/Future-Rafay/zambiel-departmental-store/pull/1) (`feat/email-marketing` → `main`) is merged. Later audit fixes on the same branch need a new PR. Live Resend inbox delivery and the new admin screens are not browser-verified.
 ## Current work state (2026-10-31)
 
 - Branch `feat/email-marketing` holds the email marketing feature plus the loading bar, deferred-form transition, categories grid, and DB connection fixes. It tracks `origin/feat/email-marketing`, is not merged into `main`, and has no pull request yet (check `git status -sb` for unpushed commits).
@@ -108,13 +108,14 @@ APIs:
 - Server code reprices lines and validates stock, promotions, destination-country shipping rules, fulfillment, and payment methods.
 - Orders, fees, promotions, payments, and refunds remain authoritative in CHF integer rappen. Stripe Checkout enables Adaptive Pricing so supported customers may see and pay the CHF order in local currency; Zambiel does not store exchange rates or mixed-currency order totals.
 - Stripe reserves stock; verified success consumes it; terminal failure/expiry releases it.
-- Cancellation or full refund-and-cancel restores stock exactly once. Partial refunds do not restock.
+- Cancellation or full refund-and-cancel restores stock exactly once, following the order's `InventoryMovement` rows rather than the variant's current `trackInventory`. Partial refunds do not restock.
+- Order data reset (2026-11-03): at the owner's request, all orders were deleted from Railway `zambiel` (25) and local `zambiel_dev` (19). Sold stock was restocked and reservations released, recorded as order-less `ORDER_RESTORED`/`ORDER_RELEASED` movements (`order-reset:` keys). Older ledger rows remain with no order, and audit-log entries still name the deleted order numbers.
 - Paid Stripe orders must use refund-before-cancel. Destructive controls require separation, confirmation, and reasons.
 - Legacy `PREPARING`/`COMPLETED`, scheduling columns, restaurant modifiers, and dietary fields remain only for expand/contract compatibility. Never introduce new dependencies on them.
 
 ## Database and data safety
 
-- Local development database is exactly lowercase `zambiel_dev`; tests/imports may use `zambiel_test`.
+- Local development database is exactly lowercase `zambiel_dev`; imports may use `zambiel_test`. `TEST_DATABASE_URL` points to `zambiel_dev` by owner decision (2026-11-03).
 - Seed/import guards reject `saltnpepper_dev`, unknown databases, and production targets.
 - Never edit or replace deployed migration history. Add forward migrations.
 - Never copy SaltNPepper production data or credentials into Zambiel.
@@ -218,7 +219,7 @@ npm.cmd run build
 git diff --check
 ```
 
-DB integration tests (`*.integration.test.ts`) skip unless `TEST_DATABASE_URL` points to local `zambiel_test`; set it to run them. Known pre-existing failures with it set (2026-10-31): `email-flows.integration.test.ts` (`DEVELOPMENT_CONTACT_OVERRIDE_NOT_ALLOWED` because `.env` sets `CONTACT_EMAIL_TO_DEV`) and `retail-catalog.integration.test.ts` (catalogue data assumption in `zambiel_test`).
+DB integration tests (`*.integration.test.ts`) skip unless `TEST_DATABASE_URL` is set and differs from `DATABASE_URL`. All 67 tests pass with it set (2026-11-03).
 
 Read-only DB probes: write a throwaway `scripts/.claude-*.ts` that imports `../src/server/db`, run it with `npx tsx --env-file=.env` (or a `DATABASE_URL=` override), then delete it. Browser checks of `/admin` need the owner to sign in; the owner's own `next dev` usually already holds port 3000.
 
