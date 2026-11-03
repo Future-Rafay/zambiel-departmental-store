@@ -100,6 +100,13 @@ body {
   }
 }
 
+/* Keep keyboard-focused controls clear of the phone purchase bar. */
+@media (width < 64rem) {
+  html:has([data-purchase-bar]) {
+    scroll-padding-bottom: 6rem;
+  }
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 10px;
