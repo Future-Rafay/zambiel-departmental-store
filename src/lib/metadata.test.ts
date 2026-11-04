@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { localizedMetadata } from "@/lib/metadata";
+import { localizedMetadata, pageTitleMetadata } from "@/lib/metadata";
 
 test("localized metadata provides canonical, language, social, and image fields", () => {
   const metadata = localizedMetadata(
@@ -27,4 +27,14 @@ test("localized metadata provides canonical, language, social, and image fields"
       : undefined,
     "summary_large_image",
   );
+});
+
+test("page title metadata follows the locale and keeps robots rules", async () => {
+  const generate = pageTitleMetadata({ de: "Warenkorb", en: "Cart" }, { index: false, follow: false });
+  assert.equal((await generate({ params: Promise.resolve({ locale: "de" }) })).title, "Warenkorb");
+  const english = await generate({ params: Promise.resolve({ locale: "en" }) });
+  assert.equal(english.title, "Cart");
+  assert.deepEqual(english.robots, { index: false, follow: false });
+  const open = await pageTitleMetadata({ de: "AGB", en: "Terms" })({ params: Promise.resolve({ locale: "de" }) });
+  assert.equal(open.robots, undefined);
 });

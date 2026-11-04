@@ -1,4 +1,7 @@
 import { Card } from "@/components/ui/card";
+import { pageTitleMetadata } from "@/lib/metadata";
+
+export const generateMetadata = pageTitleMetadata({ de: "Datenschutz", en: "Privacy policy" });
 
 export default async function PrivacyPage({ params }: { params: Promise<{ locale: string }> }) {
   const de = (await params).locale !== "en";

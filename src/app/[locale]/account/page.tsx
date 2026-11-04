@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { pageTitleMetadata } from "@/lib/metadata";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { saveCustomerProfile } from "@/app/[locale]/account/actions";
@@ -9,9 +9,7 @@ import { getCurrentUser } from "@/server/auth/current-user";
 import { prisma } from "@/server/db";
 import { getShippingCountries } from "@/server/services/ordering";
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
+export const generateMetadata = pageTitleMetadata({ de: "Mein Konto", en: "My account" }, { index: false, follow: false });
 
 export default async function AccountPage({
   params,

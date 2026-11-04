@@ -1,11 +1,11 @@
 import Link from "next/link";
-import type { Metadata } from "next";
+import { pageTitleMetadata } from "@/lib/metadata";
 
 import { AuthForm } from "@/components/site/auth-form";
 import { Card } from "@/components/ui/card";
 import { BrandLogo } from "@/components/brand-logo";
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const generateMetadata = pageTitleMetadata({ de: "Konto erstellen", en: "Create account" }, { index: false, follow: false });
 
 export default async function RegisterPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ b2b?: string }> }) {
   const locale = (await params).locale === "en" ? "en" : "de";

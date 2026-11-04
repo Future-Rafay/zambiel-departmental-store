@@ -35,3 +35,13 @@ export function localizedMetadata(
     },
   };
 }
+
+export function pageTitleMetadata(
+  title: { de: string; en: string },
+  robots?: { index: boolean; follow: boolean },
+) {
+  return async ({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> => ({
+    title: title[(await params).locale === "en" ? "en" : "de"],
+    ...(robots ? { robots } : {}),
+  });
+}

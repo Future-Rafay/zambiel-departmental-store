@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Metadata } from "next";
+import { pageTitleMetadata } from "@/lib/metadata";
 import { redirect } from "next/navigation";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 
@@ -8,7 +8,7 @@ import { formatMoney, orderStatusLabel } from "@/lib/orders";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getCustomerOrders } from "@/server/services/ordering";
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const generateMetadata = pageTitleMetadata({ de: "Meine Bestellungen", en: "My orders" }, { index: false, follow: false });
 
 export default async function AccountOrdersPage({
   params,
