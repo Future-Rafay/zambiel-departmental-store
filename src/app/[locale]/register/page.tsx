@@ -29,7 +29,7 @@ export default async function RegisterPage({ params, searchParams }: { params: P
 
         <p className="text-center text-xs text-muted border-t border-border/60 pt-4">
           {de ? "Bereits ein Konto?" : "Already have an account?"}{" "}
-          <Link className="font-bold text-primary hover:text-secondary-text underline" href={`/${locale}/login`}>
+          <Link className="inline-flex min-h-11 items-center font-bold text-primary hover:text-secondary-text underline" href={`/${locale}/login`}>
             {de ? "Zur Anmeldung" : "Back to sign in"}
           </Link>
         </p>

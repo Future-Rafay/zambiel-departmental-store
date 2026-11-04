@@ -37,7 +37,7 @@ export function RetailProductCard({ product, locale, hrefBase }: { product: Reta
         </div>
       </div>
       <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted">{product.category.name}</p>
+        <p className="truncate text-xs font-bold uppercase tracking-[0.14em] text-muted">{product.category.name}</p>
         <h3 className="mt-2 line-clamp-2 text-base font-bold leading-6 text-primary sm:text-lg">{product.name}</h3>
         <div className="mt-auto flex items-end justify-between gap-3 pt-5">
           <p className="font-bold tabular-nums text-foreground">

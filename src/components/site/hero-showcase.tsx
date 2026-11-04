@@ -51,38 +51,46 @@ export function HeroShowcase({
             className="object-cover"
           />
         </div>
-        <button
-          type="button"
-          onClick={() =>
-            setSlide((slide + banners.length - 1) % banners.length)
-          }
-          aria-label={de ? "Vorheriges Banner" : "Previous banner"}
-          className="absolute left-3 top-1/2 inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-primary shadow-lg hover:bg-white"
-        >
-          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setSlide((slide + 1) % banners.length)}
-          aria-label={de ? "Nächstes Banner" : "Next banner"}
-          className="absolute right-3 top-1/2 inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-primary shadow-lg hover:bg-white"
-        >
-          <ChevronRight className="h-5 w-5" aria-hidden="true" />
-        </button>
-        <div
-          className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2 rounded-full bg-primary/75 p-2"
-          aria-label={de ? "Banner auswählen" : "Choose banner"}
-        >
-          {banners.map((banner, index) => (
-            <button
-              key={banner.src}
-              type="button"
-              onClick={() => setSlide(index)}
-              aria-label={`${de ? "Banner" : "Banner"} ${index + 1}`}
-              aria-current={slide === index ? "true" : undefined}
-              className={`h-3 w-3 rounded-full ${slide === index ? "bg-secondary" : "bg-white/70"}`}
-            />
-          ))}
+        {/* Controls sit under the image on phones, where they would cover most of the short banner. */}
+        <div className="flex items-center justify-between sm:justify-center">
+          <button
+            type="button"
+            onClick={() =>
+              setSlide((slide + banners.length - 1) % banners.length)
+            }
+            aria-label={de ? "Vorheriges Banner" : "Previous banner"}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center text-primary sm:absolute sm:left-3 sm:top-[calc(50%-1.375rem)] sm:-translate-y-1/2 sm:rounded-full sm:bg-white/90 sm:shadow-lg sm:hover:bg-white"
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <div
+            role="group"
+            className="flex"
+            aria-label={de ? "Banner auswählen" : "Choose banner"}
+          >
+            {banners.map((banner, index) => (
+              <button
+                key={banner.src}
+                type="button"
+                onClick={() => setSlide(index)}
+                aria-label={`Banner ${index + 1}`}
+                aria-current={slide === index ? "true" : undefined}
+                className="grid size-11 place-items-center"
+              >
+                <span
+                  className={`size-3 rounded-full border border-primary ${slide === index ? "bg-primary" : "bg-transparent"}`}
+                />
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => setSlide((slide + 1) % banners.length)}
+            aria-label={de ? "Nächstes Banner" : "Next banner"}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center text-primary sm:absolute sm:right-3 sm:top-[calc(50%-1.375rem)] sm:-translate-y-1/2 sm:rounded-full sm:bg-white/90 sm:shadow-lg sm:hover:bg-white"
+          >
+            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+          </button>
         </div>
       </div>
       <div className="mt-4">

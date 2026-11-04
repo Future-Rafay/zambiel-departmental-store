@@ -395,17 +395,17 @@ export function SiteShell({
             <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-secondary-light">
               {de ? "Schnellzugriff" : "Quick links"}
             </h2>
-            <div className="mt-4 flex flex-col gap-3 text-sm">
+            <div className="mt-2 flex flex-col items-start text-sm">
               {links.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="hover:text-secondary-light"
+                  className="inline-flex min-h-11 items-center hover:text-secondary-light"
                 >
                   {link.label}
                 </Link>
               ))}
-              <Link href={`/${locale}/b2b-shop`} className="hover:text-secondary-light">
+              <Link href={`/${locale}/b2b-shop`} className="inline-flex min-h-11 items-center hover:text-secondary-light">
                 {de ? "B2B-Shop" : "B2B Shop"}
               </Link>
             </div>
@@ -414,11 +414,11 @@ export function SiteShell({
             <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-secondary-light">
               {de ? "Bedingungen & Richtlinien" : "Terms & policies"}
             </h2>
-            <ul className="mt-4 space-y-3 text-sm">
+            <ul className="mt-2 text-sm">
               <li>
                 <Link
                   href={`/${locale}/privacy`}
-                  className="hover:text-secondary-light"
+                  className="inline-flex min-h-11 items-center hover:text-secondary-light"
                 >
                   {labels.privacy}
                 </Link>
@@ -426,7 +426,7 @@ export function SiteShell({
               <li>
                 <Link
                   href={`/${locale}/returns`}
-                  className="hover:text-secondary-light"
+                  className="inline-flex min-h-11 items-center hover:text-secondary-light"
                 >
                   {de ? "Rückgabe & Erstattung" : "Return & refund"}
                 </Link>
@@ -434,7 +434,7 @@ export function SiteShell({
               <li>
                 <Link
                   href={`/${locale}/terms`}
-                  className="hover:text-secondary-light"
+                  className="inline-flex min-h-11 items-center hover:text-secondary-light"
                 >
                   {labels.terms}
                 </Link>
@@ -442,7 +442,7 @@ export function SiteShell({
               <li>
                 <Link
                   href={`/${locale}/contact`}
-                  className="hover:text-secondary-light"
+                  className="inline-flex min-h-11 items-center hover:text-secondary-light"
                 >
                   {de ? "Kontaktinformationen" : "Contact information"}
                 </Link>
@@ -459,7 +459,7 @@ export function SiteShell({
             {publicConfig.email ? (
               <a
                 href={`mailto:${publicConfig.email}`}
-                className="mt-2 inline-block break-all font-bold hover:text-secondary-light"
+                className="mt-1 inline-flex min-h-11 items-center break-all font-bold hover:text-secondary-light"
               >
                 {publicConfig.email}
               </a>

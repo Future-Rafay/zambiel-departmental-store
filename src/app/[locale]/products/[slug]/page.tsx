@@ -115,17 +115,17 @@ export default async function ProductPage({
       />
       <nav
         aria-label={de ? "Brotkrumen" : "Breadcrumb"}
-        className="mb-7 text-sm text-muted"
+        className="mb-3 text-sm text-muted sm:mb-7"
       >
-        <ol className="flex flex-wrap items-center gap-2">
+        <ol className="flex flex-wrap items-center gap-x-2">
           <li>
-            <Link href={`/${locale}`} className="hover:text-primary">
+            <Link href={`/${locale}`} className="inline-flex min-h-11 items-center hover:text-primary">
               {de ? "Startseite" : "Home"}
             </Link>
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <Link href={`/${locale}/products`} className="hover:text-primary">
+            <Link href={`/${locale}/products`} className="inline-flex min-h-11 items-center hover:text-primary">
               {de ? "Produkte" : "Products"}
             </Link>
           </li>
@@ -133,7 +133,7 @@ export default async function ProductPage({
           <li>
             <Link
               href={`/${locale}/categories/${product.category.slug}`}
-              className="hover:text-primary"
+              className="inline-flex min-h-11 items-center hover:text-primary"
             >
               {product.category.name}
             </Link>

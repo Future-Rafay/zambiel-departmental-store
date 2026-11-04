@@ -65,7 +65,7 @@ export function AuthForm({ locale, mode, admin = false, requestB2b = false }: { 
           required
           className="mt-1"
         />
-        {mode === "login" ? <a href={`/${locale}/forgot-password`} className="mt-2 block text-right text-xs font-bold text-primary underline">{de ? "Passwort vergessen?" : "Forgot password?"}</a> : null}
+        {mode === "login" ? <a href={`/${locale}/forgot-password`} className="mt-1 flex min-h-11 items-center justify-end text-xs font-bold text-primary underline">{de ? "Passwort vergessen?" : "Forgot password?"}</a> : null}
       </div>
 
       {error && (

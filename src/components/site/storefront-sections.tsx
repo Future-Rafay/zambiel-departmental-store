@@ -56,7 +56,7 @@ export function RetailProductSection({
           <ArrowRight className="h-5 w-5" aria-hidden="true" />
         </Link>
       </div>
-      <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
+      <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-4">
         {products.map((product) => (
           <RetailProductCard
             key={product.slug}
