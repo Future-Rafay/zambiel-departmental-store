@@ -48,7 +48,7 @@ export function ContactForm({
         <Input id={`${prefix}-name`} name="name" autoComplete="name" required minLength={2} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`${prefix}-email`}>Email</Label>
+        <Label htmlFor={`${prefix}-email`}>{de ? "E-Mail" : "Email"}</Label>
         <Input id={`${prefix}-email`} name="email" type="email" autoComplete="email" required />
       </div>
       <div className="space-y-2">

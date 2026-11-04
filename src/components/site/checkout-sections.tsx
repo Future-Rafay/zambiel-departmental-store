@@ -45,7 +45,7 @@ export function FulfillmentChoices({
     <Card className="space-y-4 p-5">
       <fieldset>
         <legend className="mb-3 font-display text-xl font-bold">
-          {de ? "Lieferart" : "Fulfillment"}
+          {de ? "Lieferart" : "Delivery or pickup"}
         </legend>
         <div className="grid gap-3 sm:grid-cols-2">
           {(["PICKUP", "DELIVERY"] as const).map((option) => (
@@ -424,8 +424,8 @@ export function CheckoutSummary({
       </div>
       <p className="text-xs text-muted">
         {de
-          ? "Preise, Bestand und Liefergebiet werden serverseitig erneut geprüft."
-          : "Prices, stock, and delivery eligibility are revalidated by the server."}
+          ? "Preise und Verfügbarkeit prüfen wir beim Bestellen noch einmal."
+          : "We check prices and availability again when you place your order."}
       </p>
     </Card>
   );

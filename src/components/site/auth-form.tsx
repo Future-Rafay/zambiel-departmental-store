@@ -50,7 +50,7 @@ export function AuthForm({ locale, mode, admin = false, requestB2b = false }: { 
         </div>
       )}
       <div>
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{de ? "E-Mail" : "Email"}</Label>
         <Input id="email" name="email" type="email" autoComplete="email" placeholder="name@beispiel.ch" required className="mt-1" />
       </div>
       <div>

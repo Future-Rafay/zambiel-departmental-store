@@ -27,7 +27,7 @@ export default async function AccountOrdersPage({
       {/* Header */}
       <div className="border-b border-border/60 pb-5">
         <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary-text">
-          ZAMBIEL ACCOUNT
+          {de ? "ZAMBIEL KONTO" : "ZAMBIEL ACCOUNT"}
         </span>
         <h1 className="font-display text-4xl font-extrabold text-primary mt-1">
           {de ? "Meine Bestellungen" : "My Orders"}

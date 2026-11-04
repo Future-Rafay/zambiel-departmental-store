@@ -40,7 +40,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
         <aside className="space-y-4">
           {contact.email ? <a href={`mailto:${contact.email}`} className="block rounded-card border border-border bg-surface p-6 hover:border-secondary">
             <Mail className="h-6 w-6 text-secondary" aria-hidden="true" />
-            <h2 className="mt-5 text-xl font-bold text-primary">Email</h2>
+            <h2 className="mt-5 text-xl font-bold text-primary">{de ? "E-Mail" : "Email"}</h2>
             <p className="mt-2 break-all text-sm text-muted">{contact.email}</p>
           </a> : null}
           {contact.social.instagram ? <a href={contact.social.instagram} target="_blank" rel="noreferrer" className="block rounded-card border border-border bg-surface p-6 hover:border-secondary">
