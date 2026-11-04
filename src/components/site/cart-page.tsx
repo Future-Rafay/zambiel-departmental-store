@@ -47,7 +47,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
           </p>
           <Link
             href={b2b ? `/${locale}/b2b-shop` : `/${locale}/products`}
-            className="inline-flex min-h-11 items-center rounded-xl bg-primary px-8 font-bold text-primary-foreground"
+            className="inline-flex min-h-11 items-center rounded-control bg-primary px-8 font-bold text-primary-foreground"
           >
             {de ? "Produkte entdecken" : "Browse Products"}
           </Link>
@@ -58,7 +58,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
             {items.map((item) => (
               <li key={item.key}>
                 <Card className="grid grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-none p-4 sm:flex sm:items-center sm:gap-4">
-                  <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-background sm:size-20">
+                  <div className="relative size-16 shrink-0 overflow-hidden rounded-control bg-background sm:size-20">
                     <Image
                       src={item.imageUrl ?? "/images/product-placeholder.svg"}
                       alt=""
@@ -77,7 +77,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
                         {item.choiceNames.join(", ")}
                       </p>
                     )}
-                    <div className="mt-2 inline-flex items-center rounded-lg border border-border">
+                    <div className="mt-2 inline-flex items-center rounded-control border border-border">
                       <button
                         type="button"
                         className="grid size-11 place-items-center"
@@ -140,7 +140,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
             </dl>
             <Link
               href={b2b ? `/${locale}/b2b-shop/checkout` : `/${locale}/checkout`}
-              className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground"
+              className="inline-flex min-h-12 w-full items-center justify-center rounded-control bg-primary font-bold text-primary-foreground"
             >
               {de ? "Zur Kasse" : "Proceed to Checkout"}
             </Link>

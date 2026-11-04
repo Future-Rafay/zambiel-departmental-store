@@ -66,7 +66,7 @@ export default async function AccountOrdersPage({
           <div className="pt-2">
             <Link
               href={`/${locale}/products`}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-secondary px-8 text-sm font-bold text-secondary-foreground shadow hover:bg-secondary-light transition-all"
+              className="inline-flex min-h-11 items-center justify-center rounded-control bg-secondary px-8 text-sm font-bold text-secondary-foreground shadow hover:bg-secondary-light transition-all"
             >
               {de ? "Jetzt bestellen" : "Order now"}
             </Link>

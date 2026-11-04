@@ -80,7 +80,7 @@ export function CustomerNotifications({ locale, userId }: { locale: "de" | "en";
       <Bell className="size-5" aria-hidden="true" />
       {unread > 0 && <span className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">{Math.min(unread, 9)}</span>}
     </button>
-    {open && <div className="absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl">
+    {open && <div className="absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-card border border-border bg-surface shadow-2xl">
       <div className="border-b border-border px-4 py-3 font-display font-bold">{locale === "de" ? "Bestellupdates" : "Order updates"}</div>
       {notices.length === 0 ? <p className="p-5 text-sm text-muted">{locale === "de" ? "Keine Updates verfügbar." : "No updates available."}</p> : <ul className="max-h-[min(30rem,calc(100vh-8rem))] divide-y divide-border overflow-y-auto">
         {notices.slice(0, 8).map((notice) => <li key={notice.id} className="p-4">

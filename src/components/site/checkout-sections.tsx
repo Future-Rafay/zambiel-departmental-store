@@ -404,7 +404,7 @@ export function CheckoutSummary({
       {error ? (
         <p
           role="alert"
-          className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive"
+          className="rounded-control bg-destructive/10 p-3 text-sm text-destructive"
         >
           {error}
         </p>

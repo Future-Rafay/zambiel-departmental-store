@@ -80,14 +80,14 @@ export default async function AccountPage({
         </Link>
       </div>
       {feedback.saved && (
-        <p role="status" className="rounded-xl bg-success/10 p-3 text-success">
+        <p role="status" className="rounded-control bg-success/10 p-3 text-success">
           {de ? "Profil gespeichert." : "Profile saved."}
         </p>
       )}
       {feedback.error && (
         <p
           role="alert"
-          className="rounded-xl bg-destructive/10 p-3 text-destructive"
+          className="rounded-control bg-destructive/10 p-3 text-destructive"
         >
           {de
             ? "Dieses Lieferland ist nicht verfügbar."
@@ -147,7 +147,7 @@ export default async function AccountPage({
             </select>
           </div>
           <div className="sm:col-span-2 flex justify-end">
-            <button className="min-h-11 rounded-xl bg-primary px-6 font-bold text-white">
+            <button className="min-h-11 rounded-control bg-primary px-6 font-bold text-white">
               {de ? "Profil speichern" : "Save profile"}
             </button>
           </div>

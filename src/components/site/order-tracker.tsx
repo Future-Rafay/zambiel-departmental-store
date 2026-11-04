@@ -108,7 +108,7 @@ export function OrderTracker({
           <ul className="divide-y divide-border">
             {order.items.map((item) => (
               <li key={item.id} className="flex gap-3 py-3">
-                <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-background">
+                <div className="relative size-14 shrink-0 overflow-hidden rounded-control bg-background">
                   <Image
                     src={item.imageUrl ?? "/images/product-placeholder.svg"}
                     alt=""
