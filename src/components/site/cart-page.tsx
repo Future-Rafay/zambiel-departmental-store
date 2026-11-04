@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { StorefrontImage } from "@/components/site/storefront-image";
 import Link from "next/link";
 import { Minus, Plus, Trash2 } from "lucide-react";
 
@@ -59,8 +59,8 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
               <li key={item.key}>
                 <Card className="grid grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-none p-4 sm:flex sm:items-center sm:gap-4">
                   <div className="relative size-16 shrink-0 overflow-hidden rounded-control bg-background sm:size-20">
-                    <Image
-                      src={item.imageUrl ?? "/images/product-placeholder.svg"}
+                    <StorefrontImage
+                      src={item.imageUrl ?? null}
                       alt=""
                       fill
                       sizes="80px"

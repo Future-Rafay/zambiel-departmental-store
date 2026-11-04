@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
-import { formatMoney, orderStatusLabel } from "@/lib/orders";
+import { formatMoney, orderStatusBadgeClass, orderStatusLabel } from "@/lib/orders";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getCustomerOrders } from "@/server/services/ordering";
 
@@ -21,17 +21,6 @@ export default async function AccountOrdersPage({
   if (!user) redirect(`/${locale}/login`);
 
   const orders = await getCustomerOrders(user.id);
-
-  const statusColors: Record<string, string> = {
-    CONFIRMED: "bg-blue-600 text-white",
-    PROCESSING: "bg-amber-600 text-white",
-    READY_FOR_PICKUP: "bg-emerald-600 text-white",
-    OUT_FOR_DELIVERY: "bg-secondary text-secondary-foreground",
-    DELIVERED: "bg-success text-white",
-    PICKED_UP: "bg-success text-white",
-    CANCELLED: "bg-destructive text-white",
-    PAYMENT_PENDING: "bg-muted text-foreground",
-  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-8">
@@ -88,7 +77,7 @@ export default async function AccountOrdersPage({
                     {order.orderNumber}
                   </span>
                   <span
-                    className={`rounded-full px-3 py-1 text-[11px] font-bold shadow-sm ${statusColors[order.status] ?? "bg-primary text-white"}`}
+                    className={`rounded-full px-3 py-1 text-xs font-bold shadow-sm ${orderStatusBadgeClass(order.status)}`}
                   >
                     {orderStatusLabel(order.status, locale)}
                   </span>
