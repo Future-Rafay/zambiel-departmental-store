@@ -151,7 +151,7 @@ export function ImageUploadField({
               event.preventDefault();
               select(event.dataTransfer.files?.[0]);
             }}
-            className="flex min-h-28 w-full flex-col items-center justify-center gap-2 rounded-lg text-sm font-semibold text-muted hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
+            className="flex min-h-28 w-full flex-col items-center justify-center gap-2 rounded-lg text-sm font-semibold text-muted hover:bg-background"
           >
             <ImageIcon aria-hidden="true" className="size-8 text-primary" />
             Drop an image or click to browse

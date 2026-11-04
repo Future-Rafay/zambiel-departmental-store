@@ -122,7 +122,7 @@ export function Field({
         {...props}
         id={inputId}
         name={name}
-        className="min-h-11 rounded-control border-border bg-surface px-3 text-sm shadow-2xs focus:border-primary focus:ring-1 focus:ring-ring"
+        className="min-h-11 rounded-control border-border bg-surface px-3 text-base shadow-2xs focus:border-primary sm:text-sm"
       />
     </div>
   );
@@ -156,7 +156,7 @@ export function TextareaField({
         defaultValue={defaultValue ?? ""}
         rows={rows}
         required={required}
-        className="min-h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm shadow-2xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+        className="min-h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-base shadow-2xs focus:border-primary sm:text-sm"
       />
     </div>
   );
@@ -189,7 +189,7 @@ export function SelectField({
         name={name}
         defaultValue={defaultValue}
         required={required}
-        className="min-h-11 w-full rounded-control border border-border bg-surface px-3 text-sm font-medium shadow-2xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+        className="min-h-11 w-full rounded-control border border-border bg-surface px-3 text-base font-medium shadow-2xs focus:border-primary sm:text-sm"
       >
         {children}
       </select>

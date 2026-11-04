@@ -72,7 +72,7 @@ export function OrderHistory({ orders }: { orders: Order[] }) {
         ))}</tbody></table>
       </div>
       <div className="grid gap-3 md:hidden">{orders.map((order) => (
-        <Link key={order.id} href={`/admin/orders/${order.orderNumber}`} className="rounded-xl focus:outline-none focus:ring-2 focus:ring-secondary"><Card className="space-y-3 border-[#E1E3E5] bg-white p-4 transition-colors hover:bg-[#F9F9F9]"><div className="flex items-center justify-between"><span className="font-extrabold text-primary">{order.orderNumber}</span><StatusBadge status={order.status} /></div><div className="flex items-center justify-between text-sm"><span className="font-semibold text-foreground">{order.customerName}</span><span className="font-bold text-foreground">{formatMoney(order.totalRappen, "en")}</span></div><div className="text-xs text-muted">{date(order.createdAt)}</div></Card></Link>
+        <Link key={order.id} href={`/admin/orders/${order.orderNumber}`} className="rounded-xl"><Card className="space-y-3 border-[#E1E3E5] bg-white p-4 transition-colors hover:bg-[#F9F9F9]"><div className="flex items-center justify-between"><span className="font-extrabold text-primary">{order.orderNumber}</span><StatusBadge status={order.status} /></div><div className="flex items-center justify-between text-sm"><span className="font-semibold text-foreground">{order.customerName}</span><span className="font-bold text-foreground">{formatMoney(order.totalRappen, "en")}</span></div><div className="text-xs text-muted">{date(order.createdAt)}</div></Card></Link>
       ))}</div>
       <p className="pt-1 text-right text-xs text-muted">{orders.length} orders shown</p>
     </div>

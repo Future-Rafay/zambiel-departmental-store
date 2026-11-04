@@ -76,7 +76,7 @@ export function RichTextEditor({
       attributes: {
         "aria-label": label,
         class:
-          "rich-editor-content blog-prose min-h-64 max-w-none p-4 focus:outline-none",
+          "rich-editor-content blog-prose min-h-64 max-w-none p-4",
       },
     },
   });
@@ -277,7 +277,7 @@ export function RichTextEditor({
                   onChange={(event) => {
                     if (event.target.value) editor?.chain().focus().insertContent(event.target.value).run();
                   }}
-                  className="min-h-9 bg-transparent text-xs font-bold text-primary focus:outline-none"
+                  className="min-h-9 bg-transparent text-base font-bold text-primary sm:text-xs"
                 >
                   <option value="">Insert field</option>
                   <option value="{{name}}">Full name</option>
@@ -330,7 +330,7 @@ export function RichTextEditor({
               setHtml(event.target.value);
               releaseRemovedImages(event.target.value);
             }}
-            className="min-h-64 w-full resize-y p-4 font-mono text-sm focus:outline-none"
+            className="min-h-64 w-full resize-y p-4 font-mono text-sm"
           />
         ) : (
           <EditorContent editor={editor} />

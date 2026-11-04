@@ -75,7 +75,7 @@ export function MarketingSendForm({ campaignId, customers, minSendAt, maxSendAt 
         {mode === "schedule" ? (
           <label className="block max-w-xs space-y-1 text-xs font-bold text-[#303030]">
             <span>Send at</span>
-            <input type="datetime-local" name="sendAt" value={sendAt} min={minSendAt} max={maxSendAt} required onChange={(event) => setSendAt(event.target.value)} className="min-h-11 w-full rounded-control border border-border bg-surface px-3 text-sm font-medium shadow-2xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring" />
+            <input type="datetime-local" name="sendAt" value={sendAt} min={minSendAt} max={maxSendAt} required onChange={(event) => setSendAt(event.target.value)} className="min-h-11 w-full rounded-control border border-border bg-surface px-3 text-base font-medium shadow-2xs focus:border-primary sm:text-sm" />
           </label>
         ) : null}
       </fieldset>
