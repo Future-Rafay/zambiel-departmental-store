@@ -20,7 +20,7 @@ export default async function AccountDeletionPage({ params }: { params: Promise<
         <p>{de ? "Melden Sie sich mit Ihrem Kundenkonto an und öffnen Sie anschliessend diese Seite erneut." : "Sign in with your customer account, then return to this page."}</p>
         <Link className="inline-flex min-h-11 items-center font-bold text-primary underline" href={`/${locale}/login`}>{de ? "Anmelden" : "Sign in"}</Link>
       </>}
-      <div className="pt-6"><Link className="text-primary underline" href={`/${locale}/contact`}>{de ? "Hilfe beim Kontozugriff" : "Help accessing your account"}</Link></div>
+      <div className="pt-6"><Link className="inline-flex min-h-11 items-center text-primary underline" href={`/${locale}/contact`}>{de ? "Hilfe beim Kontozugriff" : "Help accessing your account"}</Link></div>
     </div>
   </div>;
 }

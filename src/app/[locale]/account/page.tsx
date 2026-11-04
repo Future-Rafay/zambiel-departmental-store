@@ -74,7 +74,7 @@ export default async function AccountPage({
         </div>
         <Link
           href={`/${locale}/account/orders`}
-          className="font-bold text-primary hover:underline"
+          className="inline-flex min-h-11 items-center font-bold text-primary hover:underline"
         >
           {de ? "Bestellungen" : "Orders"}
         </Link>
