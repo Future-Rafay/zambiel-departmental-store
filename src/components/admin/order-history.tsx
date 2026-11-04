@@ -57,7 +57,7 @@ export function OrderHistory({ orders }: { orders: Order[] }) {
   if (!orders.length) return <Empty>No orders match this filter.</Empty>;
   return (
     <div className="space-y-3">
-      <div className="hidden overflow-x-auto rounded-xl border border-[#E1E3E5] bg-white shadow-xs md:block">
+      <div className="hidden relative overflow-x-auto rounded-xl border border-[#E1E3E5] bg-white shadow-xs md:block">
         <table className="w-full min-w-[760px] text-left text-sm"><thead className="border-b border-[#E1E3E5] bg-[#F6F6F7]"><tr>
           {['Order', 'Customer', 'Placed', 'Status', 'Payment'].map((label) => <th key={label} className="px-5 py-3.5 text-xs font-bold uppercase tracking-wide text-muted">{label}</th>)}
           <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wide text-muted">Total</th><th className="w-8 px-5 py-3.5"><span className="sr-only">View</span></th>

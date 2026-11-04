@@ -43,12 +43,16 @@ export default async function InventoryPage({
       description="Variant stock, low-stock visibility, and audited manual adjustments."
     >
       <Notice saved={filters.saved} error={filters.error} />
-      <form className="mb-5 flex gap-3">
+      <form className="mb-5 flex flex-wrap gap-3">
+        <label htmlFor="inventory-search" className="sr-only">
+          Product or SKU
+        </label>
         <input
           name="q"
           defaultValue={filters.q}
+          id="inventory-search"
           placeholder="Product or SKU"
-          className="min-h-11 flex-1 rounded-lg border bg-white px-3"
+          className="min-h-11 min-w-full flex-1 rounded-lg border bg-white px-3 sm:min-w-0"
         />
         <label className="flex min-h-11 items-center gap-2 rounded-lg border bg-white px-3">
           <input
@@ -59,7 +63,7 @@ export default async function InventoryPage({
           />{" "}
           Show all inventory
         </label>
-        <button className="rounded-lg border bg-white px-5 font-bold">
+        <button className="min-h-11 rounded-lg border bg-white px-5 font-bold">
           Filter
         </button>
       </form>

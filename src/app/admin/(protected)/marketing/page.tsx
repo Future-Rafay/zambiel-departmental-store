@@ -19,7 +19,7 @@ export default async function MarketingPage({ searchParams }: { searchParams: Pr
     >
       <Notice {...query} />
       {campaigns.length === 0 ? <Empty>No campaigns yet. Create one from a template or a blank email.</Empty> : (
-        <div className="overflow-x-auto rounded-xl border bg-white">
+        <div className="relative overflow-x-auto rounded-xl border bg-white">
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="border-b bg-[#F6F6F7] text-xs uppercase text-muted"><tr><th className="p-4">Campaign</th><th className="p-4">Status</th><th className="p-4">Recipients</th><th className="p-4">Sent / scheduled</th><th className="p-4 text-right">Actions</th></tr></thead>
             <tbody className="divide-y">

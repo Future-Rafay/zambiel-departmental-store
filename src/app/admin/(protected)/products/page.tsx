@@ -103,7 +103,7 @@ export default async function ProductsPage({
       {products.length === 0 ? (
         <Empty>No products match this view.</Empty>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-white">
+        <div className="relative overflow-x-auto rounded-xl border bg-white">
           <table className="w-full min-w-[820px] text-left text-sm">
             <thead className="border-b bg-[#F6F6F7] text-xs uppercase text-muted">
               <tr><th className="p-4">Product</th><th className="p-4">Catalog</th><th className="p-4">Category</th><th className="p-4">State</th><th className="p-4">Variants</th><th className="p-4">Available stock</th><th className="p-4"><span className="sr-only">Edit</span></th></tr>

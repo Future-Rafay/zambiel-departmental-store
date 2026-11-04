@@ -95,7 +95,7 @@ async function DeliverySummary({ campaign }: { campaign: { id: string; status: s
         {(["SENT", "SCHEDULED", "PENDING", "FAILED", "CANCELLED"] as const).map((status) => <div key={status} className="rounded-lg border bg-background p-3"><dt className="text-xs font-bold text-muted">{status}</dt><dd className="text-xl font-bold">{counts[status] ?? 0}</dd></div>)}
       </dl>
       {failed || stale ? <form action={retryMarketingCampaign} className="mb-5"><input type="hidden" name="id" value={campaign.id} /><Button type="submit" size="compact">{stale ? "Resume sending" : `Retry ${failed} failed`}</Button></form> : null}
-      <div className="overflow-x-auto rounded-xl border bg-white">
+      <div className="relative overflow-x-auto rounded-xl border bg-white">
         <table className="w-full min-w-[560px] text-left text-sm">
           <thead className="border-b bg-[#F6F6F7] text-xs uppercase text-muted"><tr><th className="p-3">Recipient</th><th className="p-3">Status</th><th className="p-3">Error</th><th className="p-3 text-right"><span className="sr-only">Actions</span></th></tr></thead>
           <tbody className="divide-y">{recipients.map((recipient) => <tr key={recipient.id}><td className="p-3"><span className="font-semibold">{recipient.name ?? "—"}</span><br />{recipient.email}</td><td className="p-3 font-bold">{recipient.status}</td><td className="p-3 text-xs text-destructive">{recipient.error ?? ""}</td><td className="p-3 text-right">{recipient.status === "FAILED" && !stale ? <ExcludeRecipientDialog id={campaign.id} recipientId={recipient.id} email={recipient.email} /> : null}</td></tr>)}</tbody>
