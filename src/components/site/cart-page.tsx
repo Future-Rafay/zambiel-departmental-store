@@ -12,6 +12,7 @@ import { formatMoney } from "@/lib/orders";
 export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: boolean }) {
   const { items, remove, setQuantity } = useCart();
   const de = locale === "de";
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const total = items.reduce(
     (sum, item) => sum + item.unitPriceRappen * item.quantity,
     0,
@@ -29,8 +30,8 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
         </div>
         {items.length > 0 && (
           <span className="shrink-0 rounded-full bg-secondary/15 px-4 py-1 text-xs font-bold text-secondary-text">
-            {items.reduce((sum, item) => sum + item.quantity, 0)}{" "}
-            {de ? "Artikel" : "items"}
+            {itemCount}{" "}
+            {de ? "Artikel" : itemCount === 1 ? "item" : "items"}
           </span>
         )}
       </div>

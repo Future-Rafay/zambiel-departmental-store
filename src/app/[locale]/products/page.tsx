@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { RetailProductCard } from "@/components/site/retail-product-card";
 import { storeConfig, type StoreLocale } from "@/config/store";
-import { categoryHierarchy, parsePriceRappen } from "@/lib/catalog-display";
+import { categoryHierarchy, parsePriceRappen, productCountLabel } from "@/lib/catalog-display";
 import { localizedMetadata } from "@/lib/metadata";
 import { getRetailCategories, listRetailProducts } from "@/server/services/retail-catalog";
 
@@ -88,7 +88,7 @@ export default async function ProductsPage({ params, searchParams }: { params: P
   };
   return (
     <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
-      <div className="flex flex-col justify-between gap-5 border-b border-border pb-7 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">{de ? "Sortiment" : "Catalogue"}</p><h1 className="mt-2 font-display text-4xl tracking-[-0.04em] text-primary sm:text-6xl">{de ? "Alle Produkte" : "All products"}</h1></div><p className="text-sm font-bold text-muted">{result.total} {de ? "Produkte" : "products"}</p></div>
+      <div className="flex flex-col justify-between gap-5 border-b border-border pb-7 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">{de ? "Sortiment" : "Catalogue"}</p><h1 className="mt-2 font-display text-4xl tracking-[-0.04em] text-primary sm:text-6xl">{de ? "Alle Produkte" : "All products"}</h1></div><p className="text-sm font-bold text-muted">{productCountLabel(result.total, de)}</p></div>
       <details className="mt-6 rounded-card border border-border bg-surface p-4 sm:p-5"><summary className="flex min-h-11 cursor-pointer items-center gap-2 font-bold"><Filter className="h-5 w-5 text-secondary" aria-hidden="true" />{de ? "Filter und Sortierung" : "Filters and sorting"}</summary><div className="mt-5 border-t border-border pt-5"><Filters locale={locale} categories={categories} values={values} /></div></details>
       {result.items.length ? <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">{result.items.map((product) => <RetailProductCard key={product.id} product={product} locale={locale} />)}</div> : <div className="mt-8 rounded-card border border-dashed border-border p-10 text-center text-muted">{de ? "Keine passenden Produkte gefunden." : "No matching products found."}</div>}
       {result.pageCount > 1 ? <nav aria-label={de ? "Seitennavigation" : "Pagination"} className="mt-10 flex items-center justify-center gap-3"><Link aria-disabled={result.page === 1} href={queryForPage(Math.max(1, result.page - 1))} className={`inline-flex min-h-11 items-center rounded-control border border-border px-4 font-bold ${result.page === 1 ? "pointer-events-none opacity-40" : "hover:border-primary"}`}>{de ? "Zurück" : "Previous"}</Link><span className="text-sm font-bold">{result.page} / {result.pageCount}</span><Link aria-disabled={result.page === result.pageCount} href={queryForPage(Math.min(result.pageCount, result.page + 1))} className={`inline-flex min-h-11 items-center rounded-control border border-border px-4 font-bold ${result.page === result.pageCount ? "pointer-events-none opacity-40" : "hover:border-primary"}`}>{de ? "Weiter" : "Next"}</Link></nav> : null}

@@ -5,6 +5,7 @@ import {
   categoryHierarchy,
   categoryProductTotals,
   parsePriceRappen,
+  productCountLabel,
 } from "./catalog-display";
 
 test("catalog prices ignore empty input and convert valid CHF to rappen", () => {
@@ -50,4 +51,12 @@ test("category hierarchy keeps orphans and cycles finite and visible", () => {
   assert.deepEqual(hierarchy.map(({ id }) => id), ["orphan", "cycle-a", "cycle-b"]);
   assert.equal(new Set(hierarchy.map(({ id }) => id)).size, 3);
   assert.equal(hierarchy[0].depth, 0);
+});
+
+test("product counts use the singular only for one", () => {
+  assert.equal(productCountLabel(1, true), "1 Produkt");
+  assert.equal(productCountLabel(0, true), "0 Produkte");
+  assert.equal(productCountLabel(2, true), "2 Produkte");
+  assert.equal(productCountLabel(1, false), "1 product");
+  assert.equal(productCountLabel(50, false), "50 products");
 });

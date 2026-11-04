@@ -1,3 +1,7 @@
+export function productCountLabel(count: number, de: boolean) {
+  return `${count} ${de ? (count === 1 ? "Produkt" : "Produkte") : count === 1 ? "product" : "products"}`;
+}
+
 export function parsePriceRappen(value?: string) {
   const normalized = value?.trim();
   if (!normalized) return undefined;
