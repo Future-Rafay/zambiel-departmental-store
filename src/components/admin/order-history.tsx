@@ -57,7 +57,7 @@ export function OrderHistory({ orders }: { orders: Order[] }) {
   if (!orders.length) return <Empty>No orders match this filter.</Empty>;
   return (
     <div className="space-y-3">
-      <div className="hidden relative overflow-x-auto rounded-xl border border-[#E1E3E5] bg-white shadow-xs md:block">
+      <div className="hidden relative overflow-x-auto rounded-card border border-[#E1E3E5] bg-white shadow-xs md:block">
         <table className="w-full min-w-[760px] text-left text-sm"><thead className="border-b border-[#E1E3E5] bg-[#F6F6F7]"><tr>
           {['Order', 'Customer', 'Placed', 'Status', 'Payment'].map((label) => <th key={label} className="px-5 py-3.5 text-xs font-bold uppercase tracking-wide text-muted">{label}</th>)}
           <th className="px-5 py-3.5 text-right text-xs font-bold uppercase tracking-wide text-muted">Total</th><th className="w-8 px-5 py-3.5"><span className="sr-only">View</span></th>
@@ -72,7 +72,7 @@ export function OrderHistory({ orders }: { orders: Order[] }) {
         ))}</tbody></table>
       </div>
       <div className="grid gap-3 md:hidden">{orders.map((order) => (
-        <Link key={order.id} href={`/admin/orders/${order.orderNumber}`} className="rounded-xl"><Card className="space-y-3 border-[#E1E3E5] bg-white p-4 transition-colors hover:bg-[#F9F9F9]"><div className="flex items-center justify-between"><span className="font-extrabold text-primary">{order.orderNumber}</span><StatusBadge status={order.status} /></div><div className="flex items-center justify-between text-sm"><span className="font-semibold text-foreground">{order.customerName}</span><span className="font-bold text-foreground">{formatMoney(order.totalRappen, "en")}</span></div><div className="text-xs text-muted">{date(order.createdAt)}</div></Card></Link>
+        <Link key={order.id} href={`/admin/orders/${order.orderNumber}`} className="rounded-card"><Card className="space-y-3 border-[#E1E3E5] bg-white p-4 transition-colors hover:bg-[#F9F9F9]"><div className="flex items-center justify-between"><span className="font-extrabold text-primary">{order.orderNumber}</span><StatusBadge status={order.status} /></div><div className="flex items-center justify-between text-sm"><span className="font-semibold text-foreground">{order.customerName}</span><span className="font-bold text-foreground">{formatMoney(order.totalRappen, "en")}</span></div><div className="text-xs text-muted">{date(order.createdAt)}</div></Card></Link>
       ))}</div>
       <p className="pt-1 text-right text-xs text-muted">{orders.length} orders shown</p>
     </div>

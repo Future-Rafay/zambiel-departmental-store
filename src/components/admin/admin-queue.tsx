@@ -96,7 +96,7 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
       {error && (
         <div
           role="alert"
-          className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-xs font-semibold text-destructive"
+          className="rounded-card border border-destructive/40 bg-destructive/5 p-4 text-xs font-semibold text-destructive"
         >
           {error}
         </div>
@@ -160,7 +160,7 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between text-xs font-semibold text-muted bg-[#F6F6F7] p-2.5 rounded-lg">
+                <div className="flex items-center justify-between text-xs font-semibold text-muted bg-[#F6F6F7] p-2.5 rounded-control">
                   <span>{order.fulfillmentType.replaceAll("_", " ")}</span>
                   <span className="font-bold text-primary">
                     {formatMoney(order.totalRappen, "en")}

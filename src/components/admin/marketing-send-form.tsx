@@ -31,7 +31,7 @@ export function MarketingSendForm({ campaignId, customers, minSendAt, maxSendAt 
   return (
     <form ref={form} action={sendMarketingCampaign} onSubmit={() => setSubmitting(true)} className="space-y-5">
       <input type="hidden" name="id" value={campaignId} />
-      <div className="relative overflow-x-auto rounded-xl border bg-white">
+      <div className="relative overflow-x-auto rounded-card border bg-white">
         <table className="w-full min-w-[560px] text-left text-sm">
           <thead className="border-b bg-[#F6F6F7] text-xs uppercase text-muted">
             <tr>

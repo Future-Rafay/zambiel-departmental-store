@@ -46,23 +46,23 @@ export default async function CategoriesPage({
     <AdminPage
       title="Categories"
       description="Manage storefront categories and subcategories."
-      actions={<Link href="/admin/categories/new" className="inline-flex min-h-11 items-center rounded-lg bg-primary px-5 text-sm font-bold text-white">Add category</Link>}
+      actions={<Link href="/admin/categories/new" className="inline-flex min-h-11 items-center rounded-control bg-primary px-5 text-sm font-bold text-white">Add category</Link>}
     >
       <Notice saved={feedback.saved} deleted={feedback.deleted} />
       <form className="mb-5 grid gap-3 sm:grid-cols-[1fr_10rem_auto] sm:items-end">
         <div>
           <label htmlFor="category-search" className="mb-1 block text-xs font-bold text-muted">Name or slug</label>
-          <input id="category-search" name="q" defaultValue={feedback.q} className="min-h-11 w-full rounded-lg border bg-white px-3" />
+          <input id="category-search" name="q" defaultValue={feedback.q} className="min-h-11 w-full rounded-control border bg-white px-3" />
         </div>
         <div>
           <label htmlFor="category-store-mode" className="mb-1 block text-xs font-bold text-muted">Catalog</label>
-          <select id="category-store-mode" name="storeMode" defaultValue={mode} className="min-h-11 w-full rounded-lg border bg-white px-3">
+          <select id="category-store-mode" name="storeMode" defaultValue={mode} className="min-h-11 w-full rounded-control border bg-white px-3">
             <option value="b2c">B2C</option>
             <option value="b2b">B2B</option>
             <option value="all">All</option>
           </select>
         </div>
-        <button className="min-h-11 rounded-lg border bg-white px-5 font-bold">Filter</button>
+        <button className="min-h-11 rounded-control border bg-white px-5 font-bold">Filter</button>
       </form>
       {categories.length === 0 ? (
         <Empty>No categories match this view.</Empty>

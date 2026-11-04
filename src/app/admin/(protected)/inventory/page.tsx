@@ -54,9 +54,9 @@ export default async function InventoryPage({
           name="q"
           defaultValue={filters.q}
           placeholder="Product or SKU"
-          className="min-h-11 min-w-full flex-1 rounded-lg border bg-white px-3 sm:min-w-0"
+          className="min-h-11 min-w-full flex-1 rounded-control border bg-white px-3 sm:min-w-0"
         />
-        <label className="flex min-h-11 items-center gap-2 rounded-lg border bg-white px-3">
+        <label className="flex min-h-11 items-center gap-2 rounded-control border bg-white px-3">
           <input
             type="checkbox"
             name="all"
@@ -65,7 +65,7 @@ export default async function InventoryPage({
           />{" "}
           Show all inventory
         </label>
-        <button className="min-h-11 rounded-lg border bg-white px-5 font-bold">
+        <button className="min-h-11 rounded-control border bg-white px-5 font-bold">
           Filter
         </button>
       </form>
@@ -78,7 +78,7 @@ export default async function InventoryPage({
             return (
               <details
                 key={variant.id}
-                className="rounded-xl border bg-white p-4"
+                className="rounded-card border bg-white p-4"
               >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
                   <span>
@@ -113,7 +113,7 @@ export default async function InventoryPage({
                       maxLength={500}
                       required
                     />
-                    <button className="min-h-11 rounded-lg bg-primary px-5 text-sm font-bold text-white">
+                    <button className="min-h-11 rounded-control bg-primary px-5 text-sm font-bold text-white">
                       Record adjustment
                     </button>
                   </form>

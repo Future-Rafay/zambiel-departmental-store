@@ -41,7 +41,7 @@ export default async function MarketingCampaignPage({ params, searchParams }: { 
   return (
     <AdminPage title={campaign.name} description={campaign.subject} actions={<><CampaignStatusBadge status={campaign.status} scheduledAt={campaign.scheduledAt} /><Link href="/admin/marketing" className="inline-flex min-h-11 items-center px-3 text-sm font-bold text-primary">All campaigns</Link></>}>
       <Notice saved={query.saved} error={query.error} />
-      {query.test === "sent" || (query.done && doneMessages[query.done]) ? <p role="status" className="mb-6 rounded-xl border border-emerald-500/40 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800">{query.test === "sent" ? `Test email sent to ${actor.email}.` : doneMessages[query.done!]}</p> : null}
+      {query.test === "sent" || (query.done && doneMessages[query.done]) ? <p role="status" className="mb-6 rounded-card border border-emerald-500/40 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800">{query.test === "sent" ? `Test email sent to ${actor.email}.` : doneMessages[query.done!]}</p> : null}
       <div className="space-y-6">
         {draft ? <MarketingCampaignForm campaign={{ id: campaign.id, name: campaign.name, subject: campaign.subject, locale: campaign.locale, html: campaign.html }} /> : null}
 
@@ -54,7 +54,7 @@ export default async function MarketingCampaignPage({ params, searchParams }: { 
             </div>
           </div>
           <p className="mb-3 text-xs text-muted">Shown with your own name in the personal fields. Subject: <strong>{preview.subject}</strong></p>
-          <iframe title="Email preview" srcDoc={preview.html} sandbox="" className="h-[640px] w-full rounded-lg border bg-white" />
+          <iframe title="Email preview" srcDoc={preview.html} sandbox="" className="h-[640px] w-full rounded-control border bg-white" />
         </Card>
 
         {draft ? <RecipientPicker campaignId={campaign.id} sort={query.sort === "desc" ? "desc" : "asc"} top={limits.find((limit) => String(limit) === query.top) ?? 100} /> : <DeliverySummary campaign={campaign} />}
@@ -94,10 +94,10 @@ async function DeliverySummary({ campaign }: { campaign: { id: string; status: s
       <h2 className="mb-2 font-display text-lg font-bold">Delivery</h2>
       <p className="mb-4 text-sm">{campaign.status === "SCHEDULED" ? `Scheduled for ${when(campaign.scheduledAt)} (Zurich time).` : campaign.sentAt ? `Sent ${when(campaign.sentAt)}.` : campaign.status === "SENDING" ? "Sending is in progress." : null} Resend accepted the emails; inbox delivery is not tracked here.</p>
       <dl className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
-        {(["SENT", "SCHEDULED", "PENDING", "FAILED", "CANCELLED"] as const).map((status) => <div key={status} className="rounded-lg border bg-background p-3"><dt className="text-xs font-bold text-muted">{status}</dt><dd className="text-xl font-bold">{counts[status] ?? 0}</dd></div>)}
+        {(["SENT", "SCHEDULED", "PENDING", "FAILED", "CANCELLED"] as const).map((status) => <div key={status} className="rounded-control border bg-background p-3"><dt className="text-xs font-bold text-muted">{status}</dt><dd className="text-xl font-bold">{counts[status] ?? 0}</dd></div>)}
       </dl>
       {failed || stale ? <form action={retryMarketingCampaign} className="mb-5"><input type="hidden" name="id" value={campaign.id} /><Button type="submit" size="compact">{stale ? "Resume sending" : `Retry ${failed} failed`}</Button></form> : null}
-      <div className="relative overflow-x-auto rounded-xl border bg-white">
+      <div className="relative overflow-x-auto rounded-card border bg-white">
         <table className="w-full min-w-[560px] text-left text-sm">
           <thead className="border-b bg-[#F6F6F7] text-xs uppercase text-muted"><tr><th className="p-3">Recipient</th><th className="p-3">Status</th><th className="p-3">Error</th><th className="p-3 text-right"><span className="sr-only">Actions</span></th></tr></thead>
           <tbody className="divide-y">{recipients.map((recipient) => <tr key={recipient.id}><td className="p-3"><span className="font-semibold">{recipient.name ?? "—"}</span><br />{recipient.email}</td><td className="p-3 font-bold">{recipient.status}</td><td className="p-3 text-xs text-destructive">{recipient.error ?? ""}</td><td className="p-3 text-right">{recipient.status === "FAILED" && !stale ? <ExcludeRecipientDialog id={campaign.id} recipientId={recipient.id} email={recipient.email} /> : null}</td></tr>)}</tbody>

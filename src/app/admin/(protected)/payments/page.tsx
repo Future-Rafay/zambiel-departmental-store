@@ -41,7 +41,7 @@ export default async function PaymentsPage({
       {payments.length === 0 ? (
         <Empty>No payments found on this page.</Empty>
       ) : (
-        <div className="relative overflow-x-auto rounded-xl border bg-white">
+        <div className="relative overflow-x-auto rounded-card border bg-white">
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="border-b bg-[#F6F6F7] text-xs uppercase text-muted">
               <tr>
@@ -93,7 +93,7 @@ export default async function PaymentsPage({
           <Link
             href={`/admin/payments?page=${Math.max(1, page - 1)}`}
             aria-disabled={page === 1}
-            className={`inline-flex min-h-11 items-center rounded-lg border px-4 font-bold ${page === 1 ? "pointer-events-none opacity-40" : "bg-white hover:border-primary"}`}
+            className={`inline-flex min-h-11 items-center rounded-control border px-4 font-bold ${page === 1 ? "pointer-events-none opacity-40" : "bg-white hover:border-primary"}`}
           >
             Previous
           </Link>
@@ -103,7 +103,7 @@ export default async function PaymentsPage({
           <Link
             href={`/admin/payments?page=${Math.min(pageCount, page + 1)}`}
             aria-disabled={page >= pageCount}
-            className={`inline-flex min-h-11 items-center rounded-lg border px-4 font-bold ${page >= pageCount ? "pointer-events-none opacity-40" : "bg-white hover:border-primary"}`}
+            className={`inline-flex min-h-11 items-center rounded-control border px-4 font-bold ${page >= pageCount ? "pointer-events-none opacity-40" : "bg-white hover:border-primary"}`}
           >
             Next
           </Link>

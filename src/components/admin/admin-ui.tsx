@@ -77,7 +77,7 @@ export function Notice({
     <div
       role={error || warning ? "alert" : "status"}
       className={cn(
-        "mb-6 flex items-center gap-3 rounded-xl border p-4 text-xs font-semibold shadow-xs animate-scale-in",
+        "mb-6 flex items-center gap-3 rounded-card border p-4 text-xs font-semibold shadow-xs animate-scale-in",
         error
           ? "border-destructive/40 bg-destructive/5 text-destructive"
           : warning

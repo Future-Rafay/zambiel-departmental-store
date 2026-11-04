@@ -65,17 +65,17 @@ export default async function ProductsPage({
     <AdminPage
       title="Products"
       description="Catalog publication, variants, pricing, and stock."
-      actions={<Link href="/admin/products/new" className="inline-flex min-h-11 items-center rounded-lg bg-primary px-5 text-sm font-bold text-white">Add product</Link>}
+      actions={<Link href="/admin/products/new" className="inline-flex min-h-11 items-center rounded-control bg-primary px-5 text-sm font-bold text-white">Add product</Link>}
     >
       <Notice saved={filters.saved} deleted={filters.deleted} />
       <form className="mb-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_8rem_minmax(0,18rem)_10rem_auto] xl:items-end">
         <div>
           <label htmlFor="product-search" className="mb-1 block text-xs font-bold text-muted">Name or SKU</label>
-          <input id="product-search" name="q" defaultValue={filters.q} className="min-h-11 w-full rounded-lg border bg-white px-3" />
+          <input id="product-search" name="q" defaultValue={filters.q} className="min-h-11 w-full rounded-control border bg-white px-3" />
         </div>
         <div>
           <label htmlFor="product-store-mode" className="mb-1 block text-xs font-bold text-muted">Catalog</label>
-          <select id="product-store-mode" name="storeMode" defaultValue={mode} className="min-h-11 w-full rounded-lg border bg-white px-3">
+          <select id="product-store-mode" name="storeMode" defaultValue={mode} className="min-h-11 w-full rounded-control border bg-white px-3">
             <option value="b2c">B2C</option>
             <option value="b2b">B2B</option>
             <option value="all">All</option>
@@ -83,7 +83,7 @@ export default async function ProductsPage({
         </div>
         <div>
           <label htmlFor="product-category" className="mb-1 block text-xs font-bold text-muted">Category</label>
-          <select id="product-category" name="categoryId" defaultValue={selectedCategory?.id ?? ""} className="min-h-11 w-full rounded-lg border bg-white px-3">
+          <select id="product-category" name="categoryId" defaultValue={selectedCategory?.id ?? ""} className="min-h-11 w-full rounded-control border bg-white px-3">
             <option value="">All categories</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
@@ -94,18 +94,18 @@ export default async function ProductsPage({
         </div>
         <div>
           <label htmlFor="product-status" className="mb-1 block text-xs font-bold text-muted">Publication state</label>
-          <select id="product-status" name="status" defaultValue={filters.status ?? ""} className="min-h-11 w-full rounded-lg border bg-white px-3">
+          <select id="product-status" name="status" defaultValue={filters.status ?? ""} className="min-h-11 w-full rounded-control border bg-white px-3">
             <option value="">All states</option>
             <option value="DRAFT">Draft</option>
             <option value="ACTIVE">Active</option>
           </select>
         </div>
-        <button className="min-h-11 rounded-lg border bg-white px-5 font-bold md:col-span-2 xl:col-span-1">Filter</button>
+        <button className="min-h-11 rounded-control border bg-white px-5 font-bold md:col-span-2 xl:col-span-1">Filter</button>
       </form>
       {products.length === 0 ? (
         <Empty>No products match this view.</Empty>
       ) : (
-        <div className="relative overflow-x-auto rounded-xl border bg-white">
+        <div className="relative overflow-x-auto rounded-card border bg-white">
           <table className="w-full min-w-[820px] text-left text-sm">
             <thead className="border-b bg-[#F6F6F7] text-xs uppercase text-muted">
               <tr><th className="p-4">Product</th><th className="p-4">Catalog</th><th className="p-4">Category</th><th className="p-4">State</th><th className="p-4">Variants</th><th className="p-4">Available stock</th><th className="p-4"><span className="sr-only">Edit</span></th></tr>

@@ -20,7 +20,7 @@ export function RetailProductMedia({ product }: { product: RetailProductEdit }) 
           <Field label="German alt text" name="altDe" />
           <Field label="Position" name="sortOrder" type="number" min="0" defaultValue={product.media.length} required />
           <SelectField label="Variant (optional)" name="variantId"><option value="">All variants</option>{product.variants.map((variant) => <option key={variant.id} value={variant.id}>{variant.nameEn}</option>)}</SelectField>
-          <div className="sm:col-span-2 flex justify-end"><DeferredSubmitButton className="min-h-11 rounded-lg bg-primary px-5 text-sm font-bold text-white">Add image</DeferredSubmitButton></div>
+          <div className="sm:col-span-2 flex justify-end"><DeferredSubmitButton className="min-h-11 rounded-control bg-primary px-5 text-sm font-bold text-white">Add image</DeferredSubmitButton></div>
         </DeferredUploadForm>
       </Card>
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
@@ -32,7 +32,7 @@ export function RetailProductMedia({ product }: { product: RetailProductEdit }) 
               <Field label="English alt text" name="altEn" defaultValue={media.altEn ?? ""} /><Field label="German alt text" name="altDe" defaultValue={media.altDe ?? ""} />
               <Field label="Position" name="sortOrder" type="number" min="0" defaultValue={media.sortOrder} required />
               <SelectField label="Variant" name="variantId" defaultValue={media.variantId ?? ""}><option value="">All variants</option>{product.variants.map((variant) => <option key={variant.id} value={variant.id}>{variant.nameEn}</option>)}</SelectField>
-              <Check label="Primary product image" name="primary" /><button className="min-h-11 rounded-lg border border-primary px-4 text-sm font-bold text-primary">Save image details</button>
+              <Check label="Primary product image" name="primary" /><button className="min-h-11 rounded-control border border-primary px-4 text-sm font-bold text-primary">Save image details</button>
             </form>
             <div className="mt-3 flex justify-end border-t pt-3"><RetailMediaDelete id={media.id} productId={product.id} /></div></details>
           </Card>
