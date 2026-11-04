@@ -69,13 +69,13 @@ export default async function CategoriesPage({
       ) : (
         <div className="grid gap-3">
           {categories.map((category) => (
-            <Link key={category.id} href={`/admin/categories/${category.id}`} className="flex min-h-16 flex-col gap-3 rounded-xl border bg-white p-4 hover:border-primary sm:flex-row sm:items-center sm:justify-between">
+            <Link key={category.id} href={`/admin/categories/${category.id}`} className="flex min-h-11 flex-col gap-1 rounded-card border bg-white p-3 hover:border-primary sm:min-h-16 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-4">
               <div className="min-w-0" style={{ paddingInlineStart: `${Math.min(category.depth, 4) * 1.25}rem` }}>
                 <strong className="break-words">{category.depth ? <span aria-hidden="true">↳ </span> : null}{category.nameEn}</strong>
-                {category.depth ? <p className="mt-1 text-xs text-muted">{category.path.join(" → ")}</p> : null}
+                {category.depth ? <p className="mt-1 hidden text-xs text-muted sm:block">{category.path.join(" → ")}</p> : null}
                 <p className="mt-1 text-xs text-muted">/{category.slug} · {category.active ? "Active" : "Hidden"} · {category.is_b2b ? "B2B" : "B2C"}</p>
               </div>
-              <span className="shrink-0 text-sm text-muted">{category._count.products} products · {category._count.children} children</span>
+              <span className="shrink-0 text-xs text-muted sm:text-sm">{category._count.products} products · {category._count.children} children</span>
             </Link>
           ))}
         </div>
