@@ -77,6 +77,7 @@ export function AdminShell({ user, children }: { user: AdminUser; children: Reac
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const userButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -84,8 +85,17 @@ export function AdminShell({ user, children }: { user: AdminUser; children: Reac
         setUserDropdownOpen(false);
       }
     }
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      if (dropdownRef.current?.contains(document.activeElement)) userButtonRef.current?.focus();
+      setUserDropdownOpen(false);
+    }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, []);
 
   async function handleLogout() {
@@ -205,7 +215,8 @@ export function AdminShell({ user, children }: { user: AdminUser; children: Reac
                 <button
                   type="button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 rounded-full border border-border bg-surface p-1 pr-3 hover:border-secondary transition-all focus:outline-none"
+                  className="flex min-h-11 items-center gap-2 rounded-full border border-border bg-surface p-1 pr-3 hover:border-secondary transition-all"
+                  ref={userButtonRef}
                   aria-expanded={userDropdownOpen}
                   aria-label="Admin User Menu"
                 >
@@ -238,7 +249,7 @@ export function AdminShell({ user, children }: { user: AdminUser; children: Reac
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-foreground hover:bg-surface-warm transition-colors"
+                        className="flex min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-foreground hover:bg-surface-warm transition-colors"
                       >
                         <Globe className="h-4 w-4 text-secondary" />
                         <span>View Live Website</span>
@@ -247,7 +258,7 @@ export function AdminShell({ user, children }: { user: AdminUser; children: Reac
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors"
+                        className="flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-bold text-destructive hover:bg-destructive/10 transition-colors"
                       >
                         <LogOut className="h-4 w-4" />
                         <span>Log Out</span>
