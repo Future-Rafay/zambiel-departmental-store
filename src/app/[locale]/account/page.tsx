@@ -130,7 +130,7 @@ export default async function AccountPage({
                 address?.countryCode ?? countries[0]?.countryCode ?? ""
               }
               required
-              className="mt-1 min-h-11 w-full rounded-control border border-border bg-surface px-4 py-2 text-base focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              className="mt-1 min-h-11 w-full rounded-control border border-border bg-surface px-4 py-2 text-base focus:border-secondary"
             >
               {countries.length === 0 ? (
                 <option value="">

@@ -90,7 +90,7 @@ export function RetailProductPurchase({
                 const id = `option-${option.id}-${value.id}`;
                 const possible = variants.some((candidate) => options.every((other) => candidate.optionValues.some((candidateValue) => candidateValue.optionId === other.id && candidateValue.valueId === (other.id === option.id ? value.id : selected[other.id]))));
                 return (
-                  <label key={value.id} htmlFor={id} className={`inline-flex min-h-11 items-center rounded-control border px-4 text-sm font-bold transition-colors ${possible ? "cursor-pointer" : "cursor-not-allowed opacity-40"} ${selected[option.id] === value.id ? "border-primary bg-primary text-white" : "border-border bg-surface hover:border-primary/40"}`}>
+                  <label key={value.id} htmlFor={id} className={`inline-flex min-h-11 items-center rounded-control border px-4 text-sm font-bold transition-colors has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-secondary-text ${possible ? "cursor-pointer" : "cursor-not-allowed opacity-40"} ${selected[option.id] === value.id ? "border-primary bg-primary text-white" : "border-border bg-surface hover:border-primary/40"}`}>
                     <input id={id} className="sr-only" type="radio" name={option.id} value={value.id} disabled={!possible} checked={selected[option.id] === value.id} onChange={() => chooseValue(option.id, value.id)} />
                     {value.value}
                   </label>

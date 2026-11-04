@@ -212,7 +212,7 @@ export function AddressFields({
           required
           aria-invalid={!!errors.countryCode}
           aria-describedby={errors.countryCode ? "countryCode-error" : undefined}
-          className="min-h-11 w-full rounded-control border border-border bg-surface px-4 py-2 text-base focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 aria-invalid:border-destructive"
+          className="min-h-11 w-full rounded-control border border-border bg-surface px-4 py-2 text-base focus:border-secondary aria-invalid:border-destructive"
         >
           {countries.length === 0 ? <option value="">{de ? "Keine Lieferländer verfügbar" : "No shipping countries available"}</option> : null}
           {countries.map((country) => <option key={country.countryCode} value={country.countryCode}>{de ? country.nameDe : country.nameEn}</option>)}
@@ -297,7 +297,7 @@ export function PaymentChoices({
           id="note"
           name="note"
           maxLength={1000}
-          className="min-h-24 w-full border border-border bg-surface p-3 focus:outline-none focus:ring-2 focus:ring-secondary"
+          className="min-h-24 w-full border border-border bg-surface p-3"
         />
       </Field>
     </Card>

@@ -56,6 +56,7 @@ html {
   color: var(--brand-foreground);
   font-family: var(--font-body);
   scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
 }
 
 h1,
@@ -80,8 +81,18 @@ body {
 }
 
 :focus-visible {
-  outline: 3px solid var(--brand-ring);
+  outline: 3px solid var(--brand-secondary-text);
   outline-offset: 2px;
+}
+
+footer :focus-visible,
+.bg-primary :focus-visible {
+  outline-color: var(--brand-secondary-light);
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  accent-color: var(--brand-primary);
 }
 
 @media (hover: hover) and (pointer: fine) {

@@ -78,7 +78,7 @@ export function ContactForm({
           minLength={10}
           maxLength={5000}
           rows={request ? 5 : 7}
-          className="w-full rounded-[var(--radius-control)] border border-border bg-surface px-4 py-3 text-base focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+          className="w-full rounded-[var(--radius-control)] border border-border bg-surface px-4 py-3 text-base focus:border-secondary"
         />
       </div>
       <div className="flex flex-col items-start gap-3 sm:col-span-2 sm:flex-row sm:items-center">
