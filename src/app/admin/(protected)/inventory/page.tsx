@@ -2,6 +2,8 @@ import { adjustInventory } from "@/app/admin/(protected)/retail-actions";
 import { AdminPage, Empty, Field, Notice } from "@/components/admin/admin-ui";
 import { prisma } from "@/server/db";
 
+export const metadata = { title: "Inventory" };
+
 export default async function InventoryPage({
   searchParams,
 }: {
@@ -48,9 +50,9 @@ export default async function InventoryPage({
           Product or SKU
         </label>
         <input
+          id="inventory-search"
           name="q"
           defaultValue={filters.q}
-          id="inventory-search"
           placeholder="Product or SKU"
           className="min-h-11 min-w-full flex-1 rounded-lg border bg-white px-3 sm:min-w-0"
         />

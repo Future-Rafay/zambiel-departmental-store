@@ -6,6 +6,8 @@ import { formatMoney, formatMoneyInput } from "@/lib/orders";
 import { formatZurichDateTimeLocal } from "@/lib/zurich-time";
 import { getPromosAdminData } from "@/server/services/admin";
 
+export const metadata = { title: "Promo codes" };
+
 type Promo = Awaited<ReturnType<typeof getPromosAdminData>>[number];
 
 export default async function PromosPage({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string }> }) {

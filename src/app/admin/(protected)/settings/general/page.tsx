@@ -8,6 +8,8 @@ import {
 import { Card } from "@/components/ui/card";
 import { getSettingsAdminData } from "@/server/services/admin";
 
+export const metadata = { title: "Site settings" };
+
 export default async function GeneralSettingsPage({
   searchParams,
 }: {

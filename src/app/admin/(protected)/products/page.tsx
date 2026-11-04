@@ -4,6 +4,8 @@ import { AdminPage, Empty, Notice } from "@/components/admin/admin-ui";
 import { categoryHierarchy } from "@/lib/catalog-display";
 import { prisma } from "@/server/db";
 
+export const metadata = { title: "Products" };
+
 function storeMode(value?: string) {
   return value === "b2b" || value === "all" ? value : "b2c";
 }

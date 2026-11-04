@@ -2,6 +2,8 @@ import { RetailProductForm } from "@/components/admin/retail-product-form";
 import { categoryHierarchy } from "@/lib/catalog-display";
 import { prisma } from "@/server/db";
 
+export const metadata = { title: "New product" };
+
 export default async function NewProductPage({
   searchParams,
 }: {

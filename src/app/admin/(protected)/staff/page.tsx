@@ -5,6 +5,8 @@ import { StaffToggle } from "@/components/admin/staff-toggle";
 import { Card } from "@/components/ui/card";
 import { getStaffAdminData } from "@/server/services/admin";
 
+export const metadata = { title: "Staff" };
+
 export default async function StaffPage({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string; warning?: string }> }) {
   const [{ staff, invitations }, feedback] = await Promise.all([getStaffAdminData(), searchParams]);
   const returnTo = "/admin/staff";

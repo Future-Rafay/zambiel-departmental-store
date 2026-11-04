@@ -4,6 +4,8 @@ import { AdminPage, Empty } from "@/components/admin/admin-ui";
 import { formatMoney, formatOrderNumber } from "@/lib/orders";
 import { prisma } from "@/server/db";
 
+export const metadata = { title: "Payments" };
+
 const pageSize = 50;
 
 export default async function PaymentsPage({

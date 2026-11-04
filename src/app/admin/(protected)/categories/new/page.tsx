@@ -1,6 +1,8 @@
 import { RetailCategoryForm } from "@/components/admin/retail-category-form";
 import { categoryHierarchy } from "@/lib/catalog-display";
 import { prisma } from "@/server/db";
+
+export const metadata = { title: "New category" };
 export default async function NewCategoryPage({
   searchParams,
 }: {

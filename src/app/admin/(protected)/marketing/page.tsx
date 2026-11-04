@@ -5,6 +5,8 @@ import { AdminPage, EditLink, Empty, Notice } from "@/components/admin/admin-ui"
 import { CampaignStatusBadge } from "@/components/admin/marketing-status";
 import { prisma } from "@/server/db";
 
+export const metadata = { title: "Email marketing" };
+
 export default async function MarketingPage({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string }> }) {
   const [query, campaigns] = await Promise.all([
     searchParams,

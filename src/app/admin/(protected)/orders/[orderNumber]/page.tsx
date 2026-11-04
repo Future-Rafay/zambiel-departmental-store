@@ -14,6 +14,8 @@ import { advanceRetailOrder } from "@/app/admin/(protected)/retail-actions";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getAdminOrder } from "@/server/services/admin";
 
+export const metadata = { title: "Order" };
+
 export default async function OrderDetailPage({
   params,
   searchParams,

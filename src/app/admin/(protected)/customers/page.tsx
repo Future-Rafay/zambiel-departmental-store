@@ -5,6 +5,8 @@ import { B2bAccessActions } from "@/components/admin/b2b-access-actions";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { prisma } from "@/server/db";
 
+export const metadata = { title: "Customers" };
+
 const filters = [{ value: "all", label: "All customers" }, { value: "pending", label: "Pending B2B Requests" }, { value: "approved", label: "Approved B2B" }] as const;
 
 function parseFilter(value?: string) {

@@ -5,6 +5,8 @@ import { siteConfig } from "@/config/site";
 import { formatMoney, formatMoneyInput } from "@/lib/orders";
 import { getSettingsAdminData } from "@/server/services/admin";
 
+export const metadata = { title: "Shipping countries" };
+
 type Zone = Awaited<ReturnType<typeof getSettingsAdminData>>["zones"][number];
 
 export default async function ZonesPage({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string }> }) {

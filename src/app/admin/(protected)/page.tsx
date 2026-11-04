@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/orders";
 import { getDashboardData } from "@/server/services/admin";
 
+export const metadata = { title: "Dashboard" };
+
 export default async function AdminDashboardPage() {
   const dashboard = await getDashboardData();
   const metrics = [

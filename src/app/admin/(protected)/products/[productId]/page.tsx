@@ -4,6 +4,8 @@ import { categoryHierarchy } from "@/lib/catalog-display";
 import { prisma } from "@/server/db";
 import { resolveProductMediaUrl, resolvePublicImageUrl } from "@/server/storage/s3";
 
+export const metadata = { title: "Edit product" };
+
 export default async function ProductPage({
   params,
   searchParams,

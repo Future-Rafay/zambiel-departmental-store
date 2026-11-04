@@ -14,6 +14,8 @@ import { requireRole } from "@/server/auth/current-user";
 import { prisma } from "@/server/db";
 import { listMarketingAudience, MARKETING_MAX_SCHEDULE_DAYS, recipientCounts, renderCampaignEmail } from "@/server/services/marketing-campaigns";
 
+export const metadata = { title: "Campaign" };
+
 const limits = [100, 200, 500] as const;
 const doneMessages: Record<string, string> = { sent: "Campaign sent. Resend accepted the emails listed below.", scheduled: "Campaign scheduled. Resend will send it at the chosen time.", retried: "Failed emails were sent again.", cancelled: "Scheduled emails were cancelled.", excluded: "Recipient excluded. Retry will skip this address." };
 

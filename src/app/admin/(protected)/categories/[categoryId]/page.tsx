@@ -3,6 +3,8 @@ import { RetailCategoryForm } from "@/components/admin/retail-category-form";
 import { categoryHierarchy } from "@/lib/catalog-display";
 import { prisma } from "@/server/db";
 import { resolvePublicImageUrl } from "@/server/storage/s3";
+
+export const metadata = { title: "Edit category" };
 export default async function CategoryPage({
   params,
   searchParams,

@@ -1,6 +1,8 @@
 import { AuthForm } from "@/components/site/auth-form";
 import { Card } from "@/components/ui/card";
 
+export const metadata = { title: "Staff sign in" };
+
 export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<{ accepted?: string }> }) {
   const accepted = (await searchParams).accepted === "1";
   return (

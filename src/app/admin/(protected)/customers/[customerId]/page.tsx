@@ -6,6 +6,8 @@ import { formatMoney, formatOrderNumber } from "@/lib/orders";
 import { prisma } from "@/server/db";
 import { getCurrentUser } from "@/server/auth/current-user";
 
+export const metadata = { title: "Customer" };
+
 export default async function CustomerDetailPage({ params }: { params: Promise<{ customerId: string }> }) {
   const [{ customerId }, actor] = await Promise.all([params, getCurrentUser()]);
   const customer = await prisma.user.findFirst({ where: { id: customerId, OR: [{ role: "CUSTOMER" }, ...(actor?.role === "OWNER" ? [{ role: "OWNER" as const, id: actor.id }] : [])] }, include: { addresses: { orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] }, orders: { orderBy: { createdAt: "desc" }, take: 100 } } });

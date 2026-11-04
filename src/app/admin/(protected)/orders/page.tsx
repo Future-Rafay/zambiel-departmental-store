@@ -2,6 +2,8 @@ import { AdminPage, Notice } from "@/components/admin/admin-ui";
 import { OrderHistory, OrderStatusFilters, parseOrderStatus } from "@/components/admin/order-history";
 import { getOrderHistory } from "@/server/services/admin";
 
+export const metadata = { title: "Orders" };
+
 export default async function OrdersPage({ searchParams }: {
   searchParams: Promise<{ status?: string; saved?: string; error?: string }>;
 }) {

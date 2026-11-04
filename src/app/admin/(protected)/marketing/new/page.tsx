@@ -5,6 +5,8 @@ import { MarketingCampaignForm } from "@/components/admin/marketing-campaign-for
 import { getEmailEnv } from "@/config/env";
 import { marketingStarterTemplate, marketingStarterTemplateKeys, type MarketingStarterTemplate } from "@/server/email/marketing";
 
+export const metadata = { title: "New campaign" };
+
 export default async function NewMarketingCampaignPage({ searchParams }: { searchParams: Promise<{ template?: string; error?: string }> }) {
   const query = await searchParams;
   const key: MarketingStarterTemplate = marketingStarterTemplateKeys.find((candidate) => candidate === query.template) ?? "blank";
