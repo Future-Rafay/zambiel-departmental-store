@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { AdminPage, Empty, Notice } from "@/components/admin/admin-ui";
+import { AdminPage, EditLink, Empty, Notice } from "@/components/admin/admin-ui";
 import { categoryHierarchy } from "@/lib/catalog-display";
 import { prisma } from "@/server/db";
 
@@ -115,13 +115,13 @@ export default async function ProductsPage({
                 const category = categoryById.get(product.category.id);
                 return (
                   <tr key={product.id}>
-                    <td className="p-4"><strong>{product.nameEn}</strong><div className="text-xs text-muted">/{product.slug}</div></td>
+                    <td className="p-4"><Link href={`/admin/products/${product.id}`} className="flex min-h-11 items-center font-bold text-primary hover:underline">{product.nameEn}</Link><div className="text-xs text-muted">/{product.slug}</div></td>
                     <td className="p-4">{product.is_b2b ? "B2B" : "B2C"}</td>
                     <td className="p-4">{category?.path.join(" → ") ?? product.category.nameEn}</td>
                     <td className="p-4">{product.status}</td>
                     <td className="p-4">{product.variants.length}</td>
                     <td className="p-4">{product.variants.reduce((sum, variant) => sum + Math.max(0, variant.stockOnHand - variant.stockReserved), 0)}</td>
-                    <td className="p-4 text-right"><Link href={`/admin/products/${product.id}`} className="font-bold text-primary hover:underline">Edit</Link></td>
+                    <td className="p-4 text-right"><EditLink href={`/admin/products/${product.id}`}>Edit</EditLink></td>
                   </tr>
                 );
               })}

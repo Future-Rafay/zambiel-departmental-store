@@ -54,13 +54,11 @@ export default async function OrderDetailPage({
                 Customer
               </dt>
               <dd>
-                {order.customerName}
-                <br />
-                <a href={`mailto:${order.customerEmail}`}>
+                <span className="block">{order.customerName}</span>
+                <a className="inline-flex min-h-11 items-center break-all" href={`mailto:${order.customerEmail}`}>
                   {order.customerEmail}
                 </a>
-                <br />
-                <a href={`tel:${order.customerPhone}`}>{order.customerPhone}</a>
+                <a className="inline-flex min-h-11 items-center" href={`tel:${order.customerPhone}`}>{order.customerPhone}</a>
               </dd>
             </div>
             <div>

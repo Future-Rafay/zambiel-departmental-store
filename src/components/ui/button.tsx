@@ -12,7 +12,7 @@ const variants = {
 
 const sizes = {
   default: "min-h-11 px-6 py-2.5 text-base",
-  compact: "min-h-10 px-4 py-2 text-sm",
+  compact: "min-h-11 px-4 py-2 text-sm",
 } as const;
 
 type ButtonProps = ComponentProps<"button"> & {

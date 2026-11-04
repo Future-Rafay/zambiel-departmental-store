@@ -118,7 +118,7 @@ export default async function InventoryPage({
                     </button>
                   </form>
                   <div>
-                    <h3 className="mb-2 text-sm font-bold">Recent movements</h3>
+                    <h2 className="mb-2 text-sm font-bold">Recent movements</h2>
                     {variant.inventoryMovements.length ? (
                       <ul className="space-y-2 text-xs">
                         {variant.inventoryMovements.map((movement) => (

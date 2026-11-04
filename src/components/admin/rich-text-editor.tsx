@@ -134,7 +134,7 @@ export function RichTextEditor({
       aria-label={commandLabel}
       aria-pressed={active}
       onClick={run}
-      className="grid size-10 place-items-center border-r border-border text-primary hover:bg-background aria-pressed:bg-primary aria-pressed:text-white"
+      className="grid size-11 place-items-center border-r border-border text-primary hover:bg-background aria-pressed:bg-primary aria-pressed:text-white"
     >
       {icon}
     </button>
@@ -260,7 +260,7 @@ export function RichTextEditor({
           )}
           {email ? (
             <>
-              <label className="grid size-10 place-items-center border-r border-border hover:bg-background">
+              <label className="grid size-11 place-items-center border-r border-border hover:bg-background">
                 <span className="sr-only">Text colour</span>
                 <input
                   type="color"
@@ -269,7 +269,7 @@ export function RichTextEditor({
                   className="size-6 cursor-pointer border-0 bg-transparent p-0"
                 />
               </label>
-              <label className="inline-flex min-h-10 items-center border-r border-border px-2">
+              <label className="inline-flex min-h-11 items-center border-r border-border px-2">
                 <span className="sr-only">Insert personal field</span>
                 <select
                   value=""
@@ -277,7 +277,7 @@ export function RichTextEditor({
                   onChange={(event) => {
                     if (event.target.value) editor?.chain().focus().insertContent(event.target.value).run();
                   }}
-                  className="min-h-9 bg-transparent text-base font-bold text-primary sm:text-xs"
+                  className="min-h-11 bg-transparent text-base font-bold text-primary sm:text-xs"
                 >
                   <option value="">Insert field</option>
                   <option value="{{name}}">Full name</option>
@@ -299,14 +299,14 @@ export function RichTextEditor({
             disabled={sourceMode}
             aria-label="Add image"
             onClick={() => fileInput.current?.click()}
-            className="grid size-10 place-items-center border-r border-border text-primary hover:bg-background disabled:opacity-50"
+            className="grid size-11 place-items-center border-r border-border text-primary hover:bg-background disabled:opacity-50"
           >
             <ImagePlus className="size-4" />
           </button>
           <span
             role="status"
             aria-live="polite"
-            className="inline-flex min-h-10 items-center px-3 text-xs font-semibold text-muted"
+            className="inline-flex min-h-11 items-center px-3 text-xs font-semibold text-muted"
           >
             {pendingCount
               ? `${pendingCount} image${pendingCount === 1 ? "" : "s"} will upload when saved.`
@@ -316,7 +316,7 @@ export function RichTextEditor({
             type="button"
             aria-pressed={sourceMode}
             onClick={toggleSource}
-            className="ml-auto inline-flex min-h-10 items-center gap-2 px-3 text-xs font-bold text-primary hover:bg-background"
+            className="ml-auto inline-flex min-h-11 items-center gap-2 px-3 text-xs font-bold text-primary hover:bg-background"
           >
             <Code2 className="size-4" />
             HTML

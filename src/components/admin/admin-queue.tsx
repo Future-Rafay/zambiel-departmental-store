@@ -77,7 +77,7 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
       {/* Header Banner */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E1E3E5] pb-4">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+          <span className="text-xs font-bold uppercase tracking-wider text-secondary-text">
             ZAMBIEL ORDER QUEUE
           </span>
           <h1 className="font-display text-2xl font-bold text-[#202223] tracking-tight">
@@ -98,7 +98,7 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
           role="alert"
           className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-xs font-semibold text-destructive"
         >
-          ⚠️ {error}
+          {error}
         </div>
       )}
 
@@ -147,7 +147,7 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
                       ·{" "}
                       <a
                         href={`tel:${order.customerPhone}`}
-                        className="hover:underline text-secondary font-semibold"
+                        className="inline-flex min-h-11 items-center font-semibold text-secondary-text hover:underline"
                       >
                         {order.customerPhone}
                       </a>
@@ -165,7 +165,7 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
                   <span className="font-bold text-primary">
                     {formatMoney(order.totalRappen, "en")}
                   </span>
-                  <span className="font-bold uppercase text-[10px] bg-white px-2 py-0.5 rounded border border-border">
+                  <span className="font-bold uppercase text-xs bg-white px-2 py-0.5 rounded border border-border">
                     {order.paymentStatus}
                   </span>
                 </div>
@@ -178,7 +178,7 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
                       </span>
                       <span className="font-medium">{item.name}</span>
                       {item.options.length > 0 && (
-                        <span className="text-[11px] text-muted font-normal">
+                        <span className="text-xs text-muted font-normal">
                           ({item.options.join(", ")})
                         </span>
                       )}
@@ -189,7 +189,7 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
                 <div className="flex flex-wrap gap-2 border-t border-[#E1E3E5] pt-3">
                   <Link
                     href={`/admin/orders/${order.orderNumber}`}
-                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border bg-white px-3 text-xs font-bold text-primary"
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-control border bg-white px-3 text-xs font-bold text-primary"
                   >
                     <ExternalLink className="size-3.5" />
                     View details

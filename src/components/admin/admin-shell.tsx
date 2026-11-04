@@ -50,7 +50,7 @@ function AdminNavigation({ groups, pathname, mobile = false, onNavigate }: { gro
     <nav aria-label="Admin navigation" className={mobile ? "mt-4 flex-1 space-y-4 overflow-y-auto" : "space-y-5"}>
       {groups.map((group) => (
         <div key={group.title} className="space-y-1">
-          <p className={`${mobile ? "px-2 text-[10px]" : "px-3 text-[11px]"} font-bold uppercase tracking-wider text-muted`}>{group.title}</p>
+          <p className={`${mobile ? "px-2" : "px-3"} text-xs font-bold uppercase tracking-wider text-muted`}>{group.title}</p>
           {group.items.map((item) => {
             const active = isActive(pathname, item.href);
             return (
@@ -159,7 +159,7 @@ export function AdminShell({ user, children }: { user: AdminUser; children: Reac
             {/* Brand Box */}
             <div className="flex items-center justify-between px-2 py-1">
               <BrandLogo className="h-8 w-36" />
-              <span className="rounded bg-primary/10 px-2 py-0.5 font-mono text-[10px] font-bold text-primary uppercase">
+              <span className="rounded bg-primary/10 px-2 py-0.5 font-mono text-xs font-bold text-primary uppercase">
                 {user.role}
               </span>
             </div>
@@ -235,7 +235,7 @@ export function AdminShell({ user, children }: { user: AdminUser; children: Reac
                     <div className="rounded-lg bg-surface-warm p-3 space-y-1">
                       <p className="font-display text-sm font-bold text-primary truncate">{user.name}</p>
                       <p className="text-xs text-muted truncate">{user.email}</p>
-                      <span className="inline-flex items-center gap-1 rounded bg-secondary/20 px-2 py-0.5 text-[10px] font-bold text-secondary-light">
+                      <span className="inline-flex items-center gap-1 rounded bg-secondary/20 px-2 py-0.5 text-xs font-bold text-secondary-text">
                         <ShieldCheck className="h-3 w-3" />
                         {user.role} ACCOUNT
                       </span>
