@@ -14,6 +14,7 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from "react-native";
+import { Eye, EyeOff } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocale } from "./app-state";
 import { money } from "./commerce";
@@ -137,18 +138,39 @@ export function IconButton({
 export function Field({
   label,
   error,
+  secureTextEntry,
   ...props
 }: TextInputProps & { label: string; error?: string }) {
+  const { locale } = useLocale();
+  const [revealed, setRevealed] = useState(false);
+  const RevealIcon = revealed ? EyeOff : Eye;
   return (
     <View style={s.field}>
       <Text style={s.label}>{label}</Text>
-      <TextInput
-        accessibilityLabel={label}
-        accessibilityHint={error}
-        style={[s.input, error && s.inputError]}
-        placeholderTextColor={colors.muted}
-        {...props}
-      />
+      <View>
+        <TextInput
+          accessibilityLabel={label}
+          accessibilityHint={error}
+          style={[s.input, error && s.inputError, secureTextEntry && s.inputWithReveal]}
+          placeholderTextColor={colors.muted}
+          secureTextEntry={secureTextEntry && !revealed}
+          {...props}
+        />
+        {secureTextEntry ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              revealed
+                ? locale === "de" ? "Passwort verbergen" : "Hide password"
+                : locale === "de" ? "Passwort anzeigen" : "Show password"
+            }
+            onPress={() => setRevealed((current) => !current)}
+            style={s.reveal}
+          >
+            <RevealIcon size={20} color={colors.muted} />
+          </Pressable>
+        ) : null}
+      </View>
       {error ? (
         <Text accessibilityRole="alert" style={s.error}>
           {error}
@@ -335,6 +357,16 @@ const s = StyleSheet.create({
     fontSize: 16,
   },
   inputError: { borderColor: colors.danger },
+  inputWithReveal: { paddingRight: 48 },
+  reveal: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    right: 0,
+    width: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   error: { color: colors.danger, fontSize: 13 },
   state: {
     flex: 1,
