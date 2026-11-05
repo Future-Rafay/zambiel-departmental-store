@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export function InvitationAcceptForm({ token }: { token: string }) {
   const router = useRouter();
@@ -46,12 +47,12 @@ export function InvitationAcceptForm({ token }: { token: string }) {
       </div>
       <div className="space-y-2">
         <Label htmlFor="invitation-password">Password</Label>
-        <Input id="invitation-password" name="password" type="password" minLength={12} autoComplete="new-password" aria-describedby="password-help" required />
+        <PasswordInput id="invitation-password" name="password" minLength={12} autoComplete="new-password" aria-describedby="password-help" required />
         <p id="password-help" className="text-xs text-muted">Use at least 12 characters.</p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="invitation-confirm-password">Confirm password</Label>
-        <Input id="invitation-confirm-password" name="confirmPassword" type="password" minLength={12} autoComplete="new-password" required />
+        <PasswordInput id="invitation-confirm-password" name="confirmPassword" minLength={12} autoComplete="new-password" required />
       </div>
       <div role="status" aria-live="polite" className="min-h-5 text-sm font-semibold text-destructive">{error}</div>
       <Button type="submit" className="w-full" disabled={submitting}>{submitting ? "Creating account…" : "Accept invitation"}</Button>

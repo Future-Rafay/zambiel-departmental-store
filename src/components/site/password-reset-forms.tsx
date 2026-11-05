@@ -6,6 +6,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export function ForgotPasswordForm({ locale }: { locale: "de" | "en" }) {
   const de = locale === "de";
@@ -36,5 +37,5 @@ export function ResetPasswordForm({ locale, token }: { locale: "de" | "en"; toke
     setStatus("done");
   }
   if (status === "done") return <p role="status" className="text-success">{de ? "Passwort aktualisiert." : "Password updated."} <Link className="font-bold underline" href={admin ? "/admin/login" : `/${locale}/login`}>{de ? "Anmelden" : "Sign in"}</Link></p>;
-  return <form onSubmit={submit} className="space-y-4"><div><Label htmlFor="new-password">{de ? "Neues Passwort" : "New password"}</Label><Input id="new-password" name="password" type="password" minLength={10} maxLength={200} autoComplete="new-password" required className="mt-1" /></div><div><Label htmlFor="confirm-password">{de ? "Passwort bestätigen" : "Confirm password"}</Label><Input id="confirm-password" name="confirmPassword" type="password" minLength={10} maxLength={200} autoComplete="new-password" required className="mt-1" /></div><Button type="submit" className="w-full" disabled={status === "saving"}>{status === "saving" ? (de ? "Wird gespeichert…" : "Saving…") : (de ? "Passwort speichern" : "Save password")}</Button>{status === "error" ? <p role="alert" className="text-sm text-destructive">{de ? "Der Link ist ungültig, abgelaufen oder die Passwörter stimmen nicht überein." : "The link is invalid or expired, or the passwords do not match."}</p> : null}</form>;
+  return <form onSubmit={submit} className="space-y-4"><div><Label htmlFor="new-password">{de ? "Neues Passwort" : "New password"}</Label><PasswordInput locale={locale} id="new-password" name="password" minLength={10} maxLength={200} autoComplete="new-password" required className="mt-1" /></div><div><Label htmlFor="confirm-password">{de ? "Passwort bestätigen" : "Confirm password"}</Label><PasswordInput locale={locale} id="confirm-password" name="confirmPassword" minLength={10} maxLength={200} autoComplete="new-password" required className="mt-1" /></div><Button type="submit" className="w-full" disabled={status === "saving"}>{status === "saving" ? (de ? "Wird gespeichert…" : "Saving…") : (de ? "Passwort speichern" : "Save password")}</Button>{status === "error" ? <p role="alert" className="text-sm text-destructive">{de ? "Der Link ist ungültig, abgelaufen oder die Passwörter stimmen nicht überein." : "The link is invalid or expired, or the passwords do not match."}</p> : null}</form>;
 }

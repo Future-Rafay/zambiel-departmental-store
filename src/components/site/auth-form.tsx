@@ -5,6 +5,7 @@ import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 export function AuthForm({ locale, mode, admin = false, requestB2b = false }: { locale: "de" | "en"; mode: "login" | "register"; admin?: boolean; requestB2b?: boolean }) {
   const [error, setError] = useState("");
@@ -55,10 +56,10 @@ export function AuthForm({ locale, mode, admin = false, requestB2b = false }: { 
       </div>
       <div>
         <Label htmlFor="password">{de ? "Passwort" : "Password"}</Label>
-        <Input
+        <PasswordInput
+          locale={locale}
           id="password"
           name="password"
-          type="password"
           minLength={mode === "register" ? 10 : 1}
           autoComplete={mode === "register" ? "new-password" : "current-password"}
           placeholder="••••••••"
