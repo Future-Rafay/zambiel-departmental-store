@@ -9,6 +9,12 @@ export function parsePriceRappen(value?: string) {
   return Number.isFinite(francs) && francs >= 0 ? Math.round(francs * 100) : undefined;
 }
 
+export function paginate<T>(items: T[], requestedPage: unknown, pageSize: number) {
+  const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
+  const page = Math.min(pageCount, Math.max(1, Math.floor(Number(requestedPage)) || 1));
+  return { items: items.slice((page - 1) * pageSize, page * pageSize), page, pageCount };
+}
+
 export function categoryProductTotals(
   categories: Array<{ id: string; parentId: string | null; productCount: number }>,
 ) {
