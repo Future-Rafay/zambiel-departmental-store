@@ -27,7 +27,7 @@ export function NewsletterForm({ locale }: { locale: "de" | "en" }) {
     <form onSubmit={submit} className="space-y-2">
       <label htmlFor="newsletter-email" className="block text-sm font-bold">Email</label>
       <div className="hidden" aria-hidden="true"><label htmlFor="newsletter-website">Website</label><input id="newsletter-website" name="website" tabIndex={-1} autoComplete="off" /></div>
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input id="newsletter-email" name="email" type="email" autoComplete="email" required className="min-h-12 min-w-0 flex-1 rounded-control border border-border bg-background px-4" />
         <Button type="submit" disabled={status === "sending"}>{status === "sending" ? (de ? "Wird gesendet…" : "Sending…") : (de ? "Abonnieren" : "Subscribe")}</Button>
       </div>

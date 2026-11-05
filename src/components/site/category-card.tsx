@@ -22,16 +22,16 @@ export function CategoryCard({ category, locale, hrefBase }: { category: Categor
           src={category.imageUrl}
           alt=""
           fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-contain p-5 transition-transform duration-300 group-hover:scale-[1.03]"
+          sizes="(max-width: 1024px) 50vw, 25vw"
+          className="object-contain p-3 transition-transform duration-300 group-hover:scale-[1.03] sm:p-5"
         />
       </div>
-      <div className="p-5 sm:p-6">
+      <div className="p-3 sm:p-6">
         <p className="text-sm text-muted">{category.productCount} {de ? "Produkte" : "products"}</p>
-        <h2 className="mt-2 flex items-center justify-between gap-3 text-xl font-bold text-primary">
-          {category.name}<ArrowRight className="h-5 w-5 shrink-0 text-secondary transition-transform group-hover:translate-x-1" aria-hidden="true" />
+        <h2 className="mt-1 flex items-start justify-between gap-2 text-base font-bold text-primary hyphens-auto sm:mt-2 sm:items-center sm:gap-3 sm:text-xl">
+          <span className="min-w-0 break-words">{category.name}</span><ArrowRight className="hidden h-5 w-5 shrink-0 text-secondary transition-transform group-hover:translate-x-1 sm:block" aria-hidden="true" />
         </h2>
-        {category.description ? <p className="mt-3 line-clamp-2 text-sm leading-6 text-muted">{category.description}</p> : null}
+        {category.description ? <p className="mt-3 hidden text-sm leading-6 text-muted sm:line-clamp-2">{category.description}</p> : null}
       </div>
     </Link>
   );

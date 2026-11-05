@@ -1,7 +1,7 @@
 "use client";
 
-import { Minus, Plus, ShoppingBag } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Check, Minus, Plus, ShoppingBag } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useCart } from "@/components/site/cart-context";
 import { formatStoreMoney, type StoreLocale } from "@/config/store";
@@ -38,6 +38,26 @@ export function RetailProductPurchase({
   const variant = useMemo(() => variants.find((candidate) => options.every((option) => candidate.optionValues.some((value) => value.optionId === option.id && value.valueId === selected[option.id]))) ?? (options.length ? null : variants[0] ?? null), [options, selected, variants]);
   const stock = variant ? variant.stockAvailable : null;
   const available = Boolean(variant && (stock === null || stock > 0));
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const [showBar, setShowBar] = useState(false);
+
+  useEffect(() => {
+    const actions = actionsRef.current;
+    const footer = document.querySelector("footer");
+    if (!actions || !footer) return;
+    let actionsVisible = true;
+    let footerVisible = false;
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === actions) actionsVisible = entry.isIntersecting;
+        else footerVisible = entry.isIntersecting;
+      }
+      setShowBar(!actionsVisible && !footerVisible);
+    });
+    observer.observe(actions);
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
 
   function chooseValue(optionId: string, valueId: string) {
     const next = { ...selected, [optionId]: valueId };
@@ -84,7 +104,7 @@ export function RetailProductPurchase({
       <p className={`mt-6 text-sm font-bold ${available ? "text-success" : "text-destructive"}`} role="status">
         {available ? (stock === null ? (de ? "Verfügbar" : "Available") : de ? `${stock} auf Lager` : `${stock} in stock`) : de ? "Diese Variante ist nicht verfügbar." : "This variant is unavailable."}
       </p>
-      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+      <div ref={actionsRef} className="mt-5 flex flex-col gap-3 sm:flex-row">
         <div className="inline-flex min-h-12 items-center justify-between rounded-xl border border-border bg-surface sm:w-36">
           <button type="button" className="min-h-11 min-w-11" onClick={() => setQuantity((value) => Math.max(1, value - 1))} aria-label={de ? "Menge verringern" : "Decrease quantity"}><Minus className="mx-auto h-4 w-4" aria-hidden="true" /></button>
           <output aria-live="polite" className="font-bold tabular-nums">{quantity}</output>
@@ -95,6 +115,18 @@ export function RetailProductPurchase({
         </button>
       </div>
       <p className="mt-3 min-h-6 text-sm font-medium text-success" role="status" aria-live="polite">{message}</p>
+      {showBar ? (
+        <div data-purchase-bar className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border bg-surface px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] lg:hidden">
+          <div className="min-w-0 max-w-[45%]">
+            <p className="font-bold tabular-nums text-primary">{variant ? formatStoreMoney(variant.priceRappen, locale) : "—"}</p>
+            {variant?.optionValues.length ? <p className="truncate text-xs text-muted">{variant.optionValues.map(({ value }) => value).join(" · ")}</p> : null}
+          </div>
+          <button type="button" onClick={addToCart} disabled={!available} className="inline-flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-50">
+            {message ? <Check className="h-5 w-5 shrink-0" aria-hidden="true" /> : <ShoppingBag className="h-5 w-5 shrink-0" aria-hidden="true" />}
+            {message ? (de ? "Hinzugefügt" : "Added") : de ? "In den Warenkorb" : "Add to cart"}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

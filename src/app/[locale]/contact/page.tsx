@@ -25,7 +25,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
   return (
     <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-20">
       <section className="max-w-7xl">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">Zambiel</p>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">Zambiel</p>
         <h1 className="mt-3 font-display text-5xl leading-tight tracking-[-0.05em] text-primary sm:text-7xl">
           {de ? "Wie können wir helfen?" : "How can we help?"}
         </h1>

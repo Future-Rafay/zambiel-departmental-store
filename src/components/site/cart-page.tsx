@@ -20,7 +20,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-12 sm:px-6 lg:px-8">
       <div className="flex items-end justify-between border-b border-border/60 pb-5">
         <div>
-          <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary">
+          <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary-text">
             ZAMBIEL
           </span>
           <h1 className="mt-1 font-display text-4xl font-extrabold text-primary">
@@ -28,7 +28,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
           </h1>
         </div>
         {items.length > 0 && (
-          <span className="rounded-full bg-secondary/15 px-4 py-1 text-xs font-bold text-secondary-light">
+          <span className="shrink-0 rounded-full bg-secondary/15 px-4 py-1 text-xs font-bold text-secondary-text">
             {items.reduce((sum, item) => sum + item.quantity, 0)}{" "}
             {de ? "Artikel" : "items"}
           </span>
@@ -56,8 +56,8 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
           <ul className="min-w-0 space-y-3">
             {items.map((item) => (
               <li key={item.key}>
-                <Card className="flex items-center gap-4 rounded-none p-4">
-                  <div className="relative size-20 shrink-0 overflow-hidden rounded-xl bg-background">
+                <Card className="grid grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-none p-4 sm:flex sm:items-center sm:gap-4">
+                  <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-background sm:size-20">
                     <Image
                       src={item.imageUrl ?? "/images/product-placeholder.svg"}
                       alt=""
@@ -67,7 +67,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h2 className="truncate font-display text-lg font-bold">
+                    <h2 className="line-clamp-2 font-display text-lg font-bold leading-snug">
                       {item.productName}
                     </h2>
                     <p className="text-xs text-muted">{item.variantName}</p>
@@ -103,7 +103,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
                       </button>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="col-span-2 flex items-center justify-between border-t border-border pt-3 sm:block sm:border-0 sm:pt-0 sm:text-right">
                     <strong className="block text-primary">
                       {formatMoney(
                         item.unitPriceRappen * item.quantity,
@@ -120,7 +120,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
                           ? `${item.productName} entfernen`
                           : `Remove ${item.productName}`
                       }
-                      className="mt-2 text-muted hover:text-destructive"
+                      className="min-h-11 min-w-11 text-muted hover:text-destructive sm:mt-2"
                     >
                       <Trash2 className="size-5" />
                     </Button>

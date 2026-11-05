@@ -42,7 +42,7 @@ export default async function HomePage({
         className="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-20"
         aria-labelledby="category-heading"
       >
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">
           {de ? "Sortiment" : "Department directory"}
         </p>
         <h1
@@ -52,7 +52,7 @@ export default async function HomePage({
           {de ? "Nach Kategorie einkaufen" : "Shop by category"}
         </h1>
         {catalog.categories.length ? (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             {catalog.categories.map((category) => (
               <CategoryCard
                 key={category.id}
@@ -97,7 +97,7 @@ export default async function HomePage({
           className="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-20"
           aria-labelledby="promotions-heading"
         >
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">
             {de ? "Aktuelle Angebote" : "Current offers"}
           </p>
           <h2

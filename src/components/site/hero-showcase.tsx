@@ -41,7 +41,7 @@ export function HeroShowcase({
     >
       <ProductStrip products={rows[0]} locale={locale} />
       <div className="relative mt-4 overflow-hidden rounded-card border border-border bg-surface shadow-sm">
-        <div className="relative aspect-[16/6.8] min-h-48 sm:min-h-0">
+        <div className="relative aspect-[16/6.8]">
           <Image
             src={banners[slide].src}
             alt={banners[slide].alt}

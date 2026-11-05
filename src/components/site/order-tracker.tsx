@@ -71,7 +71,7 @@ export function OrderTracker({
     <div className="mx-auto max-w-7xl space-y-6 px-4 py-12 sm:px-6 lg:px-8">
       <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5">
         <div>
-          <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary">
+          <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary-text">
             ZAMBIEL
           </span>
           <h1 className="mt-1 font-display text-4xl font-extrabold text-primary">

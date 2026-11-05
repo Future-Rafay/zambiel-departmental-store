@@ -30,13 +30,13 @@ export default async function CategoriesPage({
   const categories = await getRetailCategories(locale);
   return (
     <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-16">
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">
         {de ? "Sortiment" : "Catalogue"}
       </p>
       <h1 className="mt-2 font-display text-4xl tracking-[-0.04em] text-primary sm:text-6xl">
         {de ? "Kategorien" : "Categories"}
       </h1>
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {categories.map((category) => (
           <CategoryCard key={category.id} category={category} locale={locale} />
         ))}

@@ -131,13 +131,13 @@ export function SiteShell({
       >
         {de ? "Zum Inhalt springen" : "Skip to content"}
       </a>
+      {announcements.length ? (
+        <div className="bg-primary px-4 py-2 text-center text-xs font-bold text-white sm:text-sm">
+          <span aria-hidden="true">{announcements[announcementIndex % announcements.length]}</span>
+          <span className="sr-only">{announcements.join(". ")}</span>
+        </div>
+      ) : null}
       <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-xl">
-        {announcements.length ? (
-          <div className="bg-primary px-4 py-2 text-center text-xs font-bold text-white sm:text-sm">
-            <span aria-hidden="true">{announcements[announcementIndex % announcements.length]}</span>
-            <span className="sr-only">{announcements.join(". ")}</span>
-          </div>
-        ) : null}
         <div className="mx-auto flex min-h-20 max-w-7xl items-center gap-3 px-4 sm:px-6">
           <Link
             href={`/${locale}`}
@@ -322,22 +322,6 @@ export function SiteShell({
             className="border-t border-border p-4 lg:hidden"
             aria-label={de ? "Mobile Navigation" : "Mobile navigation"}
           >
-            <form
-              action={`/${locale}/products`}
-              className="mb-3 sm:hidden"
-              role="search"
-            >
-              <label htmlFor="mobile-search" className="sr-only">
-                {labels.search}
-              </label>
-              <input
-                id="mobile-search"
-                name="q"
-                type="search"
-                placeholder={labels.search}
-                className="min-h-12 w-full rounded-control border border-border bg-background px-4"
-              />
-            </form>
             <div className="grid gap-1">
               {links.map((link) => (
                 <Link
@@ -361,6 +345,28 @@ export function SiteShell({
           </nav>
         ) : null}
       </header>
+      <form
+        action={`/${locale}/products`}
+        className="border-b border-border bg-surface px-4 py-2 sm:hidden"
+        role="search"
+      >
+        <label htmlFor="mobile-search" className="sr-only">
+          {labels.search}
+        </label>
+        <div className="relative">
+          <Search
+            className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted"
+            aria-hidden="true"
+          />
+          <input
+            id="mobile-search"
+            name="q"
+            type="search"
+            placeholder={labels.search}
+            className="min-h-11 w-full rounded-control border border-border bg-background py-2 pl-12 pr-4"
+          />
+        </div>
+      </form>
 
       <main
         id="main-content"
