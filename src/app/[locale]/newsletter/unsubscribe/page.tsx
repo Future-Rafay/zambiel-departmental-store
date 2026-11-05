@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+import { pageTitleMetadata } from "@/lib/metadata";
 
 import { NewsletterUnsubscribeForm } from "@/components/site/newsletter-unsubscribe-form";
 import { Card } from "@/components/ui/card";
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const generateMetadata = pageTitleMetadata({ de: "Newsletter abbestellen", en: "Unsubscribe from newsletter" }, { index: false, follow: false });
 
 export default async function NewsletterUnsubscribePage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ token?: string }> }) {
   const locale = (await params).locale === "en" ? "en" : "de";

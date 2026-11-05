@@ -51,6 +51,8 @@ export function SiteShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const accountRef = useRef<HTMLDivElement>(null);
+  const accountButtonRef = useRef<HTMLButtonElement>(null);
+  const navButtonRef = useRef<HTMLButtonElement>(null);
   const { count } = useCart();
   const { mode } = useStoreMode();
   const otherLocale = de ? "en" : "de";
@@ -105,6 +107,9 @@ export function SiteShell({
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        const active = document.activeElement;
+        if (accountRef.current?.contains(active)) accountButtonRef.current?.focus();
+        else if (document.getElementById("mobile-nav")?.contains(active)) navButtonRef.current?.focus();
         setAccountOpen(false);
         setMobileOpen(false);
       }
@@ -138,13 +143,13 @@ export function SiteShell({
         </div>
       ) : null}
       <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-xl">
-        <div className="mx-auto flex min-h-20 max-w-7xl items-center gap-3 px-4 sm:px-6">
+        <div className="mx-auto flex min-h-16 max-w-7xl items-center gap-1 px-4 sm:min-h-20 sm:gap-3 sm:px-6">
           <Link
             href={`/${locale}`}
             className="flex min-h-11 shrink-0 items-center"
             aria-label={de ? "Zambiel Startseite" : "Zambiel home"}
           >
-            <BrandLogo priority />
+            <BrandLogo priority className="max-sm:h-12" />
           </Link>
           <form
             action={`/${locale}/products`}
@@ -196,7 +201,7 @@ export function SiteShell({
           </Link>
           <Link
             href={mode === "b2b" ? `/${locale}/b2b-shop/cart` : `/${locale}/cart`}
-            className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-control bg-primary px-3 text-white"
+            className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-control bg-primary px-3 text-white max-sm:ml-auto"
             aria-label={`${labels.cart}: ${count}`}
           >
             <ShoppingBag className="h-5 w-5" aria-hidden="true" />
@@ -209,17 +214,16 @@ export function SiteShell({
           <div ref={accountRef} className="relative">
             <button
               type="button"
+              ref={accountButtonRef}
               onClick={() => setAccountOpen((open) => !open)}
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border border-border"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border-border sm:border"
               aria-label={labels.account}
               aria-expanded={accountOpen}
-              aria-haspopup="menu"
             >
               <User className="h-5 w-5" aria-hidden="true" />
             </button>
             {accountOpen ? (
               <div
-                role="menu"
                 className="absolute right-0 top-12 w-64 rounded-card border border-border bg-surface p-2 shadow-2xl"
               >
                 {user ? (
@@ -233,7 +237,6 @@ export function SiteShell({
                       </p>
                     </div>
                     <Link
-                      role="menuitem"
                       href={`/${locale}/account`}
                       onClick={() => setAccountOpen(false)}
                       className="mt-2 flex min-h-11 items-center gap-3 rounded-control px-3 text-sm font-bold hover:bg-surface-warm"
@@ -245,7 +248,6 @@ export function SiteShell({
                       {labels.account}
                     </Link>
                     <Link
-                      role="menuitem"
                       href={`/${locale}/account/orders`}
                       onClick={() => setAccountOpen(false)}
                       className="flex min-h-11 items-center gap-3 rounded-control px-3 text-sm font-bold hover:bg-surface-warm"
@@ -258,8 +260,8 @@ export function SiteShell({
                     </Link>
                     {user.role === "OWNER" || user.role === "STAFF" ? (
                       <Link
-                        role="menuitem"
                         href="/admin"
+                        onClick={() => setAccountOpen(false)}
                         className="flex min-h-11 items-center gap-3 rounded-control px-3 text-sm font-bold hover:bg-surface-warm"
                       >
                         <Settings
@@ -271,7 +273,6 @@ export function SiteShell({
                     ) : null}
                     <div className="my-2 border-t border-border" />
                     <button
-                      role="menuitem"
                       type="button"
                       onClick={() => signOut({ callbackUrl: `/${locale}` })}
                       className="flex min-h-11 w-full items-center gap-3 rounded-control px-3 text-left text-sm font-bold text-destructive hover:bg-destructive/10"
@@ -283,15 +284,15 @@ export function SiteShell({
                 ) : (
                   <div className="grid gap-2 p-2">
                     <Link
-                      role="menuitem"
                       href={`/${locale}/login`}
+                      onClick={() => setAccountOpen(false)}
                       className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary font-bold text-white"
                     >
                       {labels.login}
                     </Link>
                     <Link
-                      role="menuitem"
                       href={`/${locale}/register`}
+                      onClick={() => setAccountOpen(false)}
                       className="inline-flex min-h-11 items-center justify-center rounded-control border border-primary font-bold text-primary"
                     >
                       {labels.register}
@@ -303,9 +304,10 @@ export function SiteShell({
           </div>
           <button
             type="button"
+            ref={navButtonRef}
             onClick={() => setMobileOpen((open) => !open)}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border border-border lg:hidden"
-            aria-label={de ? "Navigation öffnen" : "Open navigation"}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border-border sm:border lg:hidden"
+            aria-label={mobileOpen ? (de ? "Navigation schliessen" : "Close navigation") : de ? "Navigation öffnen" : "Open navigation"}
             aria-controls="mobile-nav"
             aria-expanded={mobileOpen}
           >
@@ -336,6 +338,7 @@ export function SiteShell({
               <Link
                 href={otherPath}
                 hrefLang={otherLocale}
+                onClick={() => setMobileOpen(false)}
                 className="flex min-h-12 items-center gap-3 rounded-control px-4 font-bold hover:bg-surface-warm"
               >
                 <Globe2 className="h-5 w-5 text-secondary" aria-hidden="true" />
@@ -395,17 +398,17 @@ export function SiteShell({
             <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-secondary-light">
               {de ? "Schnellzugriff" : "Quick links"}
             </h2>
-            <div className="mt-4 flex flex-col gap-3 text-sm">
+            <div className="mt-2 flex flex-col items-start text-sm">
               {links.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="hover:text-secondary-light"
+                  className="inline-flex min-h-11 items-center hover:text-secondary-light"
                 >
                   {link.label}
                 </Link>
               ))}
-              <Link href={`/${locale}/b2b-shop`} className="hover:text-secondary-light">
+              <Link href={`/${locale}/b2b-shop`} className="inline-flex min-h-11 items-center hover:text-secondary-light">
                 {de ? "B2B-Shop" : "B2B Shop"}
               </Link>
             </div>
@@ -414,11 +417,11 @@ export function SiteShell({
             <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-secondary-light">
               {de ? "Bedingungen & Richtlinien" : "Terms & policies"}
             </h2>
-            <ul className="mt-4 space-y-3 text-sm">
+            <ul className="mt-2 text-sm">
               <li>
                 <Link
                   href={`/${locale}/privacy`}
-                  className="hover:text-secondary-light"
+                  className="inline-flex min-h-11 items-center hover:text-secondary-light"
                 >
                   {labels.privacy}
                 </Link>
@@ -426,7 +429,7 @@ export function SiteShell({
               <li>
                 <Link
                   href={`/${locale}/returns`}
-                  className="hover:text-secondary-light"
+                  className="inline-flex min-h-11 items-center hover:text-secondary-light"
                 >
                   {de ? "Rückgabe & Erstattung" : "Return & refund"}
                 </Link>
@@ -434,7 +437,7 @@ export function SiteShell({
               <li>
                 <Link
                   href={`/${locale}/terms`}
-                  className="hover:text-secondary-light"
+                  className="inline-flex min-h-11 items-center hover:text-secondary-light"
                 >
                   {labels.terms}
                 </Link>
@@ -442,7 +445,7 @@ export function SiteShell({
               <li>
                 <Link
                   href={`/${locale}/contact`}
-                  className="hover:text-secondary-light"
+                  className="inline-flex min-h-11 items-center hover:text-secondary-light"
                 >
                   {de ? "Kontaktinformationen" : "Contact information"}
                 </Link>
@@ -459,7 +462,7 @@ export function SiteShell({
             {publicConfig.email ? (
               <a
                 href={`mailto:${publicConfig.email}`}
-                className="mt-2 inline-block break-all font-bold hover:text-secondary-light"
+                className="mt-1 inline-flex min-h-11 items-center break-all font-bold hover:text-secondary-light"
               >
                 {publicConfig.email}
               </a>

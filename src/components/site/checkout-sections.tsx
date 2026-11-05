@@ -45,7 +45,7 @@ export function FulfillmentChoices({
     <Card className="space-y-4 p-5">
       <fieldset>
         <legend className="mb-3 font-display text-xl font-bold">
-          {de ? "Lieferart" : "Fulfillment"}
+          {de ? "Lieferart" : "Delivery or pickup"}
         </legend>
         <div className="grid gap-3 sm:grid-cols-2">
           {(["PICKUP", "DELIVERY"] as const).map((option) => (
@@ -212,7 +212,7 @@ export function AddressFields({
           required
           aria-invalid={!!errors.countryCode}
           aria-describedby={errors.countryCode ? "countryCode-error" : undefined}
-          className="min-h-11 w-full rounded-control border border-border bg-surface px-4 py-2 text-base focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20 aria-invalid:border-destructive"
+          className="min-h-11 w-full rounded-control border border-border bg-surface px-4 py-2 text-base focus:border-secondary aria-invalid:border-destructive"
         >
           {countries.length === 0 ? <option value="">{de ? "Keine Lieferländer verfügbar" : "No shipping countries available"}</option> : null}
           {countries.map((country) => <option key={country.countryCode} value={country.countryCode}>{de ? country.nameDe : country.nameEn}</option>)}
@@ -297,7 +297,7 @@ export function PaymentChoices({
           id="note"
           name="note"
           maxLength={1000}
-          className="min-h-24 w-full border border-border bg-surface p-3 focus:outline-none focus:ring-2 focus:ring-secondary"
+          className="min-h-24 w-full border border-border bg-surface p-3"
         />
       </Field>
     </Card>
@@ -404,7 +404,7 @@ export function CheckoutSummary({
       {error ? (
         <p
           role="alert"
-          className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive"
+          className="rounded-control bg-destructive/10 p-3 text-sm text-destructive"
         >
           {error}
         </p>
@@ -424,8 +424,8 @@ export function CheckoutSummary({
       </div>
       <p className="text-xs text-muted">
         {de
-          ? "Preise, Bestand und Liefergebiet werden serverseitig erneut geprüft."
-          : "Prices, stock, and delivery eligibility are revalidated by the server."}
+          ? "Preise und Verfügbarkeit prüfen wir beim Bestellen noch einmal."
+          : "We check prices and availability again when you place your order."}
       </p>
     </Card>
   );

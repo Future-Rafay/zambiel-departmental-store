@@ -50,7 +50,7 @@ export function AuthForm({ locale, mode, admin = false, requestB2b = false }: { 
         </div>
       )}
       <div>
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{de ? "E-Mail" : "Email"}</Label>
         <Input id="email" name="email" type="email" autoComplete="email" placeholder="name@beispiel.ch" required className="mt-1" />
       </div>
       <div>
@@ -65,11 +65,11 @@ export function AuthForm({ locale, mode, admin = false, requestB2b = false }: { 
           required
           className="mt-1"
         />
-        {mode === "login" ? <a href={`/${locale}/forgot-password`} className="mt-2 block text-right text-xs font-bold text-primary underline">{de ? "Passwort vergessen?" : "Forgot password?"}</a> : null}
+        {mode === "login" ? <a href={`/${locale}/forgot-password`} className="mt-1 flex min-h-11 items-center justify-end text-xs font-bold text-primary underline">{de ? "Passwort vergessen?" : "Forgot password?"}</a> : null}
       </div>
 
       {error && (
-        <div role="alert" className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-xs font-semibold text-destructive">
+        <div role="alert" className="rounded-control bg-destructive/10 border border-destructive/20 p-3 text-xs font-semibold text-destructive">
           {error}
         </div>
       )}
@@ -87,7 +87,7 @@ export function AuthForm({ locale, mode, admin = false, requestB2b = false }: { 
           </div>
 
           <a
-            className="mt-2 flex min-h-11 items-center justify-center gap-3 rounded-xl border border-border bg-surface font-semibold text-sm hover:bg-background transition-all"
+            className="mt-2 flex min-h-11 items-center justify-center gap-3 rounded-control border border-border bg-surface font-semibold text-sm hover:bg-background transition-all"
             href={`/api/auth/signin/google?callbackUrl=/${locale}/account/orders`}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">

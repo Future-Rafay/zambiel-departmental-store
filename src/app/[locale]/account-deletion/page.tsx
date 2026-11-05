@@ -1,11 +1,9 @@
-import type { Metadata } from "next";
+import { pageTitleMetadata } from "@/lib/metadata";
 import Link from "next/link";
 import { AccountDeletionForm } from "@/components/site/account-deletion-form";
 import { getCurrentUser } from "@/server/auth/current-user";
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
+export const generateMetadata = pageTitleMetadata({ de: "Konto löschen", en: "Delete account" }, { index: false, follow: false });
 
 export default async function AccountDeletionPage({ params }: { params: Promise<{ locale: string }> }) {
   const locale = (await params).locale === "en" ? "en" : "de";
@@ -22,7 +20,7 @@ export default async function AccountDeletionPage({ params }: { params: Promise<
         <p>{de ? "Melden Sie sich mit Ihrem Kundenkonto an und öffnen Sie anschliessend diese Seite erneut." : "Sign in with your customer account, then return to this page."}</p>
         <Link className="inline-flex min-h-11 items-center font-bold text-primary underline" href={`/${locale}/login`}>{de ? "Anmelden" : "Sign in"}</Link>
       </>}
-      <div className="pt-6"><Link className="text-primary underline" href={`/${locale}/contact`}>{de ? "Hilfe beim Kontozugriff" : "Help accessing your account"}</Link></div>
+      <div className="pt-6"><Link className="inline-flex min-h-11 items-center text-primary underline" href={`/${locale}/contact`}>{de ? "Hilfe beim Kontozugriff" : "Help accessing your account"}</Link></div>
     </div>
   </div>;
 }

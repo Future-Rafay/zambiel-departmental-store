@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { pageTitleMetadata } from "@/lib/metadata";
 import { CheckoutForm } from "@/components/site/checkout-form";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { prisma } from "@/server/db";
@@ -23,4 +23,4 @@ export default async function CheckoutPage({ params }: { params: Promise<{ local
   );
 }
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const generateMetadata = pageTitleMetadata({ de: "Kasse", en: "Checkout" }, { index: false, follow: false });

@@ -1,4 +1,7 @@
 import { Card } from "@/components/ui/card";
+import { pageTitleMetadata } from "@/lib/metadata";
+
+export const generateMetadata = pageTitleMetadata({ de: "AGB", en: "Terms of service" });
 
 export default async function TermsPage({ params }: { params: Promise<{ locale: string }> }) {
   const de = (await params).locale !== "en";

@@ -4,8 +4,19 @@ import test from "node:test";
 import {
   categoryHierarchy,
   categoryProductTotals,
+  paginate,
   parsePriceRappen,
+  productCountLabel,
 } from "./catalog-display";
+
+test("paginate slices pages and falls back safely on bad page values", () => {
+  const items = [1, 2, 3, 4, 5];
+  assert.deepEqual(paginate(items, "2", 2), { items: [3, 4], page: 2, pageCount: 3 });
+  assert.deepEqual(paginate(items, "999", 2), { items: [5], page: 3, pageCount: 3 });
+  for (const bad of [undefined, "abc", "-4", "0"]) assert.deepEqual(paginate(items, bad, 2).items, [1, 2]);
+  assert.equal(paginate(items, "1.9", 2).page, 1);
+  assert.deepEqual(paginate([], "3", 2), { items: [], page: 1, pageCount: 1 });
+});
 
 test("catalog prices ignore empty input and convert valid CHF to rappen", () => {
   assert.equal(parsePriceRappen(undefined), undefined);
@@ -50,4 +61,12 @@ test("category hierarchy keeps orphans and cycles finite and visible", () => {
   assert.deepEqual(hierarchy.map(({ id }) => id), ["orphan", "cycle-a", "cycle-b"]);
   assert.equal(new Set(hierarchy.map(({ id }) => id)).size, 3);
   assert.equal(hierarchy[0].depth, 0);
+});
+
+test("product counts use the singular only for one", () => {
+  assert.equal(productCountLabel(1, true), "1 Produkt");
+  assert.equal(productCountLabel(0, true), "0 Produkte");
+  assert.equal(productCountLabel(2, true), "2 Produkte");
+  assert.equal(productCountLabel(1, false), "1 product");
+  assert.equal(productCountLabel(50, false), "50 products");
 });

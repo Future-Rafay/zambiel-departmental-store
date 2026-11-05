@@ -48,7 +48,7 @@ export function ContactForm({
         <Input id={`${prefix}-name`} name="name" autoComplete="name" required minLength={2} />
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`${prefix}-email`}>Email</Label>
+        <Label htmlFor={`${prefix}-email`}>{de ? "E-Mail" : "Email"}</Label>
         <Input id={`${prefix}-email`} name="email" type="email" autoComplete="email" required />
       </div>
       <div className="space-y-2">
@@ -78,7 +78,7 @@ export function ContactForm({
           minLength={10}
           maxLength={5000}
           rows={request ? 5 : 7}
-          className="w-full rounded-[var(--radius-control)] border border-border bg-surface px-4 py-3 text-base focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+          className="w-full rounded-[var(--radius-control)] border border-border bg-surface px-4 py-3 text-base focus:border-secondary"
         />
       </div>
       <div className="flex flex-col items-start gap-3 sm:col-span-2 sm:flex-row sm:items-center">

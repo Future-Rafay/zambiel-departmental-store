@@ -1,14 +1,14 @@
 import Link from "next/link";
-import type { Metadata } from "next";
+import { pageTitleMetadata } from "@/lib/metadata";
 import { redirect } from "next/navigation";
 import { ArrowRight, ShoppingBag } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
-import { formatMoney, orderStatusLabel } from "@/lib/orders";
+import { formatMoney, orderStatusBadgeClass, orderStatusLabel } from "@/lib/orders";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getCustomerOrders } from "@/server/services/ordering";
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const generateMetadata = pageTitleMetadata({ de: "Meine Bestellungen", en: "My orders" }, { index: false, follow: false });
 
 export default async function AccountOrdersPage({
   params,
@@ -22,23 +22,12 @@ export default async function AccountOrdersPage({
 
   const orders = await getCustomerOrders(user.id);
 
-  const statusColors: Record<string, string> = {
-    CONFIRMED: "bg-blue-600 text-white",
-    PROCESSING: "bg-amber-600 text-white",
-    READY_FOR_PICKUP: "bg-emerald-600 text-white",
-    OUT_FOR_DELIVERY: "bg-secondary text-secondary-foreground",
-    DELIVERED: "bg-success text-white",
-    PICKED_UP: "bg-success text-white",
-    CANCELLED: "bg-destructive text-white",
-    PAYMENT_PENDING: "bg-muted text-foreground",
-  };
-
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 space-y-8">
       {/* Header */}
       <div className="border-b border-border/60 pb-5">
         <span className="text-xs font-bold uppercase tracking-[0.3em] text-secondary-text">
-          ZAMBIEL ACCOUNT
+          {de ? "ZAMBIEL KONTO" : "ZAMBIEL ACCOUNT"}
         </span>
         <h1 className="font-display text-4xl font-extrabold text-primary mt-1">
           {de ? "Meine Bestellungen" : "My Orders"}
@@ -66,7 +55,7 @@ export default async function AccountOrdersPage({
           <div className="pt-2">
             <Link
               href={`/${locale}/products`}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-secondary px-8 text-sm font-bold text-secondary-foreground shadow hover:bg-secondary-light transition-all"
+              className="inline-flex min-h-11 items-center justify-center rounded-control bg-secondary px-8 text-sm font-bold text-secondary-foreground shadow hover:bg-secondary-light transition-all"
             >
               {de ? "Jetzt bestellen" : "Order now"}
             </Link>
@@ -88,7 +77,7 @@ export default async function AccountOrdersPage({
                     {order.orderNumber}
                   </span>
                   <span
-                    className={`rounded-full px-3 py-1 text-[11px] font-bold shadow-sm ${statusColors[order.status] ?? "bg-primary text-white"}`}
+                    className={`rounded-full px-3 py-1 text-xs font-bold shadow-sm ${orderStatusBadgeClass(order.status)}`}
                   >
                     {orderStatusLabel(order.status, locale)}
                   </span>

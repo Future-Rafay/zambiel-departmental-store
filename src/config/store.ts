@@ -27,7 +27,7 @@ export const storeConfig = {
       background: "#F4F7F3",
       surface: "#FFFFFF",
       foreground: "#102722",
-      muted: "#60716B",
+      muted: "#5E6F69",
       border: "#D7E1DB",
     },
     fonts: { display: "Inter", body: "Archivo" },

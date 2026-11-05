@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+import { pageTitleMetadata } from "@/lib/metadata";
 import Link from "next/link";
 
 import { Card } from "@/components/ui/card";
 
-export const metadata: Metadata = { robots: { index: false, follow: true } };
+export const generateMetadata = pageTitleMetadata({ de: "Rückgabe und Erstattung", en: "Returns and refunds" }, { index: false, follow: true });
 
 export default async function ReturnsPage({ params }: { params: Promise<{ locale: string }> }) {
   const locale = (await params).locale === "en" ? "en" : "de";

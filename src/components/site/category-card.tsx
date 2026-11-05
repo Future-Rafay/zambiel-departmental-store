@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { StorefrontImage } from "@/components/site/storefront-image";
 import type { StoreLocale } from "@/config/store";
+import { productCountLabel } from "@/lib/catalog-display";
 
 export type CategoryCardData = {
   id: string;
@@ -27,7 +28,7 @@ export function CategoryCard({ category, locale, hrefBase }: { category: Categor
         />
       </div>
       <div className="p-3 sm:p-6">
-        <p className="text-sm text-muted">{category.productCount} {de ? "Produkte" : "products"}</p>
+        <p className="text-sm text-muted">{productCountLabel(category.productCount, de)}</p>
         <h2 className="mt-1 flex items-start justify-between gap-2 text-base font-bold text-primary hyphens-auto sm:mt-2 sm:items-center sm:gap-3 sm:text-xl">
           <span className="min-w-0 break-words">{category.name}</span><ArrowRight className="hidden h-5 w-5 shrink-0 text-secondary transition-transform group-hover:translate-x-1 sm:block" aria-hidden="true" />
         </h2>

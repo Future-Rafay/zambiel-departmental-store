@@ -69,7 +69,7 @@ export function CheckoutForm({
     variantId,
     quantity,
   }));
-  function message(code = "") {
+  function message(code = "", fallback: [string, string] = ["Bestellung konnte nicht abgeschlossen werden.", "The order could not be completed."]) {
     const messages: Record<string, [string, string]> = {
       COUNTRY_NOT_DELIVERABLE: [
         "In dieses Land liefern wir derzeit nicht.",
@@ -104,13 +104,10 @@ export function CheckoutForm({
         "Please check your details.",
       ],
     };
-    return (messages[code] ?? [
-      "Bestellung konnte nicht abgeschlossen werden.",
-      "The order could not be completed.",
-    ])[de ? 0 : 1];
+    return (messages[code] ?? fallback)[de ? 0 : 1];
   }
 
-  function applyApiError(value: unknown) {
+  function applyApiError(value: unknown, fallback?: [string, string]) {
     const api = value && typeof value === "object" ? (value as ApiError) : {};
     const next: FieldErrors = {};
     for (const issue of api.details ?? []) {
@@ -120,7 +117,7 @@ export function CheckoutForm({
     if (api.error === "COUNTRY_NOT_DELIVERABLE")
       next.countryCode = message(api.error);
     setFieldErrors(next);
-    setError(Object.keys(next).length ? "" : message(api.error));
+    setError(Object.keys(next).length ? "" : message(api.error, fallback));
     const first = Object.keys(next)[0];
     if (first)
       requestAnimationFrame(() => document.getElementById(first)?.focus());
@@ -163,7 +160,7 @@ export function CheckoutForm({
     } catch (caught) {
       if (!request.isCurrent() || isAbortError(caught)) return;
       setQuote(null);
-      applyApiError(caught);
+      applyApiError(caught, ["Die Summe konnte nicht berechnet werden. Bitte versuchen Sie es erneut.", "Your total could not be calculated. Please try again."]);
     } finally {
       if (request.isCurrent()) setQuoting(false);
     }

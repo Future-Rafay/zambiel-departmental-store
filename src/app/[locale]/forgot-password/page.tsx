@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+import { pageTitleMetadata } from "@/lib/metadata";
 
 import { ForgotPasswordForm } from "@/components/site/password-reset-forms";
 import { Card } from "@/components/ui/card";
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const generateMetadata = pageTitleMetadata({ de: "Passwort vergessen", en: "Forgot password" }, { index: false, follow: false });
 
 export default async function ForgotPasswordPage({ params }: { params: Promise<{ locale: string }> }) {
   const locale = (await params).locale === "en" ? "en" : "de";

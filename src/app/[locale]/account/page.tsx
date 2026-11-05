@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import { pageTitleMetadata } from "@/lib/metadata";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { saveCustomerProfile } from "@/app/[locale]/account/actions";
@@ -9,9 +9,7 @@ import { getCurrentUser } from "@/server/auth/current-user";
 import { prisma } from "@/server/db";
 import { getShippingCountries } from "@/server/services/ordering";
 
-export const metadata: Metadata = {
-  robots: { index: false, follow: false },
-};
+export const generateMetadata = pageTitleMetadata({ de: "Mein Konto", en: "My account" }, { index: false, follow: false });
 
 export default async function AccountPage({
   params,
@@ -76,20 +74,20 @@ export default async function AccountPage({
         </div>
         <Link
           href={`/${locale}/account/orders`}
-          className="font-bold text-primary hover:underline"
+          className="inline-flex min-h-11 items-center font-bold text-primary hover:underline"
         >
           {de ? "Bestellungen" : "Orders"}
         </Link>
       </div>
       {feedback.saved && (
-        <p role="status" className="rounded-xl bg-success/10 p-3 text-success">
+        <p role="status" className="rounded-control bg-success/10 p-3 text-success">
           {de ? "Profil gespeichert." : "Profile saved."}
         </p>
       )}
       {feedback.error && (
         <p
           role="alert"
-          className="rounded-xl bg-destructive/10 p-3 text-destructive"
+          className="rounded-control bg-destructive/10 p-3 text-destructive"
         >
           {de
             ? "Dieses Lieferland ist nicht verfügbar."
@@ -132,7 +130,7 @@ export default async function AccountPage({
                 address?.countryCode ?? countries[0]?.countryCode ?? ""
               }
               required
-              className="mt-1 min-h-11 w-full rounded-control border border-border bg-surface px-4 py-2 text-base focus:border-secondary focus:outline-none focus:ring-2 focus:ring-secondary/20"
+              className="mt-1 min-h-11 w-full rounded-control border border-border bg-surface px-4 py-2 text-base focus:border-secondary"
             >
               {countries.length === 0 ? (
                 <option value="">
@@ -149,7 +147,7 @@ export default async function AccountPage({
             </select>
           </div>
           <div className="sm:col-span-2 flex justify-end">
-            <button className="min-h-11 rounded-xl bg-primary px-6 font-bold text-white">
+            <button className="min-h-11 rounded-control bg-primary px-6 font-bold text-white">
               {de ? "Profil speichern" : "Save profile"}
             </button>
           </div>

@@ -1,11 +1,11 @@
 import Link from "next/link";
-import type { Metadata } from "next";
+import { pageTitleMetadata } from "@/lib/metadata";
 
 import { AuthForm } from "@/components/site/auth-form";
 import { Card } from "@/components/ui/card";
 import { BrandLogo } from "@/components/brand-logo";
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const generateMetadata = pageTitleMetadata({ de: "Konto erstellen", en: "Create account" }, { index: false, follow: false });
 
 export default async function RegisterPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ b2b?: string }> }) {
   const locale = (await params).locale === "en" ? "en" : "de";
@@ -29,7 +29,7 @@ export default async function RegisterPage({ params, searchParams }: { params: P
 
         <p className="text-center text-xs text-muted border-t border-border/60 pt-4">
           {de ? "Bereits ein Konto?" : "Already have an account?"}{" "}
-          <Link className="font-bold text-primary hover:text-secondary-text underline" href={`/${locale}/login`}>
+          <Link className="inline-flex min-h-11 items-center font-bold text-primary hover:text-secondary-text underline" href={`/${locale}/login`}>
             {de ? "Zur Anmeldung" : "Back to sign in"}
           </Link>
         </p>

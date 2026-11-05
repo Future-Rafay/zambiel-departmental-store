@@ -1,8 +1,18 @@
+export function productCountLabel(count: number, de: boolean) {
+  return `${count} ${de ? (count === 1 ? "Produkt" : "Produkte") : count === 1 ? "product" : "products"}`;
+}
+
 export function parsePriceRappen(value?: string) {
   const normalized = value?.trim();
   if (!normalized) return undefined;
   const francs = Number(normalized);
   return Number.isFinite(francs) && francs >= 0 ? Math.round(francs * 100) : undefined;
+}
+
+export function paginate<T>(items: T[], requestedPage: unknown, pageSize: number) {
+  const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
+  const page = Math.min(pageCount, Math.max(1, Math.floor(Number(requestedPage)) || 1));
+  return { items: items.slice((page - 1) * pageSize, page * pageSize), page, pageCount };
 }
 
 export function categoryProductTotals(

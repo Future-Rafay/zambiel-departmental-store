@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { StorefrontImage } from "@/components/site/storefront-image";
 import Link from "next/link";
 import { Minus, Plus, Trash2 } from "lucide-react";
 
@@ -12,6 +12,7 @@ import { formatMoney } from "@/lib/orders";
 export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: boolean }) {
   const { items, remove, setQuantity } = useCart();
   const de = locale === "de";
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const total = items.reduce(
     (sum, item) => sum + item.unitPriceRappen * item.quantity,
     0,
@@ -29,8 +30,8 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
         </div>
         {items.length > 0 && (
           <span className="shrink-0 rounded-full bg-secondary/15 px-4 py-1 text-xs font-bold text-secondary-text">
-            {items.reduce((sum, item) => sum + item.quantity, 0)}{" "}
-            {de ? "Artikel" : "items"}
+            {itemCount}{" "}
+            {de ? "Artikel" : itemCount === 1 ? "item" : "items"}
           </span>
         )}
       </div>
@@ -46,7 +47,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
           </p>
           <Link
             href={b2b ? `/${locale}/b2b-shop` : `/${locale}/products`}
-            className="inline-flex min-h-11 items-center rounded-xl bg-primary px-8 font-bold text-primary-foreground"
+            className="inline-flex min-h-11 items-center rounded-control bg-primary px-8 font-bold text-primary-foreground"
           >
             {de ? "Produkte entdecken" : "Browse Products"}
           </Link>
@@ -57,9 +58,9 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
             {items.map((item) => (
               <li key={item.key}>
                 <Card className="grid grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-none p-4 sm:flex sm:items-center sm:gap-4">
-                  <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-background sm:size-20">
-                    <Image
-                      src={item.imageUrl ?? "/images/product-placeholder.svg"}
+                  <div className="relative size-16 shrink-0 overflow-hidden rounded-control bg-background sm:size-20">
+                    <StorefrontImage
+                      src={item.imageUrl ?? null}
                       alt=""
                       fill
                       sizes="80px"
@@ -76,7 +77,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
                         {item.choiceNames.join(", ")}
                       </p>
                     )}
-                    <div className="mt-2 inline-flex items-center rounded-lg border border-border">
+                    <div className="mt-2 inline-flex items-center rounded-control border border-border">
                       <button
                         type="button"
                         className="grid size-11 place-items-center"
@@ -139,7 +140,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
             </dl>
             <Link
               href={b2b ? `/${locale}/b2b-shop/checkout` : `/${locale}/checkout`}
-              className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-primary font-bold text-primary-foreground"
+              className="inline-flex min-h-12 w-full items-center justify-center rounded-control bg-primary font-bold text-primary-foreground"
             >
               {de ? "Zur Kasse" : "Proceed to Checkout"}
             </Link>

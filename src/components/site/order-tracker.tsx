@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
+import { StorefrontImage } from "@/components/site/storefront-image";
 import { useEffect, useState } from "react";
 
 import { Card } from "@/components/ui/card";
 import type { OrderStatus } from "@/generated/prisma/enums";
-import { formatMoney, orderStatusLabel } from "@/lib/orders";
+import { formatMoney, orderStatusBadgeClass, orderStatusLabel } from "@/lib/orders";
 
 type Activity =
   | { id: string; kind: "ORDER_STATUS"; status: OrderStatus; at: string }
@@ -80,7 +80,7 @@ export function OrderTracker({
         </div>
         <span
           aria-live="polite"
-          className="rounded-full bg-primary px-4 py-2 text-sm font-bold text-white"
+          className={`rounded-full px-4 py-2 text-sm font-bold ${orderStatusBadgeClass(order.status)}`}
         >
           {orderStatusLabel(order.status, locale)}
         </span>
@@ -108,9 +108,9 @@ export function OrderTracker({
           <ul className="divide-y divide-border">
             {order.items.map((item) => (
               <li key={item.id} className="flex gap-3 py-3">
-                <div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-background">
-                  <Image
-                    src={item.imageUrl ?? "/images/product-placeholder.svg"}
+                <div className="relative size-14 shrink-0 overflow-hidden rounded-control bg-background">
+                  <StorefrontImage
+                    src={item.imageUrl ?? null}
                     alt=""
                     fill
                     sizes="56px"

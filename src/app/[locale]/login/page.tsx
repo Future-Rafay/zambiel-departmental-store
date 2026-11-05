@@ -1,11 +1,11 @@
 import Link from "next/link";
-import type { Metadata } from "next";
+import { pageTitleMetadata } from "@/lib/metadata";
 
 import { AuthForm } from "@/components/site/auth-form";
 import { Card } from "@/components/ui/card";
 import { BrandLogo } from "@/components/brand-logo";
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const generateMetadata = pageTitleMetadata({ de: "Anmelden", en: "Sign in" }, { index: false, follow: false });
 
 export default async function LoginPage({ params }: { params: Promise<{ locale: string }> }) {
   const locale = (await params).locale === "en" ? "en" : "de";
@@ -28,7 +28,7 @@ export default async function LoginPage({ params }: { params: Promise<{ locale: 
 
         <p className="text-center text-xs text-muted border-t border-border/60 pt-4">
           {de ? "Noch kein Konto?" : "No account yet?"}{" "}
-          <Link className="font-bold text-primary hover:text-secondary-text underline" href={`/${locale}/register`}>
+          <Link className="inline-flex min-h-11 items-center font-bold text-primary hover:text-secondary-text underline" href={`/${locale}/register`}>
             {de ? "Jetzt registrieren" : "Register now"}
           </Link>
         </p>

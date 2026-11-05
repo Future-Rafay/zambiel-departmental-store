@@ -58,6 +58,19 @@ export function orderStatusLabel(status: OrderStatus, locale: "de" | "en") {
   return orderStatusLabels[status][locale];
 }
 
+const orderStatusBadges: Partial<Record<OrderStatus, string>> = {
+  PAYMENT_PENDING: "bg-surface-warm text-foreground",
+  READY_FOR_PICKUP: "bg-secondary text-secondary-foreground",
+  OUT_FOR_DELIVERY: "bg-secondary text-secondary-foreground",
+  DELIVERED: "bg-success text-white",
+  PICKED_UP: "bg-success text-white",
+  CANCELLED: "bg-destructive text-white",
+};
+
+export function orderStatusBadgeClass(status: OrderStatus) {
+  return orderStatusBadges[status] ?? "bg-primary text-white";
+}
+
 export function formatMoneyInput(minorUnits: number) {
   return (minorUnits / 100).toFixed(2);
 }
