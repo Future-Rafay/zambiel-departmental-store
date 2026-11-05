@@ -95,8 +95,20 @@ input[type="checkbox"] {
   accent-color: var(--brand-primary);
 }
 
+/* Touch screens: the button sits under the card text so it never covers the photo. */
+.product-card-action {
+  padding: 0 0.75rem 0.75rem;
+}
+
+/* Mouse: the button appears over the bottom of the square photo on hover. */
 @media (hover: hover) and (pointer: fine) {
   .product-card-action {
+    position: absolute;
+    inset: 0 0 auto;
+    display: flex;
+    aspect-ratio: 1;
+    align-items: flex-end;
+    padding: 0.75rem;
     pointer-events: none;
     opacity: 0;
     transform: translateY(0.5rem);
@@ -105,9 +117,13 @@ input[type="checkbox"] {
 
   .group:hover .product-card-action,
   .group:focus-within .product-card-action {
-    pointer-events: auto;
     opacity: 1;
     transform: translateY(0);
+  }
+
+  .group:hover .product-card-action > *,
+  .group:focus-within .product-card-action > * {
+    pointer-events: auto;
   }
 }
 
