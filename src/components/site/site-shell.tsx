@@ -143,13 +143,13 @@ export function SiteShell({
         </div>
       ) : null}
       <header className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur-xl">
-        <div className="mx-auto flex min-h-20 max-w-7xl items-center gap-3 px-4 sm:px-6">
+        <div className="mx-auto flex min-h-16 max-w-7xl items-center gap-1 px-4 sm:min-h-20 sm:gap-3 sm:px-6">
           <Link
             href={`/${locale}`}
             className="flex min-h-11 shrink-0 items-center"
             aria-label={de ? "Zambiel Startseite" : "Zambiel home"}
           >
-            <BrandLogo priority />
+            <BrandLogo priority className="max-sm:h-12" />
           </Link>
           <form
             action={`/${locale}/products`}
@@ -201,7 +201,7 @@ export function SiteShell({
           </Link>
           <Link
             href={mode === "b2b" ? `/${locale}/b2b-shop/cart` : `/${locale}/cart`}
-            className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-control bg-primary px-3 text-white"
+            className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-control bg-primary px-3 text-white max-sm:ml-auto"
             aria-label={`${labels.cart}: ${count}`}
           >
             <ShoppingBag className="h-5 w-5" aria-hidden="true" />
@@ -216,7 +216,7 @@ export function SiteShell({
               type="button"
               ref={accountButtonRef}
               onClick={() => setAccountOpen((open) => !open)}
-              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border border-border"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border-border sm:border"
               aria-label={labels.account}
               aria-expanded={accountOpen}
             >
@@ -306,7 +306,7 @@ export function SiteShell({
             type="button"
             ref={navButtonRef}
             onClick={() => setMobileOpen((open) => !open)}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border border-border lg:hidden"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border-border sm:border lg:hidden"
             aria-label={mobileOpen ? (de ? "Navigation schliessen" : "Close navigation") : de ? "Navigation öffnen" : "Open navigation"}
             aria-controls="mobile-nav"
             aria-expanded={mobileOpen}
