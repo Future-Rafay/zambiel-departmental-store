@@ -225,12 +225,13 @@ export async function confirmCashPayment(orderNumber: string, actorUserId: strin
   const id = parseOrderNumber(orderNumber);
   if (!id) throw new OrderError("ORDER_NOT_FOUND");
   return prisma.$transaction(async (tx) => {
-    const payment = await tx.payment.findUniqueOrThrow({ where: { orderId: id } });
-    if (payment.provider !== "CASH" || payment.status !== "PENDING") {
-      throw new OrderError("CASH_CONFIRMATION_NOT_ALLOWED");
-    }
     const now = new Date();
-    await tx.payment.update({ where: { orderId: id }, data: { status: "PAID", paidAt: now } });
+    // Conditional write: a double submit or an order cancelled in another tab must not record cash.
+    const changed = await tx.payment.updateMany({
+      where: { orderId: id, provider: "CASH", status: "PENDING", order: { status: { not: "CANCELLED" } } },
+      data: { status: "PAID", paidAt: now },
+    });
+    if (changed.count !== 1) throw new OrderError("CASH_CONFIRMATION_NOT_ALLOWED");
     await tx.order.update({ where: { id }, data: { version: { increment: 1 }, updatedAt: now } });
     await tx.auditLog.create({
       data: { actorUserId, action: "CASH_PAYMENT_CONFIRMED", entityType: "Order", entityId: id.toString() },

@@ -17,6 +17,7 @@ import {
   setCustomerB2bAccess,
   confirmInvoicePayment,
 } from "@/server/services/admin";
+import { confirmCashPayment, OrderError } from "@/server/services/ordering";
 import { inviteStaff } from "@/server/services/staff-invitations";
 import {
   cancelOrderSchema,
@@ -45,7 +46,7 @@ function safeReturnTo(formData: FormData) {
 }
 
 function errorCode(error: unknown) {
-  if (error instanceof AdminError) return error.code;
+  if (error instanceof AdminError || error instanceof OrderError) return error.code;
   if (error instanceof ZodError)
     return error.issues[0]?.message || "INVALID_INPUT";
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -67,7 +68,7 @@ export async function adminAction(formData: FormData) {
   try {
     const input = values(formData);
     const intent = z.string().min(1).parse(input.intent);
-    const ownerOnly = !["cancel_order", "refund", "confirm_invoice_payment"].includes(intent);
+    const ownerOnly = !["cancel_order", "refund", "confirm_invoice_payment", "confirm_cash_payment"].includes(intent);
     const actor = await requireRole(
       ...(ownerOnly
         ? ["OWNER" as const]
@@ -103,6 +104,9 @@ export async function adminAction(formData: FormData) {
         break;
       case "confirm_invoice_payment":
         await confirmInvoicePayment(z.string().min(1).parse(input.orderNumber), actor.id);
+        break;
+      case "confirm_cash_payment":
+        await confirmCashPayment(z.string().min(1).parse(input.orderNumber), actor.id);
         break;
       case "cancel_order": {
         const parsed = cancelOrderSchema.parse(input);

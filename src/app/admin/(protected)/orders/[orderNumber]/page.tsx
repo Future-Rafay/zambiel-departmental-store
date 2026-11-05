@@ -7,7 +7,7 @@ import {
   RefundDialog,
 } from "@/components/admin/danger-actions";
 import { Card } from "@/components/ui/card";
-import { ConfirmInvoicePayment } from "@/components/admin/confirm-invoice-payment";
+import { ConfirmCashPayment, ConfirmInvoicePayment } from "@/components/admin/confirm-invoice-payment";
 import { formatMoney } from "@/lib/orders";
 import { nextOrderStatus } from "@/lib/orders";
 import { advanceRetailOrder } from "@/app/admin/(protected)/retail-actions";
@@ -35,6 +35,7 @@ export default async function OrderDetailPage({
     ["PAID", "PARTIALLY_REFUNDED"].includes(order.payment.status);
   const nextStatus = nextOrderStatus(order.status, order.fulfillmentType);
   const unpaidInvoice = order.payment?.provider === "INVOICE_BANK_TRANSFER" && order.payment.status === "PENDING_VERIFICATION";
+  const unpaidCash = order.payment?.provider === "CASH" && order.payment.status === "PENDING" && order.status !== "CANCELLED";
   return (
     <AdminPage
       title={order.orderNumber}
@@ -42,6 +43,7 @@ export default async function OrderDetailPage({
     >
       <Notice {...feedback} />
       {unpaidInvoice ? <Card className="mb-5 flex flex-wrap items-center justify-between gap-4 p-5"><div><h2 className="font-display text-xl font-semibold">B2B invoice payment</h2><p className="text-sm text-muted">Mark this payment received after verifying the bank transfer.</p></div><ConfirmInvoicePayment orderNumber={order.orderNumber} returnTo={returnTo} /></Card> : null}
+      {unpaidCash ? <Card className="mb-5 flex flex-wrap items-center justify-between gap-4 p-5"><div><h2 className="font-display text-xl font-semibold">Cash payment</h2><p className="text-sm text-muted">Mark this payment received after collecting {formatMoney(order.totalRappen, "en")} in cash.</p></div><ConfirmCashPayment orderNumber={order.orderNumber} amount={formatMoney(order.totalRappen, "en")} returnTo={returnTo} /></Card> : null}
       {nextStatus ? <Card className="mb-5 flex flex-wrap items-center justify-between gap-4 p-5"><div><h2 className="font-display text-xl font-semibold">Fulfillment action</h2><p className="text-sm text-muted">Move this order to {nextStatus.replaceAll("_", " ")}.</p></div><form action={advanceRetailOrder}><input type="hidden" name="orderNumber" value={order.orderNumber} /><input type="hidden" name="version" value={order.version} /><button className="min-h-11 rounded-xl bg-primary px-5 font-bold text-white">Mark {nextStatus.replaceAll("_", " ").toLowerCase()}</button></form></Card> : null}
       <div className="grid gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-2">

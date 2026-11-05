@@ -206,6 +206,7 @@ test("Stripe events are replayable, delayed payments settle, failures cancel, an
     });
     orderIds.push(cashOrder.id);
     await confirmCashPayment(formatOrderNumber(cashOrder.id), actor.id);
+    await assert.rejects(() => confirmCashPayment(formatOrderNumber(cashOrder.id), actor.id), /CASH_CONFIRMATION_NOT_ALLOWED/);
     const customerOrder = (await getCustomerOrders(actor.id)).find((order) => order.orderNumber === formatOrderNumber(cashOrder.id));
     const cashActivity = customerOrder?.activities.find((activity) => activity.kind === "CASH_PAYMENT_CONFIRMED");
     assert.equal(customerOrder?.version, 1);
