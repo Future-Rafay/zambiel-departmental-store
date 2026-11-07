@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AdminPage, Empty } from "@/components/admin/admin-ui";
 import { formatMoney, formatOrderNumber } from "@/lib/orders";
 import { prisma } from "@/server/db";
+import { TableShell, tableHeadClasses } from "@/components/ui/table";
 
 const pageSize = 50;
 
@@ -39,9 +40,9 @@ export default async function PaymentsPage({
       {payments.length === 0 ? (
         <Empty>No payments found on this page.</Empty>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-white">
+        <TableShell>
           <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="border-b bg-[#F6F6F7] text-xs uppercase text-muted">
+            <thead className={tableHeadClasses}>
               <tr>
                 <th className="p-4">Order</th>
                 <th className="p-4">Customer</th>
@@ -81,7 +82,7 @@ export default async function PaymentsPage({
               })}
             </tbody>
           </table>
-        </div>
+        </TableShell>
       )}
       {pageCount > 1 ? (
         <nav
@@ -91,7 +92,7 @@ export default async function PaymentsPage({
           <Link
             href={`/admin/payments?page=${Math.max(1, page - 1)}`}
             aria-disabled={page === 1}
-            className={`inline-flex min-h-11 items-center rounded-lg border px-4 font-bold ${page === 1 ? "pointer-events-none opacity-40" : "bg-white hover:border-primary"}`}
+            className={`inline-flex min-h-11 items-center rounded-control border px-4 font-bold ${page === 1 ? "pointer-events-none opacity-40" : "bg-surface hover:border-primary"}`}
           >
             Previous
           </Link>
@@ -101,7 +102,7 @@ export default async function PaymentsPage({
           <Link
             href={`/admin/payments?page=${Math.min(pageCount, page + 1)}`}
             aria-disabled={page >= pageCount}
-            className={`inline-flex min-h-11 items-center rounded-lg border px-4 font-bold ${page >= pageCount ? "pointer-events-none opacity-40" : "bg-white hover:border-primary"}`}
+            className={`inline-flex min-h-11 items-center rounded-control border px-4 font-bold ${page >= pageCount ? "pointer-events-none opacity-40" : "bg-surface hover:border-primary"}`}
           >
             Next
           </Link>

@@ -22,10 +22,10 @@ export const tones = {
 
 export type Tone = keyof typeof tones;
 
-export function badgeClasses(tone: Tone = "neutral", look: "soft" | "solid" = "soft") {
-  return cn("inline-flex items-center gap-1 rounded-pill border px-2.5 py-1 text-xs font-bold", tones[tone][look]);
+export function badgeClasses(tone: Tone = "neutral", look: "soft" | "solid" = "soft", className?: string) {
+  return cn("inline-flex items-center gap-1 rounded-pill border px-2.5 py-1 text-xs font-bold", tones[tone][look], className);
 }
 
 export function Badge({ tone = "neutral", look = "soft", className, ...props }: ComponentProps<"span"> & { tone?: Tone; look?: "soft" | "solid" }) {
-  return <span className={cn(badgeClasses(tone, look), className)} {...props} />;
+  return <span className={badgeClasses(tone, look, className)} {...props} />;
 }

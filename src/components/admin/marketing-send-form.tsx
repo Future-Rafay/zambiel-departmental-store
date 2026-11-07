@@ -6,6 +6,8 @@ import { useRef, useState } from "react";
 import { sendMarketingCampaign } from "@/app/admin/(protected)/marketing/actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { TableShell, tableHeadClasses } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 
 type Customer = { id: string; name: string | null; email: string };
 
@@ -31,9 +33,9 @@ export function MarketingSendForm({ campaignId, customers, minSendAt, maxSendAt 
   return (
     <form ref={form} action={sendMarketingCampaign} onSubmit={() => setSubmitting(true)} className="space-y-5">
       <input type="hidden" name="id" value={campaignId} />
-      <div className="overflow-x-auto rounded-xl border bg-white">
+      <TableShell>
         <table className="w-full min-w-[560px] text-left text-sm">
-          <thead className="border-b bg-[#F6F6F7] text-xs uppercase text-muted">
+          <thead className={tableHeadClasses}>
             <tr>
               <th className="w-14 p-3">
                 <label className="grid size-11 place-items-center">
@@ -60,10 +62,10 @@ export function MarketingSendForm({ campaignId, customers, minSendAt, maxSendAt 
             ))}
           </tbody>
         </table>
-      </div>
+      </TableShell>
 
       <fieldset className="space-y-3">
-        <legend className="mb-2 text-xs font-bold text-[#303030]">3. When should it be sent?</legend>
+        <legend className="mb-2 text-xs font-bold text-foreground">3. When should it be sent?</legend>
         <label className="flex min-h-11 items-center gap-2 text-sm font-medium">
           <input type="radio" name="mode" value="now" checked={mode === "now"} onChange={() => setMode("now")} className="size-5 accent-primary" />
           Send immediately
@@ -73,9 +75,9 @@ export function MarketingSendForm({ campaignId, customers, minSendAt, maxSendAt 
           Schedule for later (Zurich time, up to 30 days)
         </label>
         {mode === "schedule" ? (
-          <label className="block max-w-xs space-y-1 text-xs font-bold text-[#303030]">
+          <label className="block max-w-xs space-y-1 text-xs font-bold text-foreground">
             <span>Send at</span>
-            <input type="datetime-local" name="sendAt" value={sendAt} min={minSendAt} max={maxSendAt} required onChange={(event) => setSendAt(event.target.value)} className="min-h-11 w-full rounded-control border border-border bg-surface px-3 text-sm font-medium shadow-2xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring" />
+            <Input type="datetime-local" name="sendAt" value={sendAt} min={minSendAt} max={maxSendAt} required onChange={(event) => setSendAt(event.target.value)} className="px-3 text-sm font-medium shadow-2xs focus:border-primary focus:ring-1 focus:ring-ring" />
           </label>
         ) : null}
       </fieldset>

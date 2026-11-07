@@ -1,6 +1,7 @@
 import type { MarketingCampaignStatus } from "@/generated/prisma/enums";
+import { badgeClasses, type Tone } from "@/components/ui/badge";
 
-const styles: Record<string, string> = { DRAFT: "bg-gray-100 text-gray-700", SENDING: "bg-amber-100 text-amber-800", SCHEDULED: "bg-sky-100 text-sky-800", SENT: "bg-emerald-100 text-emerald-800", CANCELLED: "bg-red-100 text-red-700" };
+const statusTones: Record<string, Tone> = { DRAFT: "neutral", SENDING: "warning", SCHEDULED: "info", SENT: "success", CANCELLED: "error" };
 
 // Resend delivers scheduled emails itself, so a scheduled campaign whose time has passed is shown as sent.
 export function campaignStatusLabel(status: MarketingCampaignStatus, scheduledAt: Date | null) {
@@ -10,5 +11,5 @@ export function campaignStatusLabel(status: MarketingCampaignStatus, scheduledAt
 
 export function CampaignStatusBadge({ status, scheduledAt }: { status: MarketingCampaignStatus; scheduledAt: Date | null }) {
   const label = campaignStatusLabel(status, scheduledAt);
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${styles[label]}`}>{label}</span>;
+  return <span className={badgeClasses(statusTones[label] ?? "neutral")}>{label}</span>;
 }

@@ -22,6 +22,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useDeferredUploadTask } from "@/components/admin/deferred-upload-form";
 import { Label } from "@/components/ui/label";
+import { theme } from "@/config/theme";
 import {
   productImageAccept,
   replacePendingImageSources,
@@ -134,7 +135,7 @@ export function RichTextEditor({
       aria-label={commandLabel}
       aria-pressed={active}
       onClick={run}
-      className="grid size-10 place-items-center border-r border-border text-primary hover:bg-background aria-pressed:bg-primary aria-pressed:text-white"
+      className="grid size-10 place-items-center border-r border-border text-primary hover:bg-background aria-pressed:bg-primary aria-pressed:text-primary-foreground"
     >
       {icon}
     </button>
@@ -173,7 +174,7 @@ export function RichTextEditor({
 
   return (
     <div className="space-y-1 sm:col-span-2">
-      <Label className="text-xs font-bold text-[#303030]">{label}</Label>
+      <Label className="text-xs font-bold text-foreground">{label}</Label>
       <input type="hidden" name={name} value={html} />
       <div className="overflow-hidden rounded-control border border-border bg-surface shadow-2xs focus-within:ring-1 focus-within:ring-ring">
         <div
@@ -264,7 +265,7 @@ export function RichTextEditor({
                 <span className="sr-only">Text colour</span>
                 <input
                   type="color"
-                  defaultValue="#153B35"
+                  defaultValue={theme.colors.primary}
                   onChange={(event) => editor?.chain().focus().setColor(event.target.value).run()}
                   className="size-6 cursor-pointer border-0 bg-transparent p-0"
                 />
