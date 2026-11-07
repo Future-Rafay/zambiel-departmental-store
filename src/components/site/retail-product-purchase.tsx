@@ -121,7 +121,7 @@ export function RetailProductPurchase({
             <p className="font-bold tabular-nums text-primary">{variant ? formatStoreMoney(variant.priceRappen, locale) : "—"}</p>
             {variant?.optionValues.length ? <p className="truncate text-xs text-muted">{variant.optionValues.map(({ value }) => value).join(" · ")}</p> : null}
           </div>
-          <button type="button" onClick={addToCart} disabled={!available} className="inline-flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-control bg-primary px-3 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={addToCart} disabled={!available} className="ml-auto inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-control bg-primary px-5 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-50">
             {message ? <Check className="h-5 w-5 shrink-0" aria-hidden="true" /> : <ShoppingBag className="h-5 w-5 shrink-0" aria-hidden="true" />}
             {message ? (de ? "Hinzugefügt" : "Added") : de ? "In den Warenkorb" : "Add to cart"}
           </button>
