@@ -1,24 +1,18 @@
 import type { Metadata } from "next";
-import { Archivo, Inter } from "next/font/google";
 import { headers } from "next/headers";
 import { Suspense, type CSSProperties, type ReactNode } from "react";
 
 import { NavigationProgress } from "@/components/ui/navigation-progress";
 import { getPublicConfig } from "@/server/services/catalog";
+import { bodyFont, displayFont } from "@/config/fonts";
 import { storeConfig } from "@/config/store";
+import { themeCssVariables } from "@/config/theme";
 
 import "./globals.css";
 
 export const dynamic = "force-dynamic";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-const archivo = Archivo({
-  subsets: ["latin"],
-  variable: "--font-archivo",
-});
+const themeStyle = themeCssVariables() as CSSProperties;
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
@@ -49,10 +43,6 @@ export default async function RootLayout({
   ]);
   const language =
     requestHeaders.get("x-next-intl-locale") === "de" ? "de" : "en";
-  const brandStyle = {
-    "--brand-primary": brand.primaryColor,
-    "--brand-secondary": brand.secondaryColor,
-  } as CSSProperties;
   const storeJsonLd = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Store",
@@ -66,9 +56,10 @@ export default async function RootLayout({
     <html
       lang={language}
       data-scroll-behavior="smooth"
-      className={`${archivo.variable} ${inter.variable}`}
+      className={`${bodyFont.variable} ${displayFont.variable}`}
+      style={themeStyle}
     >
-      <body suppressHydrationWarning style={brandStyle}>
+      <body suppressHydrationWarning>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: storeJsonLd }}

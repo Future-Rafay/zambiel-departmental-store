@@ -22,7 +22,7 @@ export default async function GeneralSettingsPage({
   return (
     <AdminPage
       title="Site settings"
-      description="Business contact details and storefront colours. Brand assets and public content are managed in source configuration."
+      description="Business contact details. Brand colours, fonts, corners, assets and public content are managed in source configuration (src/config)."
     >
       <Notice {...feedback} />
       <Card>
@@ -69,25 +69,6 @@ export default async function GeneralSettingsPage({
               label="City"
               name="city"
               defaultValue={site.city ?? ""}
-            />
-          </fieldset>
-          <fieldset className="grid gap-4 sm:grid-cols-2">
-            <legend className="mb-3 font-display text-xl font-semibold sm:col-span-2">
-              Storefront colours
-            </legend>
-            <Field
-              label="Primary colour"
-              name="primaryColor"
-              type="color"
-              defaultValue={site.primaryColor}
-              required
-            />
-            <Field
-              label="Secondary colour"
-              name="secondaryColor"
-              type="color"
-              defaultValue={site.secondaryColor}
-              required
             />
           </fieldset>
           <SaveBar returnTo={returnTo} />

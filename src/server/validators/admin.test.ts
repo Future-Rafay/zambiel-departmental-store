@@ -22,7 +22,7 @@ test("admin money and order identifiers use CHF decimals and current or legacy p
   assert.equal(cancelOrderSchema.safeParse({ orderNumber: "BAD-000123", reason: "Invalid order" }).success, false);
 });
 
-test("site settings only accept database-backed business details and colours", () => {
+test("site settings only accept database-backed business details", () => {
   const settings = siteSettingsSchema.parse({
     displayName: "Zambiel",
     legalName: "",
@@ -38,5 +38,6 @@ test("site settings only accept database-backed business details and colours", (
   });
 
   assert.equal("logoKey" in settings, false);
+  assert.equal("primaryColor" in settings, false); // colours come from src/config/theme.ts
   assert.equal("announcementActive" in settings, false);
 });

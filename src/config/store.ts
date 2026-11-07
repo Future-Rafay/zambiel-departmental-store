@@ -1,3 +1,5 @@
+import { theme } from "./theme";
+
 export const storeConfig = {
   identity: {
     name: "Zambiel",
@@ -19,18 +21,18 @@ export const storeConfig = {
     logo: null as string | null,
     compactLogo: null as string | null,
     favicon: null as string | null,
+    // Theme values live in src/config/theme.ts; emails read them through here.
     colors: {
-      primary: "#153B35",
-      primaryLight: "#2B5C52",
-      primaryDark: "#0B2622",
-      accent: "#D6A84B",
-      background: "#F4F7F3",
-      surface: "#FFFFFF",
-      foreground: "#102722",
-      muted: "#5E6F69",
-      border: "#D7E1DB",
+      primary: theme.colors.primary,
+      accent: theme.colors.secondary,
+      background: theme.colors.background,
+      surface: theme.colors.surface,
+      foreground: theme.colors.foreground,
+      muted: theme.colors.muted,
+      border: theme.colors.border,
     },
-    fonts: { display: "Inter", body: "Archivo" },
+    radius: theme.radius[theme.corners],
+    fonts: theme.fonts,
   },
   contact: {
     phone: null as string | null,
