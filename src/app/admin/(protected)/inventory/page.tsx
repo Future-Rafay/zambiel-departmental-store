@@ -1,6 +1,8 @@
 import { adjustInventory } from "@/app/admin/(protected)/retail-actions";
 import { AdminPage, Empty, Field, Notice } from "@/components/admin/admin-ui";
 import { prisma } from "@/server/db";
+import { buttonClasses } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default async function InventoryPage({
   searchParams,
@@ -44,13 +46,13 @@ export default async function InventoryPage({
     >
       <Notice saved={filters.saved} error={filters.error} />
       <form className="mb-5 flex gap-3">
-        <input
+        <Input
           name="q"
           defaultValue={filters.q}
           placeholder="Product or SKU"
-          className="min-h-11 flex-1 rounded-lg border bg-white px-3"
+          className="flex-1 px-3"
         />
-        <label className="flex min-h-11 items-center gap-2 rounded-lg border bg-white px-3">
+        <label className="flex min-h-11 items-center gap-2 rounded-control border bg-surface px-3">
           <input
             type="checkbox"
             name="all"
@@ -59,7 +61,7 @@ export default async function InventoryPage({
           />{" "}
           Show all inventory
         </label>
-        <button className="rounded-lg border bg-white px-5 font-bold">
+        <button className={buttonClasses({ variant: "subtle", size: "compact", className: "font-bold" })}>
           Filter
         </button>
       </form>
@@ -72,7 +74,7 @@ export default async function InventoryPage({
             return (
               <details
                 key={variant.id}
-                className="rounded-xl border bg-white p-4"
+                className="rounded-card border bg-surface p-4"
               >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
                   <span>
@@ -107,7 +109,7 @@ export default async function InventoryPage({
                       maxLength={500}
                       required
                     />
-                    <button className="min-h-11 rounded-lg bg-primary px-5 text-sm font-bold text-white">
+                    <button className={buttonClasses({ size: "compact", className: "font-bold" })}>
                       Record adjustment
                     </button>
                   </form>

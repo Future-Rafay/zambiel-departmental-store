@@ -47,8 +47,6 @@ export const siteSettingsSchema = z.object({
   street: optionalText(200),
   postalCode: z.union([z.literal(""), postalCodeValueSchema]).transform((value) => value || null),
   city: optionalText(120),
-  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
 });
 
 export const promoSchema = z.object({

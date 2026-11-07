@@ -15,7 +15,7 @@ export default async function NewMarketingCampaignPage({ searchParams }: { searc
       <Notice error={query.error} />
       <nav aria-label="Email templates" className="mb-5 flex flex-wrap gap-2">
         {marketingStarterTemplateKeys.map((candidate) => (
-          <Link key={candidate} href={`/admin/marketing/new?template=${candidate}`} aria-current={candidate === key ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-bold ${candidate === key ? "border-primary bg-primary text-white" : "bg-white hover:border-primary"}`}>
+          <Link key={candidate} href={`/admin/marketing/new?template=${candidate}`} aria-current={candidate === key ? "page" : undefined} className={`inline-flex min-h-11 items-center rounded-pill border px-4 text-sm font-bold ${candidate === key ? "border-primary bg-primary text-primary-foreground" : "bg-surface hover:border-primary"}`}>
             {marketingStarterTemplate(candidate, shopUrl).label}
           </Link>
         ))}

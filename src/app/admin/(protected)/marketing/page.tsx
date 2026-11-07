@@ -4,6 +4,8 @@ import { Plus } from "lucide-react";
 import { AdminPage, EditLink, Empty, Notice } from "@/components/admin/admin-ui";
 import { CampaignStatusBadge } from "@/components/admin/marketing-status";
 import { prisma } from "@/server/db";
+import { buttonClasses } from "@/components/ui/button";
+import { TableShell, tableHeadClasses } from "@/components/ui/table";
 
 export default async function MarketingPage({ searchParams }: { searchParams: Promise<{ saved?: string; error?: string }> }) {
   const [query, campaigns] = await Promise.all([
@@ -15,13 +17,13 @@ export default async function MarketingPage({ searchParams }: { searchParams: Pr
     <AdminPage
       title="Email marketing"
       description="Design an email, choose registered customers, then send now or schedule. Every customer receives a separate email through Resend."
-      actions={<Link href="/admin/marketing/new" className="inline-flex min-h-11 items-center gap-2 rounded-control bg-primary px-4 text-sm font-bold text-white hover:bg-primary-light"><Plus className="size-4" aria-hidden="true" />New campaign</Link>}
+      actions={<Link href="/admin/marketing/new" className={buttonClasses({ size: "compact", className: "font-bold" })}><Plus className="size-4" aria-hidden="true" />New campaign</Link>}
     >
       <Notice {...query} />
       {campaigns.length === 0 ? <Empty>No campaigns yet. Create one from a template or a blank email.</Empty> : (
-        <div className="overflow-x-auto rounded-xl border bg-white">
+        <TableShell>
           <table className="w-full min-w-[760px] text-left text-sm">
-            <thead className="border-b bg-[#F6F6F7] text-xs uppercase text-muted"><tr><th className="p-4">Campaign</th><th className="p-4">Status</th><th className="p-4">Recipients</th><th className="p-4">Sent / scheduled</th><th className="p-4 text-right">Actions</th></tr></thead>
+            <thead className={tableHeadClasses}><tr><th className="p-4">Campaign</th><th className="p-4">Status</th><th className="p-4">Recipients</th><th className="p-4">Sent / scheduled</th><th className="p-4 text-right">Actions</th></tr></thead>
             <tbody className="divide-y">
               {campaigns.map((campaign) => (
                 <tr key={campaign.id}>
@@ -34,7 +36,7 @@ export default async function MarketingPage({ searchParams }: { searchParams: Pr
               ))}
             </tbody>
           </table>
-        </div>
+        </TableShell>
       )}
     </AdminPage>
   );

@@ -13,6 +13,7 @@ import { nextOrderStatus } from "@/lib/orders";
 import { advanceRetailOrder } from "@/app/admin/(protected)/retail-actions";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { getAdminOrder } from "@/server/services/admin";
+import { buttonClasses } from "@/components/ui/button";
 
 export default async function OrderDetailPage({
   params,
@@ -42,7 +43,7 @@ export default async function OrderDetailPage({
     >
       <Notice {...feedback} />
       {unpaidInvoice ? <Card className="mb-5 flex flex-wrap items-center justify-between gap-4 p-5"><div><h2 className="font-display text-xl font-semibold">B2B invoice payment</h2><p className="text-sm text-muted">Mark this payment received after verifying the bank transfer.</p></div><ConfirmInvoicePayment orderNumber={order.orderNumber} returnTo={returnTo} /></Card> : null}
-      {nextStatus ? <Card className="mb-5 flex flex-wrap items-center justify-between gap-4 p-5"><div><h2 className="font-display text-xl font-semibold">Fulfillment action</h2><p className="text-sm text-muted">Move this order to {nextStatus.replaceAll("_", " ")}.</p></div><form action={advanceRetailOrder}><input type="hidden" name="orderNumber" value={order.orderNumber} /><input type="hidden" name="version" value={order.version} /><button className="min-h-11 rounded-xl bg-primary px-5 font-bold text-white">Mark {nextStatus.replaceAll("_", " ").toLowerCase()}</button></form></Card> : null}
+      {nextStatus ? <Card className="mb-5 flex flex-wrap items-center justify-between gap-4 p-5"><div><h2 className="font-display text-xl font-semibold">Fulfillment action</h2><p className="text-sm text-muted">Move this order to {nextStatus.replaceAll("_", " ")}.</p></div><form action={advanceRetailOrder}><input type="hidden" name="orderNumber" value={order.orderNumber} /><input type="hidden" name="version" value={order.version} /><button className={buttonClasses({ className: "font-bold" })}>Mark {nextStatus.replaceAll("_", " ").toLowerCase()}</button></form></Card> : null}
       <div className="grid gap-5 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <h2 className="font-display text-xl font-semibold">Order</h2>
@@ -158,7 +159,7 @@ export default async function OrderDetailPage({
       </div>
       {order.inventoryMovements.length ? <Card className="mt-5 p-5"><h2 className="font-display text-xl font-semibold">Inventory activity</h2><ul className="mt-4 divide-y text-sm">{order.inventoryMovements.map((movement) => <li key={movement.id} className="flex flex-wrap justify-between gap-3 py-3"><span><strong>{movement.type.replaceAll("_", " ")}</strong> · {movement.variant.nameEn}{movement.variant.sku ? ` · ${movement.variant.sku}` : ""}</span><span className="font-bold tabular-nums">{movement.quantityChange > 0 ? "+" : ""}{movement.quantityChange}</span></li>)}</ul></Card> : null}
       <section
-        className="mt-8 rounded-[var(--radius-card)] border border-destructive/40 bg-surface p-5"
+        className="mt-8 rounded-card border border-destructive/40 bg-surface p-5"
         aria-labelledby="danger-zone"
       >
         <h2

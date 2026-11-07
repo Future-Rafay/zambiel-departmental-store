@@ -32,7 +32,7 @@ export default function LocaleNotFound() {
         </p>
         <Link
           href={`/${locale}/products`}
-          className="mt-7 inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-5 font-bold text-white hover:bg-primary-light"
+          className="mt-7 inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-5 font-bold text-primary-foreground hover:bg-primary-light"
         >
           {de ? "Produkte ansehen" : "Browse products"}
         </Link>

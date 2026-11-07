@@ -1,3 +1,4 @@
+import { Select } from "@/components/ui/select";
 import { pageTitleMetadata } from "@/lib/metadata";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -122,7 +123,7 @@ export default async function AccountPage({
           ))}
           <div>
             <Label htmlFor="countryCode">{de ? "Land" : "Country"}</Label>
-            <select
+            <Select
               id="countryCode"
               name="countryCode"
               autoComplete="country"
@@ -130,7 +131,7 @@ export default async function AccountPage({
                 address?.countryCode ?? countries[0]?.countryCode ?? ""
               }
               required
-              className="mt-1 min-h-11 w-full rounded-control border border-border bg-surface px-4 py-2 text-base focus:border-secondary"
+              className="mt-1"
             >
               {countries.length === 0 ? (
                 <option value="">
@@ -144,10 +145,10 @@ export default async function AccountPage({
                   {de ? country.nameDe : country.nameEn}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <div className="sm:col-span-2 flex justify-end">
-            <button className="min-h-11 rounded-control bg-primary px-6 font-bold text-white">
+            <button className="min-h-11 rounded-control bg-primary px-6 font-bold text-primary-foreground">
               {de ? "Profil speichern" : "Save profile"}
             </button>
           </div>

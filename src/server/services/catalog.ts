@@ -15,8 +15,6 @@ export const getPublicConfig = cache(async function getPublicConfig() {
       email: site.email || storeConfig.contact.email,
       phone: site.phone || storeConfig.contact.phone,
       address: [site.street, site.postalCode, site.city].filter(Boolean).join(", "),
-      primaryColor: site.primaryColor,
-      secondaryColor: site.secondaryColor,
       logoKey: storeConfig.brand.logo,
       compactLogoKey: storeConfig.brand.compactLogo,
       heroImageKey: storeConfig.content.heroImage,

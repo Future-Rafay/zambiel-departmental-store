@@ -3,6 +3,10 @@ import Link from "next/link";
 import { AdminPage, Empty, Notice } from "@/components/admin/admin-ui";
 import { categoryHierarchy } from "@/lib/catalog-display";
 import { prisma } from "@/server/db";
+import { buttonClasses } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { TableShell, tableHeadClasses } from "@/components/ui/table";
 
 function storeMode(value?: string) {
   return value === "b2b" || value === "all" ? value : "b2c";
@@ -63,49 +67,49 @@ export default async function ProductsPage({
     <AdminPage
       title="Products"
       description="Catalog publication, variants, pricing, and stock."
-      actions={<Link href="/admin/products/new" className="inline-flex min-h-11 items-center rounded-lg bg-primary px-5 text-sm font-bold text-white">Add product</Link>}
+      actions={<Link href="/admin/products/new" className={buttonClasses({ size: "compact", className: "font-bold" })}>Add product</Link>}
     >
       <Notice saved={filters.saved} deleted={filters.deleted} />
       <form className="mb-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_8rem_minmax(0,18rem)_10rem_auto] xl:items-end">
         <div>
           <label htmlFor="product-search" className="mb-1 block text-xs font-bold text-muted">Name or SKU</label>
-          <input id="product-search" name="q" defaultValue={filters.q} className="min-h-11 w-full rounded-lg border bg-white px-3" />
+          <Input id="product-search" name="q" defaultValue={filters.q} className="px-3" />
         </div>
         <div>
           <label htmlFor="product-store-mode" className="mb-1 block text-xs font-bold text-muted">Catalog</label>
-          <select id="product-store-mode" name="storeMode" defaultValue={mode} className="min-h-11 w-full rounded-lg border bg-white px-3">
+          <Select id="product-store-mode" name="storeMode" defaultValue={mode} className="px-3">
             <option value="b2c">B2C</option>
             <option value="b2b">B2B</option>
             <option value="all">All</option>
-          </select>
+          </Select>
         </div>
         <div>
           <label htmlFor="product-category" className="mb-1 block text-xs font-bold text-muted">Category</label>
-          <select id="product-category" name="categoryId" defaultValue={selectedCategory?.id ?? ""} className="min-h-11 w-full rounded-lg border bg-white px-3">
+          <Select id="product-category" name="categoryId" defaultValue={selectedCategory?.id ?? ""} className="px-3">
             <option value="">All categories</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.path.join(" → ")}{mode === "all" ? ` (${category.is_b2b ? "B2B" : "B2C"})` : ""}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div>
           <label htmlFor="product-status" className="mb-1 block text-xs font-bold text-muted">Publication state</label>
-          <select id="product-status" name="status" defaultValue={filters.status ?? ""} className="min-h-11 w-full rounded-lg border bg-white px-3">
+          <Select id="product-status" name="status" defaultValue={filters.status ?? ""} className="px-3">
             <option value="">All states</option>
             <option value="DRAFT">Draft</option>
             <option value="ACTIVE">Active</option>
-          </select>
+          </Select>
         </div>
-        <button className="min-h-11 rounded-lg border bg-white px-5 font-bold md:col-span-2 xl:col-span-1">Filter</button>
+        <button className={buttonClasses({ variant: "subtle", size: "compact", className: "font-bold md:col-span-2 xl:col-span-1" })}>Filter</button>
       </form>
       {products.length === 0 ? (
         <Empty>No products match this view.</Empty>
       ) : (
-        <div className="overflow-x-auto rounded-xl border bg-white">
+        <TableShell>
           <table className="w-full min-w-[820px] text-left text-sm">
-            <thead className="border-b bg-[#F6F6F7] text-xs uppercase text-muted">
+            <thead className={tableHeadClasses}>
               <tr><th className="p-4">Product</th><th className="p-4">Catalog</th><th className="p-4">Category</th><th className="p-4">State</th><th className="p-4">Variants</th><th className="p-4">Available stock</th><th className="p-4"><span className="sr-only">Edit</span></th></tr>
             </thead>
             <tbody className="divide-y">
@@ -125,7 +129,7 @@ export default async function ProductsPage({
               })}
             </tbody>
           </table>
-        </div>
+        </TableShell>
       )}
     </AdminPage>
   );

@@ -31,7 +31,7 @@ export function RetailProductCard({ product, locale, hrefBase }: { product: Reta
             <StorefrontImage src={product.imageUrl} alt="" fill sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" className="object-contain p-5 transition-transform duration-300 group-hover:scale-[1.03]" />
           ) : <StorefrontImage src={null} alt="" fill sizes="(max-width: 640px) 50vw, 25vw" className="object-contain p-5" />}
         </Link>
-        {!product.available ? <span className="absolute left-3 top-3 rounded-full bg-foreground px-3 py-1 text-xs font-bold text-white">{de ? "Nicht verfügbar" : "Unavailable"}</span> : null}
+        {!product.available ? <span className="absolute left-3 top-3 rounded-pill bg-foreground px-3 py-1 text-xs font-bold text-primary-foreground">{de ? "Nicht verfügbar" : "Unavailable"}</span> : null}
       </div>
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <p className="truncate text-xs font-bold uppercase tracking-[0.14em] text-muted">{product.category.name}</p>

@@ -110,7 +110,7 @@ export default async function HomePage({
             {catalog.promotions.map((promotion) => (
               <article
                 key={promotion.id}
-                className="rounded-card border border-border bg-primary p-6 text-white"
+                className="rounded-card border border-border bg-primary p-6 text-primary-foreground"
               >
                 <p className="text-sm font-bold uppercase tracking-[0.16em] text-secondary-light">
                   {promotion.code}
@@ -122,7 +122,7 @@ export default async function HomePage({
                   {de ? "Rabatt" : "off"}
                 </p>
                 {promotion.minimumSubtotalRappen > 0 ? (
-                  <p className="mt-2 text-sm text-white/70">
+                  <p className="mt-2 text-sm text-primary-foreground/70">
                     {de ? "Ab" : "From"}{" "}
                     {formatMoney(promotion.minimumSubtotalRappen, locale)}
                   </p>

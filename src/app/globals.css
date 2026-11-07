@@ -1,60 +1,123 @@
 @import "tailwindcss";
 
-:root {
-  --brand-primary: #153b35;
-  --brand-primary-light: #2b5c52;
-  --brand-primary-dark: #0b2622;
-  --brand-primary-foreground: #ffffff;
-  --brand-secondary: #d6a84b;
-  --brand-secondary-light: #e7c979;
-  --brand-secondary-contrast: #f8e8bd;
-  --brand-secondary-foreground: #14211e;
-  --brand-background: #f4f7f3;
-  --brand-surface: #ffffff;
-  --brand-surface-warm: #e8efea;
-  --brand-foreground: #102722;
-  --brand-muted: #5e6f69;
-  --brand-border: #d7e1db;
-  --brand-success: #287a54;
-  --brand-destructive: #b42318;
-  --brand-ring: #d6a84b;
-  --radius-control: 0;
-  --radius-card: 0;
-  --font-display: var(--font-inter), "Segoe UI", sans-serif;
-  --font-body: var(--font-archivo), "Segoe UI", sans-serif;
-}
-
+/*
+ * Token wiring. Do not put client values here: edit src/config/theme.ts (values)
+ * and src/config/fonts.ts (font files). layout.tsx writes them to <html> as --t-* variables.
+ */
 @theme inline {
-  --color-primary: var(--brand-primary);
-  --color-primary-light: var(--brand-primary-light);
-  --color-primary-dark: var(--brand-primary-dark);
-  --color-primary-foreground: var(--brand-primary-foreground);
-  --color-secondary: var(--brand-secondary);
-  --color-secondary-light: var(--brand-secondary-light);
-  --color-secondary-contrast: var(--brand-secondary-contrast);
-  --color-secondary-text: var(--brand-secondary-text);
-  --color-secondary-foreground: var(--brand-secondary-foreground);
-  --color-background: var(--brand-background);
-  --color-surface: var(--brand-surface);
-  --color-surface-warm: var(--brand-surface-warm);
-  --color-foreground: var(--brand-foreground);
-  --color-muted: var(--brand-muted);
-  --color-border: var(--brand-border);
-  --color-success: var(--brand-success);
-  --color-destructive: var(--brand-destructive);
-  --color-ring: var(--brand-ring);
-  --font-display: var(--font-display);
-  --font-sans: var(--font-body);
+  /* Colours */
+  --color-primary: var(--t-color-primary);
+  --color-primary-light: color-mix(in oklab, var(--t-color-primary) 85%, white);
+  --color-primary-dark: color-mix(in oklab, var(--t-color-primary) 60%, black);
+  --color-primary-foreground: var(--t-color-primary-foreground);
+  --color-secondary: var(--t-color-secondary);
+  --color-secondary-light: color-mix(in oklab, var(--t-color-secondary) 72%, white);
+  --color-secondary-contrast: color-mix(in oklab, var(--t-color-secondary) 35%, white);
+  /* Brand gold fails AA as text on light surfaces; this darker shade passes. */
+  --color-secondary-text: color-mix(in srgb, var(--t-color-secondary) 60%, black);
+  --color-secondary-foreground: var(--t-color-secondary-foreground);
+  --color-background: var(--t-color-background);
+  --color-surface: var(--t-color-surface);
+  --color-surface-muted: var(--t-color-surface-muted);
+  --color-surface-warm: var(--t-color-surface-warm);
+  --color-foreground: var(--t-color-foreground);
+  --color-muted: var(--t-color-muted);
+  --color-border: var(--t-color-border);
+  --color-border-strong: var(--t-color-border-strong);
+  --color-overlay: var(--t-color-overlay);
+  --color-success: var(--t-color-success);
+  --color-warning: var(--t-color-warning);
+  --color-error: var(--t-color-error);
+  --color-destructive: var(--t-color-error);
+  --color-info: var(--t-color-info);
+  --color-ring: var(--t-color-secondary);
+  --color-status-pending: var(--t-status-pending);
+  --color-status-confirmed: var(--t-status-confirmed);
+  --color-status-processing: var(--t-status-processing);
+  --color-status-ready: var(--t-status-ready);
+  --color-status-transit: var(--t-status-transit);
+  --color-status-done: var(--t-status-done);
+  --color-status-cancelled: var(--t-status-cancelled);
+
+  /* Corners: one switch (theme.corners). Tailwind's size scale follows it too. */
+  --radius-control: var(--t-radius-control);
+  --radius-card: var(--t-radius-card);
+  --radius-pill: var(--t-radius-pill);
+  --radius: var(--t-radius-control);
+  --radius-xs: var(--t-radius-control);
+  --radius-sm: var(--t-radius-control);
+  --radius-md: var(--t-radius-control);
+  --radius-lg: var(--t-radius-control);
+  --radius-xl: var(--t-radius-card);
+  --radius-2xl: var(--t-radius-card);
+  --radius-3xl: var(--t-radius-card);
+
+  /* Typography */
+  --font-display: var(--font-loaded-display), "Segoe UI", sans-serif;
+  --font-sans: var(--font-loaded-body), "Segoe UI", sans-serif;
+  --text-2xs: var(--t-text-2xs);
+  --text-2xs--line-height: var(--t-text-2xs-leading);
+  --text-xs: var(--t-text-xs);
+  --text-xs--line-height: var(--t-text-xs-leading);
+  --text-sm: var(--t-text-sm);
+  --text-sm--line-height: var(--t-text-sm-leading);
+  --text-base: var(--t-text-base);
+  --text-base--line-height: var(--t-text-base-leading);
+  --text-lg: var(--t-text-lg);
+  --text-lg--line-height: var(--t-text-lg-leading);
+  --text-xl: var(--t-text-xl);
+  --text-xl--line-height: var(--t-text-xl-leading);
+  --text-2xl: var(--t-text-2xl);
+  --text-2xl--line-height: var(--t-text-2xl-leading);
+  --text-3xl: var(--t-text-3xl);
+  --text-3xl--line-height: var(--t-text-3xl-leading);
+  --text-4xl: var(--t-text-4xl);
+  --text-4xl--line-height: var(--t-text-4xl-leading);
+  --text-5xl: var(--t-text-5xl);
+  --text-5xl--line-height: var(--t-text-5xl-leading);
+  --text-6xl: var(--t-text-6xl);
+  --text-6xl--line-height: var(--t-text-6xl-leading);
+  --text-7xl: var(--t-text-7xl);
+  --text-7xl--line-height: var(--t-text-7xl-leading);
+  --font-weight-normal: var(--t-weight-normal);
+  --font-weight-medium: var(--t-weight-medium);
+  --font-weight-semibold: var(--t-weight-semibold);
+  --font-weight-bold: var(--t-weight-bold);
+  --font-weight-extrabold: var(--t-weight-extrabold);
+  --leading-tight: var(--t-leading-tight);
+  --leading-snug: var(--t-leading-snug);
+  --leading-normal: var(--t-leading-normal);
+  --leading-relaxed: var(--t-leading-relaxed);
+  --leading-loose: var(--t-leading-loose);
+
+  /* Spacing, borders, shadows, control sizes */
+  --spacing: var(--t-spacing);
+  --default-border-width: var(--t-border-width);
+  --shadow: var(--t-shadow-sm);
+  --shadow-2xs: var(--t-shadow-2xs);
+  --shadow-xs: var(--t-shadow-xs);
+  --shadow-sm: var(--t-shadow-sm);
+  --shadow-md: var(--t-shadow-md);
+  --shadow-lg: var(--t-shadow-lg);
+  --shadow-xl: var(--t-shadow-xl);
+  --shadow-2xl: var(--t-shadow-2xl);
+  --shadow-card: var(--t-shadow-card);
+  --shadow-card-hover: var(--t-shadow-card-hover);
+  --shadow-bar: var(--t-shadow-bar);
+  --spacing-control: var(--t-control-height);
+  --spacing-control-compact: var(--t-control-height-compact);
+  --spacing-control-x: var(--t-control-padding-x);
+  --spacing-control-x-compact: var(--t-control-padding-x-compact);
 }
 
 * {
-  border-color: var(--brand-border);
+  border-color: var(--t-color-border);
 }
 
 html {
-  background: var(--brand-background);
-  color: var(--brand-foreground);
-  font-family: var(--font-body);
+  background: var(--t-color-background);
+  color: var(--t-color-foreground);
+  font-family: var(--font-loaded-body), "Segoe UI", sans-serif;
   scroll-behavior: smooth;
   scroll-padding-top: 6rem;
 }
@@ -65,34 +128,32 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-display);
+  font-family: var(--font-loaded-display), "Segoe UI", sans-serif;
 }
 
 body {
-  /* Brand gold fails AA as text on light surfaces. Set on body because layout.tsx overrides --brand-secondary there. */
-  --brand-secondary-text: color-mix(in srgb, var(--brand-secondary) 60%, black);
   min-height: 100vh;
   margin: 0;
   background-image:
-    radial-gradient(circle at 20% 30%, rgba(21, 59, 53, 0.045) 0 0.7px, transparent 0.9px),
-    radial-gradient(circle at 75% 65%, rgba(214, 168, 75, 0.055) 0 0.8px, transparent 1px);
+    radial-gradient(circle at 20% 30%, color-mix(in srgb, var(--t-color-primary) 4.5%, transparent) 0 0.7px, transparent 0.9px),
+    radial-gradient(circle at 75% 65%, color-mix(in srgb, var(--t-color-secondary) 5.5%, transparent) 0 0.8px, transparent 1px);
   background-position: 0 0, 7px 9px;
   background-size: 13px 13px, 17px 17px;
 }
 
 :focus-visible {
-  outline: 3px solid var(--brand-secondary-text);
-  outline-offset: 2px;
+  outline: var(--t-focus-width) solid color-mix(in srgb, var(--t-color-secondary) 60%, black);
+  outline-offset: var(--t-focus-offset);
 }
 
 footer :focus-visible,
 .bg-primary :focus-visible {
-  outline-color: var(--brand-secondary-light);
+  outline-color: color-mix(in oklab, var(--t-color-secondary) 72%, white);
 }
 
 input[type="radio"],
 input[type="checkbox"] {
-  accent-color: var(--brand-primary);
+  accent-color: var(--t-color-primary);
 }
 
 /* Touch screens: the button sits under the card text so it never covers the photo. */
@@ -139,14 +200,14 @@ input[type="checkbox"] {
   width: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--brand-background);
+  background: var(--t-color-background);
 }
 ::-webkit-scrollbar-thumb {
-  background: #c9bbaa;
-  border-radius: 5px;
+  background: var(--t-color-border-strong);
+  border-radius: var(--t-radius-pill);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--brand-secondary);
+  background: var(--t-color-secondary);
 }
 
 /* Animations */
@@ -241,8 +302,8 @@ input[type="checkbox"] {
 
 .page-progress-bar {
   animation: pageProgress 8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  background: linear-gradient(90deg, var(--brand-primary-light), var(--brand-secondary));
-  box-shadow: 0 0 0.75rem var(--brand-secondary);
+  background: linear-gradient(90deg, color-mix(in oklab, var(--t-color-primary) 85%, white), var(--t-color-secondary));
+  box-shadow: 0 0 0.75rem var(--t-color-secondary);
   transform-origin: left center;
 }
 
@@ -255,13 +316,13 @@ input[type="checkbox"] {
   inset-block: 4rem;
   left: 0;
   width: 4px;
-  border-radius: 999px;
-  background: var(--brand-secondary);
+  border-radius: var(--t-radius-pill);
+  background: var(--t-color-secondary);
   content: "";
 }
 
 .blog-prose {
-  color: var(--brand-foreground);
+  color: var(--t-color-foreground);
   font-size: 1.05rem;
   line-height: 1.85;
   /* Imported copy has long comma lists without spaces that would widen the mobile page. */
@@ -276,8 +337,8 @@ input[type="checkbox"] {
 .blog-prose h3,
 .blog-prose h4 {
   margin-top: 2.5rem;
-  color: var(--brand-primary);
-  font-family: var(--font-display);
+  color: var(--t-color-primary);
+  font-family: var(--font-loaded-display), "Segoe UI", sans-serif;
   line-height: 1.1;
   letter-spacing: -0.03em;
 }
@@ -305,21 +366,21 @@ input[type="checkbox"] {
   margin-top: 0.5rem;
 }
 .blog-prose a {
-  color: var(--brand-secondary-text);
-  font-weight: 700;
+  color: color-mix(in srgb, var(--t-color-secondary) 60%, black);
+  font-weight: var(--t-weight-bold);
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
 .blog-prose blockquote {
-  border-left: 4px solid var(--brand-secondary);
-  background: var(--brand-surface-warm);
+  border-left: 4px solid var(--t-color-secondary);
+  background: var(--t-color-surface-warm);
   padding: 1.25rem 1.5rem;
   font-style: italic;
 }
 .blog-prose img {
   height: auto;
   max-width: 100%;
-  border-radius: var(--radius-card);
+  border-radius: var(--t-radius-card);
 }
 .blog-prose table {
   width: 100%;
@@ -328,20 +389,20 @@ input[type="checkbox"] {
 }
 .blog-prose th,
 .blog-prose td {
-  border: 1px solid var(--brand-border);
+  border: var(--t-border-width) solid var(--t-color-border);
   padding: 0.75rem;
   text-align: left;
 }
 .blog-prose pre {
   overflow-x: auto;
-  border-radius: var(--radius-control);
-  background: var(--brand-primary);
+  border-radius: var(--t-radius-control);
+  background: var(--t-color-primary);
   padding: 1rem;
-  color: white;
+  color: var(--t-color-primary-foreground);
 }
 
 .rich-editor-content p:empty::before {
-  color: var(--brand-muted);
+  color: var(--t-color-muted);
   content: "Start writing…";
   pointer-events: none;
 }

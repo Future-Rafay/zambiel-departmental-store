@@ -102,10 +102,10 @@ export function ImageUploadField({
         aria-invalid={Boolean(error)}
         onChange={(event) => select(event.target.files?.[0])}
       />
-      <div className="rounded-xl border border-dashed bg-white p-3">
+      <div className="rounded-card border border-dashed bg-surface p-3">
         {preview ? (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative h-24 w-full overflow-hidden rounded-lg border sm:w-32">
+            <div className="relative h-24 w-full overflow-hidden rounded-control border sm:w-32">
               <Image
                 src={preview}
                 alt={`${label} preview`}
@@ -151,7 +151,7 @@ export function ImageUploadField({
               event.preventDefault();
               select(event.dataTransfer.files?.[0]);
             }}
-            className="flex min-h-28 w-full flex-col items-center justify-center gap-2 rounded-lg text-sm font-semibold text-muted hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
+            className="flex min-h-28 w-full flex-col items-center justify-center gap-2 rounded-control text-sm font-semibold text-muted hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
           >
             <ImageIcon aria-hidden="true" className="size-8 text-primary" />
             Drop an image or click to browse

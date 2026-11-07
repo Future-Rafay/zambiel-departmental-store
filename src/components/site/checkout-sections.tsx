@@ -1,3 +1,5 @@
+import { Textarea } from "@/components/ui/textarea";
+import { Select } from "@/components/ui/select";
 import type { ReactNode } from "react";
 import Link from "next/link";
 
@@ -84,7 +86,7 @@ export function CustomerFields({
   errors: FieldErrors;
 }) {
   return (
-    <Card className="grid gap-4 rounded-none p-5 sm:grid-cols-2">
+    <Card className="grid gap-4 p-5 sm:grid-cols-2">
       <h2 className="font-display text-xl font-bold sm:col-span-2">
         {de ? "Kontaktdaten" : "Contact details"}
       </h2>
@@ -155,7 +157,7 @@ export function AddressFields({
   refreshQuote: () => void;
 }) {
   return (
-    <Card className="grid gap-4 rounded-none p-5 sm:grid-cols-2">
+    <Card className="grid gap-4 p-5 sm:grid-cols-2">
       <h2 className="font-display text-xl font-bold sm:col-span-2">
         {de ? "Lieferadresse" : "Delivery address"}
       </h2>
@@ -203,7 +205,7 @@ export function AddressFields({
         />
       </Field>
       <Field id="countryCode" label={de ? "Land" : "Country"} error={errors.countryCode}>
-        <select
+        <Select
           id="countryCode"
           name="countryCode"
           autoComplete="country"
@@ -212,11 +214,10 @@ export function AddressFields({
           required
           aria-invalid={!!errors.countryCode}
           aria-describedby={errors.countryCode ? "countryCode-error" : undefined}
-          className="min-h-11 w-full rounded-control border border-border bg-surface px-4 py-2 text-base focus:border-secondary aria-invalid:border-destructive"
         >
           {countries.length === 0 ? <option value="">{de ? "Keine Lieferländer verfügbar" : "No shipping countries available"}</option> : null}
           {countries.map((country) => <option key={country.countryCode} value={country.countryCode}>{de ? country.nameDe : country.nameEn}</option>)}
-        </select>
+        </Select>
       </Field>
     </Card>
   );
@@ -240,7 +241,7 @@ export function PaymentChoices({
   const cashMethod =
     fulfillmentType === "DELIVERY" ? "CASH_ON_DELIVERY" : "PAY_AT_PICKUP";
   return (
-    <Card className="space-y-4 rounded-none p-5">
+    <Card className="space-y-4 p-5">
       <fieldset>
         <legend className="mb-3 font-display text-xl font-bold">
           {de ? "Zahlung" : "Payment"}
@@ -293,11 +294,11 @@ export function PaymentChoices({
         id="note"
         label={de ? "Bestellnotiz (optional)" : "Order note (optional)"}
       >
-        <textarea
+        <Textarea
           id="note"
           name="note"
           maxLength={1000}
-          className="min-h-24 w-full border border-border bg-surface p-3"
+          className="min-h-24 p-3"
         />
       </Field>
     </Card>
@@ -331,7 +332,7 @@ export function CheckoutSummary({
   refreshQuote: () => void;
 }) {
   return (
-    <Card className="h-fit space-y-4 rounded-none p-5 lg:sticky lg:top-24">
+    <Card className="h-fit space-y-4 p-5 lg:sticky lg:top-24">
       <h2 className="font-display text-xl font-bold">
         {de ? "Zusammenfassung" : "Summary"}
       </h2>

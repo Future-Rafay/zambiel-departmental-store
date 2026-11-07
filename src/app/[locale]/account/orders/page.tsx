@@ -38,8 +38,8 @@ export default async function AccountOrdersPage({
       </div>
 
       {orders.length === 0 ? (
-        <Card className="max-w-7xl mx-auto space-y-6 rounded-none p-12 text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-secondary/10 text-secondary">
+        <Card className="max-w-7xl mx-auto space-y-6 p-12 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-pill bg-secondary/10 text-secondary">
             <ShoppingBag className="h-10 w-10" strokeWidth={1.5} />
           </div>
           <div className="space-y-2">
@@ -70,14 +70,14 @@ export default async function AccountOrdersPage({
             >
               <Card
                 hover
-                className="group flex h-full flex-col justify-between space-y-4 rounded-none p-6"
+                className="group flex h-full flex-col justify-between space-y-4 p-6"
               >
                 <div className="flex items-center justify-between border-b border-border/60 pb-3">
                   <span className="font-display font-extrabold text-lg text-primary group-hover:text-secondary-text transition-colors">
                     {order.orderNumber}
                   </span>
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-bold shadow-sm ${orderStatusBadgeClass(order.status)}`}
+                    className={`rounded-pill px-3 py-1 text-xs font-bold shadow-sm ${orderStatusBadgeClass(order.status)}`}
                   >
                     {orderStatusLabel(order.status, locale)}
                   </span>

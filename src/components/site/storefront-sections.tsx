@@ -170,7 +170,7 @@ export function InstagramSpotlight({
         compact ? "instagram-product-heading" : "instagram-heading"
       }
     >
-      <div className="flex flex-col gap-6 rounded-card border border-border bg-primary p-7 text-white sm:flex-row sm:items-center sm:justify-between sm:p-10">
+      <div className="flex flex-col gap-6 rounded-card border border-border bg-primary p-7 text-primary-foreground sm:flex-row sm:items-center sm:justify-between sm:p-10">
         <div>
           <FaInstagram
             className="h-7 w-7 text-secondary-light"
@@ -182,7 +182,7 @@ export function InstagramSpotlight({
           >
             @zambiel.pk
           </h2>
-          <p className="mt-3 max-w-2xl text-white/70">
+          <p className="mt-3 max-w-2xl text-primary-foreground/70">
             {de
               ? "Folgen Sie uns für neue Produkte, Ideen und Zambiel-Geschichten."
               : "Follow us for new products, ideas, and stories from Zambiel."}
@@ -207,7 +207,7 @@ export function StoryAndRequest({ locale }: { locale: StoreLocale }) {
     <section className="mx-auto grid max-w-7xl gap-6 px-5 py-14 sm:px-8 sm:py-20 lg:grid-cols-2">
       <article
         id="about-zambiel"
-        className="rounded-card bg-primary p-7 text-white sm:p-10"
+        className="rounded-card bg-primary p-7 text-primary-foreground sm:p-10"
       >
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-light">
           Zambiel
@@ -217,7 +217,7 @@ export function StoryAndRequest({ locale }: { locale: StoreLocale }) {
             ? "Wo Einkaufen Geschichten erzählt"
             : "Where Shopping Meets Storytelling"}
         </h2>
-        <p className="mt-6 leading-7 text-white/75">
+        <p className="mt-6 leading-7 text-primary-foreground/75">
           {de
             ? "Zambiel ist mehr als ein Warenhaus. Wir wählen nützliche, besondere und überraschende Produkte aus und erzählen, wie sie Ihren Alltag bereichern können."
             : "Zambiel is more than a department store. We select useful, distinctive, and surprising products and show how they can add value to everyday life."}

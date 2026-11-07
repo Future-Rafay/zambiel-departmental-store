@@ -41,7 +41,7 @@ export function RetailProductCardAction({
 
   if (unavailable) {
     return (
-      <button type="button" disabled className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-foreground/85 px-2 text-xs font-bold text-white opacity-80 sm:px-4 sm:text-sm">
+      <button type="button" disabled className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-foreground/85 px-2 text-xs font-bold text-primary-foreground opacity-80 sm:px-4 sm:text-sm">
         {de ? "Nicht verfügbar" : "Unavailable"}
       </button>
     );
@@ -49,7 +49,7 @@ export function RetailProductCardAction({
 
   if (options.length) {
     return (
-      <Link href={href} className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-2 text-xs font-bold text-white hover:bg-primary-light sm:px-4 sm:text-sm sm:shadow-lg">
+      <Link href={href} className="inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-2 text-xs font-bold text-primary-foreground hover:bg-primary-light sm:px-4 sm:text-sm sm:shadow-lg">
         {de ? "Optionen auswählen" : "Select options"}
       </Link>
     );
@@ -71,7 +71,7 @@ export function RetailProductCardAction({
 
   return (
     <>
-      <button type="button" onClick={addToCart} className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-control bg-primary px-2 text-xs font-bold text-white hover:bg-primary-light sm:gap-2 sm:px-4 sm:text-sm sm:shadow-lg">
+      <button type="button" onClick={addToCart} className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-control bg-primary px-2 text-xs font-bold text-primary-foreground hover:bg-primary-light sm:gap-2 sm:px-4 sm:text-sm sm:shadow-lg">
         {added ? <Check className="h-4 w-4" aria-hidden="true" /> : <ShoppingBag className="h-4 w-4" aria-hidden="true" />}
         {added ? (de ? "Hinzugefügt" : "Added") : (de ? "In den Warenkorb" : "Add to cart")}
       </button>

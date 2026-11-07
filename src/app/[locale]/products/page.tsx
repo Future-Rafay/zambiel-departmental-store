@@ -1,3 +1,4 @@
+import { Select } from "@/components/ui/select";
 import { Filter, Search } from "lucide-react";
 import Link from "next/link";
 
@@ -36,7 +37,7 @@ function Filters({ locale, categories, values }: { locale: StoreLocale; categori
       </div>
       <div>
         <label htmlFor="catalog-category" className="mb-2 block text-sm font-bold">{de ? "Kategorie" : "Category"}</label>
-        <select id="catalog-category" name="category" defaultValue={one(values.category) ?? ""} className="min-h-11 w-full rounded-control border border-border bg-surface px-3"><option value="">{de ? "Alle Kategorien" : "All categories"}</option>{categories.map((category) => <option key={category.id} value={category.slug}>{category.path.join(" → ")}</option>)}</select>
+        <Select id="catalog-category" name="category" defaultValue={one(values.category) ?? ""} className="px-3"><option value="">{de ? "Alle Kategorien" : "All categories"}</option>{categories.map((category) => <option key={category.id} value={category.slug}>{category.path.join(" → ")}</option>)}</Select>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <div><label htmlFor="min-price" className="mb-2 block text-sm font-bold">{de ? "Min. CHF" : "Min CHF"}</label><input id="min-price" name="min" type="number" min="0" step="0.05" defaultValue={one(values.min)} className="min-h-11 w-full rounded-control border border-border bg-surface px-3" /></div>
@@ -44,11 +45,11 @@ function Filters({ locale, categories, values }: { locale: StoreLocale; categori
       </div>
       <div>
         <label htmlFor="catalog-sort" className="mb-2 block text-sm font-bold">{de ? "Sortierung" : "Sort"}</label>
-        <select id="catalog-sort" name="sort" defaultValue={one(values.sort) ?? "featured"} className="min-h-11 w-full rounded-control border border-border bg-surface px-3"><option value="featured">{de ? "Empfohlen" : "Featured"}</option><option value="newest">{de ? "Neueste" : "Newest"}</option><option value="price-asc">{de ? "Preis aufsteigend" : "Price low to high"}</option><option value="price-desc">{de ? "Preis absteigend" : "Price high to low"}</option><option value="name">Name</option></select>
+        <Select id="catalog-sort" name="sort" defaultValue={one(values.sort) ?? "featured"} className="px-3"><option value="featured">{de ? "Empfohlen" : "Featured"}</option><option value="newest">{de ? "Neueste" : "Newest"}</option><option value="price-asc">{de ? "Preis aufsteigend" : "Price low to high"}</option><option value="price-desc">{de ? "Preis absteigend" : "Price high to low"}</option><option value="name">Name</option></Select>
       </div>
       <div className="flex flex-col gap-2">
-        <label className="flex min-h-11 items-center gap-3 text-sm font-bold"><input type="checkbox" name="available" value="1" defaultChecked={one(values.available) === "1"} className="h-5 w-5 rounded border-border accent-primary" />{de ? "Nur verfügbar" : "Available only"}</label>
-        <button className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-5 font-bold text-white hover:bg-primary-light">{de ? "Anwenden" : "Apply"}</button>
+        <label className="flex min-h-11 items-center gap-3 text-sm font-bold"><input type="checkbox" name="available" value="1" defaultChecked={one(values.available) === "1"} className="h-5 w-5 rounded-control border-border accent-primary" />{de ? "Nur verfügbar" : "Available only"}</label>
+        <button className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-5 font-bold text-primary-foreground hover:bg-primary-light">{de ? "Anwenden" : "Apply"}</button>
       </div>
       <Link href={`/${locale}/products`} className="inline-flex min-h-11 items-center justify-center rounded-control border border-border px-4 text-sm font-bold hover:border-primary md:col-span-2 lg:col-span-6 lg:justify-self-end">{de ? "Filter löschen" : "Clear filters"}</Link>
     </form>

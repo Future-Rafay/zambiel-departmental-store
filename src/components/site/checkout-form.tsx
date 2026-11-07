@@ -234,7 +234,7 @@ export function CheckoutForm({
 
   if (items.length === 0)
     return (
-      <Card className="rounded-none p-8 text-center">
+      <Card className="p-8 text-center">
         <p>{de ? "Ihr Warenkorb ist leer." : "Your cart is empty."}</p>
       </Card>
     );

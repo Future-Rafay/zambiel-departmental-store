@@ -3,6 +3,7 @@ import test from "node:test";
 
 import { applyMergeFields, htmlToText, isUndeliverableEmail, marketingStarterTemplate, marketingStarterTemplateKeys, marketingUnsubscribeToken, sanitizeMarketingHtml, verifyMarketingUnsubscribeToken } from "./marketing";
 import { marketingEmail } from "./templates";
+import { theme } from "../../config/theme";
 
 const prefix = "https://cdn.example.com/uploads/Zambiel/products/";
 
@@ -15,7 +16,7 @@ test("marketing HTML keeps design markup, inlines email styles, and strips unsaf
   assert.match(html, /<span style="color:rgb\(214, 168, 75\)">Gold<\/span>/);
   assert.ok(!html.includes("position"));
   assert.ok(!html.includes("onclick") && !html.includes("javascript:") && !html.includes("<script") && !html.includes("<style"));
-  assert.match(html, /<a style="color:#153B35" href="https:\/\/zambiel.ch">ok<\/a>/);
+  assert.ok(html.includes(`<a style="color:${theme.colors.primary}" href="https://zambiel.ch">ok</a>`));
   assert.match(html, new RegExp(`<img style="[^"]*max-width:100%[^"]*" width="544" src="${prefix}a.png" alt="A" />`));
   assert.ok(!html.includes("evil.example"));
 });

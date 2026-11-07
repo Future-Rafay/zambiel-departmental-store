@@ -8,7 +8,7 @@ export default function NotFound() {
         <h1 id="root-not-found-title" className="mt-2 font-display text-3xl text-primary">
           Seite nicht gefunden / Page not found
         </h1>
-        <Link href="/de" className="mt-7 inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-5 font-bold text-white hover:bg-primary-light">
+        <Link href="/de" className="mt-7 inline-flex min-h-11 items-center justify-center rounded-control bg-primary px-5 font-bold text-primary-foreground hover:bg-primary-light">
           Zur Startseite / Go home
         </Link>
       </section>

@@ -90,7 +90,7 @@ export function RetailProductPurchase({
                 const id = `option-${option.id}-${value.id}`;
                 const possible = variants.some((candidate) => options.every((other) => candidate.optionValues.some((candidateValue) => candidateValue.optionId === other.id && candidateValue.valueId === (other.id === option.id ? value.id : selected[other.id]))));
                 return (
-                  <label key={value.id} htmlFor={id} className={`inline-flex min-h-11 items-center rounded-control border px-4 text-sm font-bold transition-colors has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-secondary-text ${possible ? "cursor-pointer" : "cursor-not-allowed opacity-40"} ${selected[option.id] === value.id ? "border-primary bg-primary text-white" : "border-border bg-surface hover:border-primary/40"}`}>
+                  <label key={value.id} htmlFor={id} className={`inline-flex min-h-11 items-center rounded-control border px-4 text-sm font-bold transition-colors has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-secondary-text ${possible ? "cursor-pointer" : "cursor-not-allowed opacity-40"} ${selected[option.id] === value.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-surface hover:border-primary/40"}`}>
                     <input id={id} className="sr-only" type="radio" name={option.id} value={value.id} disabled={!possible} checked={selected[option.id] === value.id} onChange={() => chooseValue(option.id, value.id)} />
                     {value.value}
                   </label>
@@ -110,18 +110,18 @@ export function RetailProductPurchase({
           <output aria-live="polite" className="font-bold tabular-nums">{quantity}</output>
           <button type="button" className="min-h-11 min-w-11" onClick={() => setQuantity((value) => Math.min(stock ?? 99, value + 1))} aria-label={de ? "Menge erhöhen" : "Increase quantity"}><Plus className="mx-auto h-4 w-4" aria-hidden="true" /></button>
         </div>
-        <button type="button" onClick={addToCart} disabled={!available} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control bg-primary px-6 font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-50">
+        <button type="button" onClick={addToCart} disabled={!available} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-control bg-primary px-6 font-bold text-primary-foreground transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-50">
           <ShoppingBag className="h-5 w-5" aria-hidden="true" />{de ? "In den Warenkorb" : "Add to cart"}
         </button>
       </div>
       <p className="mt-3 min-h-6 text-sm font-medium text-success" role="status" aria-live="polite">{message}</p>
       {showBar ? (
-        <div data-purchase-bar className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border bg-surface px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] lg:hidden">
+        <div data-purchase-bar className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-border bg-surface px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-bar lg:hidden">
           <div className="min-w-0 max-w-[45%]">
             <p className="font-bold tabular-nums text-primary">{variant ? formatStoreMoney(variant.priceRappen, locale) : "—"}</p>
             {variant?.optionValues.length ? <p className="truncate text-xs text-muted">{variant.optionValues.map(({ value }) => value).join(" · ")}</p> : null}
           </div>
-          <button type="button" onClick={addToCart} disabled={!available} className="inline-flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-control bg-primary px-3 text-sm font-bold text-white transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-50">
+          <button type="button" onClick={addToCart} disabled={!available} className="ml-auto inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-control bg-primary px-5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-50">
             {message ? <Check className="h-5 w-5 shrink-0" aria-hidden="true" /> : <ShoppingBag className="h-5 w-5 shrink-0" aria-hidden="true" />}
             {message ? (de ? "Hinzugefügt" : "Added") : de ? "In den Warenkorb" : "Add to cart"}
           </button>

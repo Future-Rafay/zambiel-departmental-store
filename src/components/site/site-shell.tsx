@@ -132,12 +132,12 @@ export function SiteShell({
     <div className="flex min-h-dvh flex-col" lang={locale}>
       <a
         href="#main-content"
-        className="sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:block focus:rounded-control focus:bg-primary focus:px-5 focus:py-3 focus:font-bold focus:text-white"
+        className="sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:block focus:rounded-control focus:bg-primary focus:px-5 focus:py-3 focus:font-bold focus:text-primary-foreground"
       >
         {de ? "Zum Inhalt springen" : "Skip to content"}
       </a>
       {announcements.length ? (
-        <div className="bg-primary px-4 py-2 text-center text-xs font-bold text-white sm:text-sm">
+        <div className="bg-primary px-4 py-2 text-center text-xs font-bold text-primary-foreground sm:text-sm">
           <span aria-hidden="true">{announcements[announcementIndex % announcements.length]}</span>
           <span className="sr-only">{announcements.join(". ")}</span>
         </div>
@@ -201,12 +201,12 @@ export function SiteShell({
           </Link>
           <Link
             href={mode === "b2b" ? `/${locale}/b2b-shop/cart` : `/${locale}/cart`}
-            className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-control bg-primary px-3 text-white max-sm:ml-auto"
+            className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-control bg-primary px-3 text-primary-foreground max-sm:ml-auto"
             aria-label={`${labels.cart}: ${count}`}
           >
             <ShoppingBag className="h-5 w-5" aria-hidden="true" />
             {count ? (
-              <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1 text-[11px] font-bold text-secondary-foreground">
+              <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-pill bg-secondary px-1 text-2xs font-bold text-secondary-foreground">
                 {count}
               </span>
             ) : null}
@@ -286,7 +286,7 @@ export function SiteShell({
                     <Link
                       href={`/${locale}/login`}
                       onClick={() => setAccountOpen(false)}
-                      className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary font-bold text-white"
+                      className="inline-flex min-h-11 items-center justify-center rounded-control bg-primary font-bold text-primary-foreground"
                     >
                       {labels.login}
                     </Link>
@@ -379,16 +379,16 @@ export function SiteShell({
         {children}
       </main>
 
-      <footer className="border-t-4 border-secondary bg-primary text-white">
+      <footer className="border-t-4 border-secondary bg-primary text-primary-foreground">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[1.35fr_repeat(3,1fr)]">
           <div>
             <BrandLogo inverted className="h-16 max-w-36" />
-            <p className="mt-6 max-w-sm font-display text-2xl font-bold leading-tight text-white">
+            <p className="mt-6 max-w-sm font-display text-2xl font-bold leading-tight text-primary-foreground">
               {de
                 ? "Wo Einkaufen Geschichten erzählt."
                 : "Where shopping meets storytelling."}
             </p>
-            <p className="mt-3 max-w-sm text-sm leading-6 text-white/70">
+            <p className="mt-3 max-w-sm text-sm leading-6 text-primary-foreground/70">
               {de
                 ? "Ausgewählte Produkte für Zuhause, unterwegs und den Alltag."
                 : "Selected products for home, life on the move, and every day."}
@@ -456,7 +456,7 @@ export function SiteShell({
             <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-secondary-light">
               {de ? "Hilfe & Support" : "Help & support"}
             </h2>
-            <p className="mt-4 text-sm text-white/65">
+            <p className="mt-4 text-sm text-primary-foreground/65">
               {de ? "Fragen? Schreiben Sie an" : "Got questions? Send email at"}
             </p>
             {publicConfig.email ? (
@@ -495,7 +495,7 @@ export function SiteShell({
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border border-white/25 hover:border-secondary-light hover:text-secondary-light focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary-light"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-control border border-primary-foreground/25 hover:border-secondary-light hover:text-secondary-light focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-secondary-light"
                 >
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </a>
@@ -503,8 +503,8 @@ export function SiteShell({
             </div>
           </div>
         </div>
-        <div className="border-t border-white/15">
-          <div className="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-5 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <div className="border-t border-primary-foreground/15">
+          <div className="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-5 text-xs text-primary-foreground/60 sm:flex-row sm:items-center sm:justify-between sm:px-8">
             <span>
               © {new Date().getFullYear()} Zambiel. {labels.rights}
             </span>

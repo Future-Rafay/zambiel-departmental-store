@@ -76,9 +76,9 @@ export function CustomerNotifications({ locale, userId }: { locale: "de" | "en";
     : orderStatusLabel(notice.status, locale);
 
   return <div className="relative" ref={ref}>
-    <button type="button" onClick={toggle} className="relative grid size-10 place-items-center rounded-full border border-border bg-surface hover:bg-background" aria-label={locale === "de" ? "Bestellbenachrichtigungen" : "Order notifications"} aria-expanded={open}>
+    <button type="button" onClick={toggle} className="relative grid size-10 place-items-center rounded-control border border-border bg-surface hover:bg-background" aria-label={locale === "de" ? "Bestellbenachrichtigungen" : "Order notifications"} aria-expanded={open}>
       <Bell className="size-5" aria-hidden="true" />
-      {unread > 0 && <span className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">{Math.min(unread, 9)}</span>}
+      {unread > 0 && <span className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-pill bg-destructive px-1 text-2xs font-bold text-primary-foreground">{Math.min(unread, 9)}</span>}
     </button>
     {open && <div className="absolute right-0 top-12 z-50 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-card border border-border bg-surface shadow-2xl">
       <div className="border-b border-border px-4 py-3 font-display font-bold">{locale === "de" ? "Bestellupdates" : "Order updates"}</div>

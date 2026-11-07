@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import { Banknote, ExternalLink, PackageCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { badgeClasses } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { formatMoney } from "@/lib/orders";
+import { formatMoney, orderStatusTone } from "@/lib/orders";
 
 type AdminOrder = {
   orderNumber: string;
@@ -26,16 +27,6 @@ type AdminOrder = {
     options: string[];
   }>;
   allowedNextStatus: string | null;
-};
-
-const statusPills: Record<string, string> = {
-  PAYMENT_PENDING: "bg-slate-100 text-slate-800 border-slate-300",
-  CONFIRMED: "bg-blue-50 text-blue-800 border-blue-200",
-  PROCESSING: "bg-amber-50 text-amber-800 border-amber-200",
-  READY_FOR_PICKUP: "bg-purple-50 text-purple-800 border-purple-200",
-  OUT_FOR_DELIVERY: "bg-orange-50 text-orange-800 border-orange-200",
-  DELIVERED: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  PICKED_UP: "bg-emerald-50 text-emerald-800 border-emerald-200",
 };
 
 const labels: Record<string, string> = {
@@ -75,19 +66,19 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
   return (
     <div className="mx-auto max-w-6xl space-y-10">
       {/* Header Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E1E3E5] pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+          <span className="text-2xs font-bold uppercase tracking-wider text-secondary">
             ZAMBIEL ORDER QUEUE
           </span>
-          <h1 className="font-display text-2xl font-bold text-[#202223] tracking-tight">
+          <h1 className="font-display text-2xl font-bold text-foreground tracking-tight">
             Live Order Queue
           </h1>
         </div>
-        <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 border border-emerald-200 shadow-2xs">
+        <div className="flex items-center gap-2 rounded-pill bg-success/10 px-3 py-1 text-xs font-semibold text-success border border-success/30 shadow-2xs">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
           </span>
           <span>Auto-refresh (10s)</span>
         </div>
@@ -96,7 +87,7 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
       {error && (
         <div
           role="alert"
-          className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-xs font-semibold text-destructive"
+          className="rounded-card border border-destructive/40 bg-destructive/5 p-4 text-xs font-semibold text-destructive"
         >
           ⚠️ {error}
         </div>
@@ -107,14 +98,14 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
         <div className="flex items-center justify-between">
           <h2
             id="active-orders-title"
-            className="font-display text-lg font-bold text-[#202223]"
+            className="font-display text-lg font-bold text-foreground"
           >
             Active Orders ({orders.length})
           </h2>
         </div>
 
         {orders.length === 0 ? (
-          <Card className="p-12 text-center border-[#E1E3E5] bg-white space-y-2">
+          <Card className="p-12 text-center border-border bg-surface space-y-2">
             <div className="flex justify-center">
               <PackageCheck
                 className="h-12 w-12 text-secondary/40"
@@ -133,9 +124,9 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
             {orders.map((order) => (
               <Card
                 key={order.orderNumber}
-                className="p-5 border-[#E1E3E5] bg-white space-y-4 shadow-2xs hover:shadow-xs transition-shadow"
+                className="p-5 border-border bg-surface space-y-4 shadow-2xs hover:shadow-xs transition-shadow"
               >
-                <div className="flex items-start justify-between gap-4 border-b border-[#E1E3E5] pb-3">
+                <div className="flex items-start justify-between gap-4 border-b border-border pb-3">
                   <div>
                     <span className="font-display text-lg font-extrabold text-primary">
                       {order.orderNumber}
@@ -154,23 +145,23 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
                     </p>
                   </div>
                   <span
-                    className={`rounded-full border px-3 py-1 text-xs font-bold ${statusPills[order.status] ?? "bg-slate-100 text-slate-800"}`}
+                    className={badgeClasses(orderStatusTone(order.status), "soft", "px-3")}
                   >
                     {labels[order.status] ?? order.status}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between text-xs font-semibold text-muted bg-[#F6F6F7] p-2.5 rounded-lg">
+                <div className="flex items-center justify-between text-xs font-semibold text-muted bg-surface-muted p-2.5 rounded-control">
                   <span>{order.fulfillmentType.replaceAll("_", " ")}</span>
                   <span className="font-bold text-primary">
                     {formatMoney(order.totalRappen, "en")}
                   </span>
-                  <span className="font-bold uppercase text-[10px] bg-white px-2 py-0.5 rounded border border-border">
+                  <span className="font-bold uppercase text-2xs bg-surface px-2 py-0.5 rounded-control border border-border">
                     {order.paymentStatus}
                   </span>
                 </div>
 
-                <ul className="space-y-1.5 border-t border-[#E1E3E5] pt-3 text-xs text-foreground">
+                <ul className="space-y-1.5 border-t border-border pt-3 text-xs text-foreground">
                   {order.items.map((item) => (
                     <li key={item.id} className="flex items-baseline gap-2">
                       <span className="font-bold text-primary">
@@ -178,7 +169,7 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
                       </span>
                       <span className="font-medium">{item.name}</span>
                       {item.options.length > 0 && (
-                        <span className="text-[11px] text-muted font-normal">
+                        <span className="text-2xs text-muted font-normal">
                           ({item.options.join(", ")})
                         </span>
                       )}
@@ -186,10 +177,10 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
                   ))}
                 </ul>
 
-                <div className="flex flex-wrap gap-2 border-t border-[#E1E3E5] pt-3">
+                <div className="flex flex-wrap gap-2 border-t border-border pt-3">
                   <Link
                     href={`/admin/orders/${order.orderNumber}`}
-                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border bg-white px-3 text-xs font-bold text-primary"
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-control border bg-surface px-3 text-xs font-bold text-primary"
                   >
                     <ExternalLink className="size-3.5" />
                     View details
@@ -197,7 +188,7 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
                   {order.allowedNextStatus && (
                     <Button
                       size="compact"
-                      className="bg-primary hover:bg-primary-light text-white text-xs font-bold shadow-2xs"
+                      className="bg-primary hover:bg-primary-light text-primary-foreground text-xs font-bold shadow-2xs"
                       disabled={busy === order.orderNumber}
                       onClick={() =>
                         mutate(
