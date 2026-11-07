@@ -264,6 +264,8 @@ input[type="checkbox"] {
   color: var(--brand-foreground);
   font-size: 1.05rem;
   line-height: 1.85;
+  /* Imported copy has long comma lists without spaces that would widen the mobile page. */
+  overflow-wrap: anywhere;
 }
 
 .blog-prose > * + * {
