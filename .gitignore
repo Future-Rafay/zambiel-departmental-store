@@ -15,8 +15,9 @@ apps/zambiel-mobile/ios/
 # local output
 /output
 /.artifacts
+/.archify
 /.playwright-cli
-
+/.playwright-mcp
 # environment files
 .env
 .env.*
