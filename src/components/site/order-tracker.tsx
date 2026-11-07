@@ -80,7 +80,7 @@ export function OrderTracker({
         </div>
         <span
           aria-live="polite"
-          className={`rounded-full px-4 py-2 text-sm font-bold ${orderStatusBadgeClass(order.status)}`}
+          className={`rounded-pill px-4 py-2 text-sm font-bold ${orderStatusBadgeClass(order.status)}`}
         >
           {orderStatusLabel(order.status, locale)}
         </span>
@@ -101,7 +101,7 @@ export function OrderTracker({
         </div>
       )}
       <div className="grid gap-6 sm:grid-cols-2">
-        <Card className="space-y-5 rounded-none p-5">
+        <Card className="space-y-5 p-5">
           <h2 className="font-display text-xl font-bold text-primary">
             {de ? "Bestellte Artikel" : "Ordered items"}
           </h2>
@@ -160,7 +160,7 @@ export function OrderTracker({
             </div>
           </dl>
         </Card>
-        <Card className="space-y-5 rounded-none p-5">
+        <Card className="space-y-5 p-5">
           <h2 className="font-display text-xl font-bold text-primary">
             {de ? "Bestellverlauf" : "Order history"}
           </h2>

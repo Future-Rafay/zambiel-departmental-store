@@ -29,14 +29,14 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
           </h1>
         </div>
         {items.length > 0 && (
-          <span className="shrink-0 rounded-full bg-secondary/15 px-4 py-1 text-xs font-bold text-secondary-text">
+          <span className="shrink-0 rounded-pill bg-secondary/15 px-4 py-1 text-xs font-bold text-secondary-text">
             {itemCount}{" "}
             {de ? "Artikel" : itemCount === 1 ? "item" : "items"}
           </span>
         )}
       </div>
       {items.length === 0 ? (
-        <Card className="mx-auto max-w-7xl space-y-5 rounded-none p-10 text-center">
+        <Card className="mx-auto max-w-7xl space-y-5 p-10 text-center">
           <h2 className="font-display text-2xl font-bold text-primary">
             {de ? "Ihr Warenkorb ist noch leer" : "Your cart is empty"}
           </h2>
@@ -57,7 +57,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
           <ul className="min-w-0 space-y-3">
             {items.map((item) => (
               <li key={item.key}>
-                <Card className="grid grid-cols-[4rem_minmax(0,1fr)] gap-3 rounded-none p-4 sm:flex sm:items-center sm:gap-4">
+                <Card className="grid grid-cols-[4rem_minmax(0,1fr)] gap-3 p-4 sm:flex sm:items-center sm:gap-4">
                   <div className="relative size-16 shrink-0 overflow-hidden rounded-control bg-background sm:size-20">
                     <StorefrontImage
                       src={item.imageUrl ?? null}
@@ -130,7 +130,7 @@ export function CartPage({ locale, b2b = false }: { locale: "de" | "en"; b2b?: b
               </li>
             ))}
           </ul>
-          <Card className="h-fit space-y-5 rounded-none p-5 lg:sticky lg:top-24">
+          <Card className="h-fit space-y-5 p-5 lg:sticky lg:top-24">
             <h2 className="font-display text-xl font-bold text-primary">
               {de ? "Zusammenfassung" : "Summary"}
             </h2>

@@ -75,7 +75,7 @@ export function AdminQueue({ orders }: { orders: AdminOrder[] }) {
             Live Order Queue
           </h1>
         </div>
-        <div className="flex items-center gap-2 rounded-full bg-success/10 px-3 py-1 text-xs font-semibold text-success border border-success/30 shadow-2xs">
+        <div className="flex items-center gap-2 rounded-pill bg-success/10 px-3 py-1 text-xs font-semibold text-success border border-success/30 shadow-2xs">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>

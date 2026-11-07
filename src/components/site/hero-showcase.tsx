@@ -59,7 +59,7 @@ export function HeroShowcase({
               setSlide((slide + banners.length - 1) % banners.length)
             }
             aria-label={de ? "Vorheriges Banner" : "Previous banner"}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center text-primary sm:absolute sm:left-3 sm:top-[calc(50%-1.375rem)] sm:-translate-y-1/2 sm:rounded-full sm:bg-white/90 sm:shadow-lg sm:hover:bg-white"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center text-primary sm:absolute sm:left-3 sm:top-[calc(50%-1.375rem)] sm:-translate-y-1/2 sm:rounded-control sm:bg-surface/90 sm:shadow-lg sm:hover:bg-surface"
           >
             <ChevronLeft className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -87,7 +87,7 @@ export function HeroShowcase({
             type="button"
             onClick={() => setSlide((slide + 1) % banners.length)}
             aria-label={de ? "Nächstes Banner" : "Next banner"}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center text-primary sm:absolute sm:right-3 sm:top-[calc(50%-1.375rem)] sm:-translate-y-1/2 sm:rounded-full sm:bg-white/90 sm:shadow-lg sm:hover:bg-white"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center text-primary sm:absolute sm:right-3 sm:top-[calc(50%-1.375rem)] sm:-translate-y-1/2 sm:rounded-control sm:bg-surface/90 sm:shadow-lg sm:hover:bg-surface"
           >
             <ChevronRight className="h-5 w-5" aria-hidden="true" />
           </button>

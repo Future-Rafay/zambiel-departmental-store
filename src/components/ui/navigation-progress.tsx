@@ -63,7 +63,7 @@ export function NavigationProgress() {
       role="progressbar"
       aria-label="Page loading"
       aria-valuetext="Loading"
-      className="fixed inset-x-0 top-0 z-[100] h-1 overflow-hidden bg-white/30"
+      className="fixed inset-x-0 top-0 z-[100] h-1 overflow-hidden bg-surface/30"
     >
       <div className="page-progress-bar h-full w-full" />
     </div>

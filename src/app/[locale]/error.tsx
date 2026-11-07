@@ -42,7 +42,7 @@ export default function LocaleError({
           <button
             type="button"
             onClick={reset}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-primary px-5 font-bold text-white hover:bg-primary-light"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-primary px-5 font-bold text-primary-foreground hover:bg-primary-light"
           >
             <RotateCcw aria-hidden="true" className="size-4" />
             {de ? "Erneut versuchen" : "Try again"}

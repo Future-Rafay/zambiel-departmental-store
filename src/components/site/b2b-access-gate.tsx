@@ -23,7 +23,7 @@ export function B2bAccessGate({ locale, signedIn, status }: { locale: "de" | "en
 
   return (
     <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 sm:py-24">
-      <Card className="mx-auto max-w-2xl rounded-none border-secondary/40 p-8 text-center sm:p-12">
+      <Card className="mx-auto max-w-2xl border-secondary/40 p-8 text-center sm:p-12">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-secondary-text">Zambiel B2B</p>
         <h1 className="mt-3 font-display text-4xl text-primary">{de ? "Geschäftskundenzugang" : "Business access"}</h1>
         <p className="mx-auto mt-5 max-w-xl leading-7 text-muted">
