@@ -24,7 +24,8 @@ Read installed Next.js documentation in `node_modules/next/dist/docs/` before fr
 
 ## Shared architectural seams
 
-- `src/config/store.ts`: release-managed identity, locale, currency, timezone, theme, order prefix, storage prefix, and safe defaults.
+- `src/config/store.ts`: release-managed identity, locale, currency, timezone, order prefix, storage prefix, and safe defaults.
+- `src/config/theme.ts` and `src/config/fonts.ts`: the only design-token source (corners switch, colours, type, spacing, shadows, control sizes). `layout.tsx` writes them to `<html>` as `--t-*` variables, `globals.css` maps them into Tailwind, and `store.ts` passes colours, fonts and radius to emails. Admin Settings no longer edits colours (2026-11-08); the `SiteSettings` colour columns are kept but unused. See `BRANDING.md`.
 - `src/server/services/store-config.ts`: merges admin/runtime settings over central defaults.
 - `src/server/db.ts`: only Prisma client construction seam.
 - `src/server/services/ordering.ts`: stable ordering facade and authoritative order creation, inventory reservation, retail transitions, and product-availability mutations.

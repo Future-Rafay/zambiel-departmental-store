@@ -56,6 +56,7 @@ Read `PROJECT-CONTEXT.md` and `PLAN.md` before making changes. Then read `BRANDI
 
 ## UI and safety
 
+- Design values come only from `src/config/theme.ts` (plus fonts in `src/config/fonts.ts`), mapped into Tailwind in `globals.css`. Use tokens and `src/components/ui` components; never hardcode radius (`rounded-lg`), palette colours, hex/rgb, arbitrary shadows or pixel font sizes. `theme-usage.test.ts` enforces this. Do not reintroduce database colour overrides.
 - Reuse the shared UI system. Target WCAG 2.2 AA, semantic labels/errors, keyboard operation, visible focus, reduced motion, and 44px targets. Single-choice options use labelled native radios.
 - Archive records with history. Separate destructive controls from routine actions and require confirmation/reason where applicable; refund dialogs show exact CHF amounts.
 - Use Lucide icons, no emoji icons. Product/category administration uses dedicated pages.
