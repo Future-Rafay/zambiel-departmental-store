@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 
 import { siteConfig } from "@/config/site";
 import { storeConfig } from "@/config/store";
+import type { Tone } from "@/components/ui/badge";
 import type {
   FulfillmentType,
   OrderStatus,
@@ -62,13 +63,29 @@ const orderStatusBadges: Partial<Record<OrderStatus, string>> = {
   PAYMENT_PENDING: "bg-surface-warm text-foreground",
   READY_FOR_PICKUP: "bg-secondary text-secondary-foreground",
   OUT_FOR_DELIVERY: "bg-secondary text-secondary-foreground",
-  DELIVERED: "bg-success text-white",
-  PICKED_UP: "bg-success text-white",
-  CANCELLED: "bg-destructive text-white",
+  DELIVERED: "bg-success text-primary-foreground",
+  PICKED_UP: "bg-success text-primary-foreground",
+  CANCELLED: "bg-destructive text-primary-foreground",
 };
 
 export function orderStatusBadgeClass(status: OrderStatus) {
-  return orderStatusBadges[status] ?? "bg-primary text-white";
+  return orderStatusBadges[status] ?? "bg-primary text-primary-foreground";
+}
+
+const orderStatusTones: Record<string, Tone> = {
+  PAYMENT_PENDING: "status-pending",
+  CONFIRMED: "status-confirmed",
+  PROCESSING: "status-processing",
+  READY_FOR_PICKUP: "status-ready",
+  OUT_FOR_DELIVERY: "status-transit",
+  DELIVERED: "status-done",
+  PICKED_UP: "status-done",
+  CANCELLED: "status-cancelled",
+};
+
+/** One colour per order status for admin badges and filters (theme.colors.status). */
+export function orderStatusTone(status: string): Tone {
+  return orderStatusTones[status] ?? "neutral";
 }
 
 export function formatMoneyInput(minorUnits: number) {

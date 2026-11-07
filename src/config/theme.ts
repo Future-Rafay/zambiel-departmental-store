@@ -86,7 +86,7 @@ export const theme = {
 
   controls: {
     height: "2.75rem", // 44px minimum touch target (WCAG 2.2)
-    heightCompact: "2.5rem",
+    heightCompact: "2.75rem", // kept at 44px too; compact differs by padding and text size
     paddingX: "1.5rem",
     paddingXCompact: "1rem",
   },

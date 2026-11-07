@@ -3,10 +3,17 @@ import { useId, type ComponentProps, type ReactNode } from "react";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 import { DeferredSubmitButton } from "@/components/admin/deferred-upload-form";
+import { tones } from "@/components/ui/badge";
+import { buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/cn";
+
+// Admin forms are denser than the storefront: smaller text and padding, same tokens.
+const adminFieldClasses = "px-3 text-sm shadow-2xs focus:border-primary focus:ring-1 focus:ring-ring";
 
 export function AdminPage({
   title,
@@ -23,7 +30,7 @@ export function AdminPage({
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <h1 className="font-display text-2xl font-bold text-[#202223] tracking-tight">
+          <h1 className="font-display text-2xl font-bold text-foreground tracking-tight">
             {title}
           </h1>
           {description && (
@@ -77,12 +84,12 @@ export function Notice({
     <div
       role={error || warning ? "alert" : "status"}
       className={cn(
-        "mb-6 flex items-center gap-3 rounded-xl border p-4 text-xs font-semibold shadow-xs animate-scale-in",
+        "mb-6 flex items-center gap-3 rounded-card border p-4 text-xs font-semibold shadow-xs animate-scale-in",
         error
-          ? "border-destructive/40 bg-destructive/5 text-destructive"
+          ? tones.error.soft
           : warning
-            ? "border-amber-500/40 bg-amber-50 text-amber-900"
-            : "border-emerald-500/40 bg-emerald-50 text-emerald-800",
+            ? tones.warning.soft
+            : tones.success.soft,
       )}
     >
       {error ? (
@@ -115,14 +122,14 @@ export function Field({
   const inputId = props.id ?? `${name}-${generatedId}`;
   return (
     <div className={cn("space-y-1", className)}>
-      <Label htmlFor={inputId} className="text-xs font-bold text-[#303030]">
+      <Label htmlFor={inputId} className="text-xs font-bold text-foreground">
         {label}
       </Label>
       <Input
         {...props}
         id={inputId}
         name={name}
-        className="min-h-11 rounded-control border-border bg-surface px-3 text-sm shadow-2xs focus:border-primary focus:ring-1 focus:ring-ring"
+        className={adminFieldClasses}
       />
     </div>
   );
@@ -147,16 +154,16 @@ export function TextareaField({
   const inputId = id ?? `${name}-${generatedId}`;
   return (
     <div className="space-y-1">
-      <Label htmlFor={inputId} className="text-xs font-bold text-[#303030]">
+      <Label htmlFor={inputId} className="text-xs font-bold text-foreground">
         {label}
       </Label>
-      <textarea
+      <Textarea
         id={inputId}
         name={name}
         defaultValue={defaultValue ?? ""}
         rows={rows}
         required={required}
-        className="min-h-11 w-full rounded-control border border-border bg-surface px-3 py-2 text-sm shadow-2xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+        className={cn(adminFieldClasses, "py-2")}
       />
     </div>
   );
@@ -181,18 +188,18 @@ export function SelectField({
   const inputId = id ?? `${name}-${generatedId}`;
   return (
     <div className="space-y-1">
-      <Label htmlFor={inputId} className="text-xs font-bold text-[#303030]">
+      <Label htmlFor={inputId} className="text-xs font-bold text-foreground">
         {label}
       </Label>
-      <select
+      <Select
         id={inputId}
         name={name}
         defaultValue={defaultValue}
         required={required}
-        className="min-h-11 w-full rounded-control border border-border bg-surface px-3 text-sm font-medium shadow-2xs focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
+        className={cn(adminFieldClasses, "font-medium")}
       >
         {children}
-      </select>
+      </Select>
     </div>
   );
 }
@@ -207,12 +214,12 @@ export function Check({
   defaultChecked?: boolean;
 }) {
   return (
-    <label className="flex items-center gap-2.5 text-xs font-bold text-[#303030] cursor-pointer py-1">
+    <label className="flex items-center gap-2.5 text-xs font-bold text-foreground cursor-pointer py-1">
       <input
         type="checkbox"
         name={name}
         defaultChecked={defaultChecked}
-        className="h-4 w-4 rounded border-[#C9CCCF] text-primary focus:ring-primary"
+        className="h-4 w-4 rounded-control border-border-strong text-primary focus:ring-primary"
       />
       <span>{label}</span>
     </label>
@@ -230,8 +237,8 @@ export function SaveBar({
     <div className="mt-6 flex justify-end border-t border-border pt-4">
       <input type="hidden" name="returnTo" value={returnTo} />
       <DeferredSubmitButton
-        size="default"
-        className="shadow-xs font-bold bg-primary hover:bg-primary-light text-xs"
+        size="compact"
+        className="shadow-xs font-bold"
       >
         {label}
       </DeferredSubmitButton>
@@ -257,7 +264,7 @@ export function EditLink({
   return (
     <Link
       href={href}
-      className="inline-flex min-h-11 items-center rounded-control border border-border bg-surface px-3 text-sm font-bold text-foreground shadow-2xs transition-colors hover:bg-surface-warm"
+      className={buttonClasses({ variant: "subtle", size: "compact", className: "px-3 font-bold" })}
     >
       {children}
     </Link>
