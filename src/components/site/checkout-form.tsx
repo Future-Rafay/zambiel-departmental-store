@@ -99,6 +99,14 @@ export function CheckoutForm({
         "Kartenzahlung ist noch nicht konfiguriert.",
         "Card payment is not configured yet.",
       ],
+      CARD_MINIMUM_NOT_MET: [
+        "Kartenzahlung ist für diesen Betrag nicht möglich. Bitte wählen Sie eine andere Zahlungsart.",
+        "Card payment is not possible for this total. Please choose another payment method.",
+      ],
+      RATE_LIMITED: [
+        "Zu viele Bestellversuche. Bitte versuchen Sie es später erneut.",
+        "Too many order attempts. Please try again later.",
+      ],
       INVALID_INPUT: [
         "Bitte prüfen Sie Ihre Eingaben.",
         "Please check your details.",
