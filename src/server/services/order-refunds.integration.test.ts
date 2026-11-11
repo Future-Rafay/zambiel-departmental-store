@@ -57,6 +57,19 @@ test("refund settlement restores stock exactly once and partial refunds keep the
     assert.equal(await stockOnHand(), 10, "a replayed refund webhook restores stock once");
     assert.equal(await prisma.inventoryMovement.count({ where: { orderId: full.id, type: "ORDER_RESTORED" } }), 1);
 
+    // Stripe refunded but our save failed: the webhook rebuilds the refund from its metadata, once, and only for the matching payment.
+    const lost = await soldOrder("STRIPE");
+    const lostEvent = { id: `re_lost_${suffix}`, status: "succeeded", amount: 1000, payment_intent: lost.payment!.stripePaymentIntentId, metadata: { orderId: lost.id.toString(), reason: "Save failed", cancelOrder: "true", actorUserId: actor.id }, failure_reason: null } as unknown as Stripe.Refund;
+    await syncStripeRefund({ ...lostEvent, id: `re_foreign_${suffix}`, payment_intent: "pi_other" } as Stripe.Refund);
+    assert.equal(await prisma.refund.count({ where: { paymentId: lost.payment!.id } }), 0, "a refund for another payment is not recorded");
+    await syncStripeRefund(lostEvent);
+    await syncStripeRefund(lostEvent);
+    const recovered = await prisma.order.findUniqueOrThrow({ where: { id: lost.id }, include: { payment: { include: { refunds: true } } } });
+    assert.equal(recovered.status, "CANCELLED");
+    assert.equal(recovered.payment?.refundedRappen, 1000);
+    assert.deepEqual(recovered.payment?.refunds.map((refund) => [refund.status, refund.amountRappen, refund.reason, refund.requestedByUserId]), [["SUCCEEDED", 1000, "Save failed", actor.id]]);
+    assert.equal(await stockOnHand(), 10, "a recovered refund restores stock once");
+
     const partial = await soldOrder("STRIPE");
     await prisma.refund.create({ data: { paymentId: partial.payment!.id, requestedByUserId: actor.id, stripeRefundId: `re_partial_${suffix}`, amountRappen: 400, reason: "Damaged box" } });
     await syncStripeRefund(refundEvent(`re_partial_${suffix}`, false));
