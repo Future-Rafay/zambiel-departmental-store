@@ -49,21 +49,12 @@ export type Category = {
   imageUrl: string | null;
   productCount: number;
 };
-export type Promotion = {
-  id: string;
-  code: string;
-  type: string;
-  value: number | string;
-  minimumSubtotalRappen: number | null;
-  endsAt: string | null;
-};
 export type HomeCatalog = {
   categories: Category[];
   showcase: Product[];
   featured: Product[];
   newest: Product[];
   bestSellers: Product[];
-  promotions: Promotion[];
 };
 export type CatalogSort =
   | "featured"
