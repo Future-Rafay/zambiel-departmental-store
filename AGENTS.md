@@ -33,6 +33,9 @@ Read `PROJECT-CONTEXT.md` and `PLAN.md` before making changes. Then read `BRANDI
 - Reservation, confirmation, release, and restock follow the order's `InventoryMovement` rows, never the variant's current `trackInventory`, which can change while an order is open. An order with no ledger rows gives no stock back.
 - Promotion limits count only orders that are not `CANCELLED`; redemption rows stay as history. A cancelled order's `checkoutKey` is refused with `CHECKOUT_KEY_USED`, and clients rotate the key after any server rejection (kept only for network/5xx outcomes).
 - Cancelling an unpaid Stripe order expires its Checkout session first, outside the transaction. Manual stock adjustments cannot go below `stockReserved`.
+- A promo counts as used only when it discounted the order (`discountRappen > 0`). Card orders under CHF 0.50 are refused with `CARD_MINIMUM_NOT_MET`. Promo codes are never listed on public pages or APIs.
+- `POST /api/v1/customer/orders` is rate-limited per IP and per customer email.
+- `refundOrder` calls Stripe before it saves. The refund webhook rebuilds a missing refund row from the refund metadata, and `settleSucceededRefund` claims the refund first so the webhook and the admin request cannot both count it.
 - Delivery: Stripe or COD. Pickup: Stripe or cash at pickup. Server code validates stock, price, promotion, destination country, fulfillment, and payment. Stripe Checkout may present the CHF order in a supported local currency through Adaptive Pricing.
 - Retail transitions are `CONFIRMED → PROCESSING → OUT_FOR_DELIVERY → DELIVERED` or `CONFIRMED → PROCESSING → READY_FOR_PICKUP → PICKED_UP`, plus cancellation. Legacy enum values remain only during expand/contract migration.
 - Keep network calls outside long database transactions. Secrets and provider identifiers remain server-only.

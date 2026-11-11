@@ -52,6 +52,10 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
   // calculateQuote re-checks B2B access inside the transaction; createOrderSchema already enforces payment/address rules.
   const order = await withConflictRetry(() => prisma.$transaction(async (tx) => {
     const quote = await calculateQuote(input, tx, userId);
+    // Stripe cannot charge less than CHF 0.50; a discount that covers the basket needs a cash method.
+    if (input.paymentMethod === "STRIPE" && quote.totalRappen < 50) throw new OrderError("CARD_MINIMUM_NOT_MET");
+    // A code below its minimum subtotal gives no discount, so it must not count as used.
+    const promo = quote.discountRappen > 0 ? quote.promo : null;
     const paymentState = initialPaymentState(input.paymentMethod);
     const status: OrderStatus = paymentState.orderStatus;
     const created = await tx.order.create({
@@ -71,7 +75,7 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
         discountRappen: quote.discountRappen,
         deliveryFeeRappen: quote.deliveryFeeRappen,
         totalRappen: quote.totalRappen,
-        promoCodeId: quote.promo?.id,
+        promoCodeId: promo?.id,
         deliveryZoneId: quote.delivery?.zoneId,
         deliveryZoneNameDeSnapshot: quote.delivery?.nameDe,
         deliveryZoneNameEnSnapshot: quote.delivery?.nameEn,
@@ -104,9 +108,9 @@ export async function createOrder(input: CreateOrderInput, userId?: string) {
           },
         },
         statusEvents: { create: { toStatus: status, reason: "ORDER_CREATED" } },
-        promoRedemption: quote.promo ? {
+        promoRedemption: promo ? {
           create: {
-            promoCodeId: quote.promo.id,
+            promoCodeId: promo.id,
             userId,
             customerEmail: input.customerEmail,
             discountRappen: quote.discountRappen,

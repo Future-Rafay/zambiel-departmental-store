@@ -9,7 +9,6 @@ import {
 } from "@/components/site/storefront-sections";
 import { storeConfig, type StoreLocale } from "@/config/store";
 import { localizedMetadata } from "@/lib/metadata";
-import { formatMoney } from "@/lib/orders";
 import { getRetailHomepage } from "@/server/services/retail-catalog";
 
 export async function generateMetadata({
@@ -91,47 +90,6 @@ export default async function HomePage({
         products={catalog.newest}
         locale={locale}
       />
-
-      {catalog.promotions.length ? (
-        <section
-          className="mx-auto max-w-7xl px-5 py-14 sm:px-8 sm:py-20"
-          aria-labelledby="promotions-heading"
-        >
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary-text">
-            {de ? "Aktuelle Angebote" : "Current offers"}
-          </p>
-          <h2
-            id="promotions-heading"
-            className="mt-2 font-display text-3xl tracking-[-0.035em] text-primary sm:text-5xl"
-          >
-            {de ? "Promotionen" : "Promotions"}
-          </h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            {catalog.promotions.map((promotion) => (
-              <article
-                key={promotion.id}
-                className="rounded-card border border-border bg-primary p-6 text-primary-foreground"
-              >
-                <p className="text-sm font-bold uppercase tracking-[0.16em] text-secondary-light">
-                  {promotion.code}
-                </p>
-                <p className="mt-3 font-display text-3xl">
-                  {promotion.type === "PERCENT"
-                    ? `${promotion.value / 100}%`
-                    : formatMoney(promotion.value, locale)}{" "}
-                  {de ? "Rabatt" : "off"}
-                </p>
-                {promotion.minimumSubtotalRappen > 0 ? (
-                  <p className="mt-2 text-sm text-primary-foreground/70">
-                    {de ? "Ab" : "From"}{" "}
-                    {formatMoney(promotion.minimumSubtotalRappen, locale)}
-                  </p>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
 
       <WhyZambiel locale={locale} />
       <StoryAndRequest locale={locale} />

@@ -290,8 +290,7 @@ export async function getRetailProductsBySlugs(slugs: string[], locale: StoreLoc
 }
 
 export async function getRetailHomepage(locale: StoreLocale) {
-  const now = new Date();
-  const [categories, showcase, featured, newest, bestSellerGroups, promotions] = await Promise.all([
+  const [categories, showcase, featured, newest, bestSellerGroups] = await Promise.all([
     getRetailCategories(locale),
     prisma.product.findMany({ where: { ...productModeWhere(false), status: "ACTIVE", active: true, deletedAt: null }, include: retailProductInclude, orderBy: [{ featured: "desc" }, { sortOrder: "asc" }, { id: "asc" }], take: 12 }),
     prisma.product.findMany({ where: { ...productModeWhere(false), status: "ACTIVE", active: true, deletedAt: null, featured: true }, include: retailProductInclude, orderBy: { sortOrder: "asc" }, take: 8 }),
@@ -302,18 +301,6 @@ export async function getRetailHomepage(locale: StoreLocale) {
       _sum: { quantity: true },
       orderBy: { _sum: { quantity: "desc" } },
       take: 8,
-    }),
-    prisma.promoCode.findMany({
-      where: {
-        active: true,
-        AND: [
-          { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
-          { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
-        ],
-      },
-      select: { id: true, code: true, type: true, value: true, minimumSubtotalRappen: true, endsAt: true },
-      orderBy: [{ endsAt: "asc" }, { createdAt: "desc" }],
-      take: 4,
     }),
   ]);
   const bestIds = bestSellerGroups.flatMap(({ productId }) => productId ? [productId] : []);
@@ -327,6 +314,5 @@ export async function getRetailHomepage(locale: StoreLocale) {
     featured: featured.map((product) => retailProductDto(product, locale)),
     newest: newest.map((product) => retailProductDto(product, locale)),
     bestSellers: bestIds.flatMap((id) => byId.get(id) ? [retailProductDto(byId.get(id)!, locale)] : []),
-    promotions,
   };
 }

@@ -261,6 +261,10 @@ export async function refundOrder(actorId: string, input: { orderNumber: string;
     const created = await tx.refund.create({ data: { paymentId: payment.id, requestedByUserId: actorId, stripeRefundId: stripeRefund.id, amountRappen: input.amountRappen, reason: input.reason, status: failed ? "FAILED" : "PENDING", failureMessage: stripeRefund.failure_reason } });
     await audit(tx, actorId, "STRIPE_REFUND_REQUESTED", "Order", id.toString(), { amountRappen: input.amountRappen, reason: input.reason, stripeRefundId: stripeRefund.id });
     return created;
+  }).catch((error) => {
+    // The refund.created webhook can save the same refund first (see recoverUnsavedRefund).
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return prisma.refund.findUniqueOrThrow({ where: { stripeRefundId: stripeRefund.id } });
+    throw error;
   });
   if (stripeRefund.status === "succeeded") {
     await notifyCancellation(await settleSucceededRefund(stripeRefund.id, input.cancelOrder));
@@ -271,13 +275,13 @@ export async function refundOrder(actorId: string, input: { orderNumber: string;
 
 async function settleSucceededRefund(stripeRefundId: string, cancelOrder: boolean) {
   return prisma.$transaction(async (tx) => {
-    const refund = await tx.refund.findUnique({ where: { stripeRefundId }, include: { payment: { include: { order: true } } } });
-    if (!refund || refund.status === "FAILED") return;
-    if (refund.status === "SUCCEEDED") return;
+    // Claim first: the webhook and the admin request can settle the same refund at the same moment, and only one may count it.
+    const claimed = await tx.refund.updateMany({ where: { stripeRefundId, status: "PENDING" }, data: { status: "SUCCEEDED", failureMessage: null } });
+    if (claimed.count !== 1) return;
+    const refund = await tx.refund.findUniqueOrThrow({ where: { stripeRefundId }, include: { payment: { include: { order: true } } } });
     const payment = refund.payment;
     const order = payment.order;
     const refundedRappen = Math.min(payment.amountRappen, payment.refundedRappen + refund.amountRappen);
-    await tx.refund.update({ where: { id: refund.id }, data: { status: "SUCCEEDED", failureMessage: null } });
     await tx.payment.update({ where: { id: payment.id }, data: { refundedRappen, status: refundedRappen === payment.amountRappen ? "REFUNDED" : "PARTIALLY_REFUNDED" } });
     await tx.auditLog.create({ data: { actorUserId: refund.requestedByUserId, action: "STRIPE_REFUND_SUCCEEDED", entityType: "Order", entityId: order.id.toString(), metadata: { amountRappen: refund.amountRappen, stripeRefundId } } });
     if (cancelOrder && refundedRappen === payment.amountRappen && !["DELIVERED", "PICKED_UP", "CANCELLED"].includes(order.status)) {
@@ -301,10 +305,34 @@ async function notifyCancellation(order: { id: bigint; email: string; locale: "D
   );
 }
 
+// refundOrder asks Stripe before it saves. If that save failed, rebuild the row from the metadata refundOrder sent with the refund.
+// Refunds made in the Stripe dashboard carry no such metadata and stay unrecorded.
+async function recoverUnsavedRefund(stripeRefund: Stripe.Refund) {
+  const { orderId, reason, actorUserId } = stripeRefund.metadata ?? {};
+  const paymentIntentId = typeof stripeRefund.payment_intent === "string" ? stripeRefund.payment_intent : stripeRefund.payment_intent?.id;
+  if (!orderId || !/^\d{1,18}$/.test(orderId) || !paymentIntentId) return false;
+  const [payment, actor] = await Promise.all([
+    prisma.payment.findUnique({ where: { orderId: BigInt(orderId) }, select: { id: true, provider: true, stripePaymentIntentId: true } }),
+    actorUserId ? prisma.user.findUnique({ where: { id: actorUserId }, select: { id: true } }) : null,
+  ]);
+  if (payment?.provider !== "STRIPE" || payment.stripePaymentIntentId !== paymentIntentId) return false;
+  const data = { paymentId: payment.id, requestedByUserId: actor?.id, stripeRefundId: stripeRefund.id, amountRappen: stripeRefund.amount, reason: reason || "Stripe refund" };
+  try {
+    await prisma.$transaction([
+      prisma.refund.create({ data }),
+      prisma.auditLog.create({ data: { actorUserId: actor?.id, action: "STRIPE_REFUND_REQUESTED", entityType: "Order", entityId: orderId, metadata: { amountRappen: data.amountRappen, reason: data.reason, stripeRefundId: stripeRefund.id, recoveredFromWebhook: true } } }),
+    ]);
+  } catch (error) {
+    // refundOrder saved it in the meantime.
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) throw error;
+  }
+  return true;
+}
+
 export async function syncStripeRefund(stripeRefund: Stripe.Refund) {
   const existing = await prisma.refund.findUnique({ where: { stripeRefundId: stripeRefund.id }, select: { id: true, status: true } });
-  if (!existing) return;
-  if (existing.status === "SUCCEEDED") return;
+  if (!existing && !(await recoverUnsavedRefund(stripeRefund))) return;
+  if (existing?.status === "SUCCEEDED") return;
   if (stripeRefund.status === "succeeded") {
     await notifyCancellation(await settleSucceededRefund(stripeRefund.id, stripeRefund.metadata?.cancelOrder === "true"));
     return;
