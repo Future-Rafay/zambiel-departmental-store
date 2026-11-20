@@ -16,8 +16,9 @@ function createPrismaClient() {
     acquireTimeout: 30_000,
     connectTimeout: 15_000,
     idleTimeout: 300,
-    // MySQL 8 caching_sha2_password without TLS needs the server RSA key after every server restart; only trusted on loopback.
-    allowPublicKeyRetrieval: ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname),
+    // caching_sha2_password without TLS needs the server RSA key after every MySQL restart, or no connection opens (pool timeout, active=0).
+    // A plaintext link is already exposed, so fetching the key adds little; with TLS it is never needed.
+    allowPublicKeyRetrieval: !env.DATABASE_SSL,
     ssl: env.DATABASE_SSL
       ? {
           rejectUnauthorized: true,
